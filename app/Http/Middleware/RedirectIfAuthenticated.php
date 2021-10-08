@@ -23,6 +23,9 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
+                if($guard == 'backpack'){
+                    return redirect(backpack_url('dashboard'));
+                }
                 return redirect(RouteServiceProvider::HOME);
             }
         }

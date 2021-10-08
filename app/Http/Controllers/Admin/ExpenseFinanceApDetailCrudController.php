@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\ApprovalCard;
 use App\Models\ExpenseClaim;
+use App\Models\Department;
 use Illuminate\Http\Request;
 use App\Models\ExpenseClaimDetail;
 use Illuminate\Support\Facades\DB;

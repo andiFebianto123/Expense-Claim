@@ -1,3 +1,9 @@
+
+@media(max-width: 976px) {
+    .app-header.bg-light .navbar-brand{
+        padding-left: 0;
+    }
+}
 /* DATEPICKER */
 .datepicker table tr td.active:active, .datepicker table tr td.active.highlighted:active, .datepicker table tr td.active.active, .datepicker table tr td.active.highlighted.active {
     color: #fff;

@@ -195,7 +195,7 @@ class ExpenseFinanceApCrudController extends CrudController
             ]);
             DB::commit();
             \Alert::success(trans('backpack::crud.upload_confirmation_message'))->flash();
-            return response()->json(['redirect_url' => $this->crud->route ]);
+            return response()->json(['redirect_url' => backpack_url('expense-finance-ap') ]);
         }
         catch(Exception $e){
             DB::rollback();

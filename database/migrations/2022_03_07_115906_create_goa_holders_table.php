@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateApprovalCardsTable extends Migration
+class CreateGoaHoldersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,15 +13,19 @@ class CreateApprovalCardsTable extends Migration
      */
     public function up()
     {
-        Schema::create('approval_cards', function (Blueprint $table) {
+        Schema::create('goa_holders', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('level_id');
-            $table->string('level_type');
+            $table->unsignedBigInteger('user_id');
+            $table->string('name')->unique();
             $table->unsignedBigInteger('limit')->nullable();
-            $table->string('currency');
-            $table->string('remark')->nullable();
+            $table->unsignedBigInteger('head_department_id')->nullable();
             $table->timestamps();
+
+
+            $table->foreign('user_id')
+            ->references('id')
+            ->on('users')
+            ->onUpdate('cascade');
         });
     }
 
@@ -32,6 +36,6 @@ class CreateApprovalCardsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('approval_cards');
+        Schema::dropIfExists('goa_holders');
     }
 }

@@ -33,24 +33,24 @@ class LoginController extends BackpackLoginController{
         }
         
         $checkUserMail = User::where($this->username(), $request->{$this->username()})
-        ->orWhere('employee_id', $request->{$this->username()})
+        ->orWhere('user_id', $request->{$this->username()})
         ->first();
         if($checkUserMail == null){
             $this->incrementLoginAttempts($request);
             throw ValidationException::withMessages([
                 $this->username() => ["Email or User ID is not exists"],
             ]);
+        }else if($checkUserMail->is_active != 1){
+            $this->incrementLoginAttempts($request);
+            throw ValidationException::withMessages([
+                $this->username() => ["Acount is not active"],
+            ]);
         }else{
             // jika user telah ketemu
             $request->request->remove('email'); // to remove property from $request
             $request->request->add(['email' => $checkUserMail->email]); // to add new property to $request
         }
-        // else if($checkUserMail->is_active != 1){
-        //     $this->incrementLoginAttempts($request);
-        //     throw ValidationException::withMessages([
-        //         $this->username() => ["Acount is not active"],
-        //     ]);
-        // }
+        
         DB::beginTransaction();
         try{
             if ($this->attemptLogin($request)) {

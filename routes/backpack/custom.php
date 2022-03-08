@@ -14,6 +14,23 @@ use App\Http\Controllers\Admin\ExpenseUserRequestHistoryCrudController;
 // This route file is loaded automatically by Backpack\Base.
 // Routes you generate using Backpack\Generators will be placed here.
 
+Route::group( 
+    [
+        'namespace'  => 'App\Http\Controllers',
+        'middleware' => config('backpack.base.web_middleware', 'web'),
+        'prefix'     => config('backpack.base.route_prefix'),
+    ],
+    function () {
+        Route::post('login', 'LoginController@login');
+        Route::get('logout', 'LoginController@logout')->name('backpack.auth.logout');
+        Route::post('logout', 'LoginController@logout');
+
+        Route::get('edit-account-info', 'MyAccountController@getAccountInfoForm')->name('backpack.account.info');
+        Route::post('edit-account-info', 'MyAccountController@postAccountInfoForm')->name('backpack.account.info.store');
+        Route::post('change-password', 'MyAccountController@postChangePasswordForm')->name('backpack.account.password');
+    }
+);
+
 Route::group([
     'prefix'     => config('backpack.base.route_prefix', 'admin'),
     'middleware' => array_merge(

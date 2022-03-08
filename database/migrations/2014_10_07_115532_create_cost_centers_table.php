@@ -16,7 +16,7 @@ class CreateCostCentersTable extends Migration
         Schema::create('cost_centers', function (Blueprint $table) {
             $table->id();
             $table->string('cost_center_id')->unique();
-            $table->string('currrency');
+            $table->string('currency');
             $table->string('description');
             $table->timestamps();
         });

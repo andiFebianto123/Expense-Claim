@@ -4,9 +4,12 @@ namespace Database\Seeders;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Level;
 use App\Models\Department;
 use App\Models\ApprovalCard;
+use App\Models\CostCenter;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,56 +20,122 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-       // ROLE SEEDER
-       $this->roleSeeder();
+        $this->roleSeeder();
 
-       // DEPARTMENT SEEDER
-       $this->departmentSeeder();
+        $this->levelSeeder();
 
-       // USER SEEDER
-       $this->userSeeder();
+        $this->costCenterSeeder();
 
-       // APPROVAL CARD SEEDER
-       $this->approvalCardSeeder();
+        // DEPARTMENT SEEDER
+        //$this->departmentSeeder();
+
+        // USER SEEDER
+        //$this->userSeeder();
+
+        // APPROVAL CARD SEEDER
+        //$this->approvalCardSeeder();
     }
 
-    public function roleSeeder(){
+    public function roleSeeder()
+    {
         $roles = [
-            'Super Admin' => 0,
-            'Director' => 1, 
-            'National Sales & Promotion (Senior Manager)' => 2,
-            'Key Account Manager' => 3, 
-            'Regional Sales Manager' => 4, 
-            'All Senior Manager (D6)' => 5,
-            'Manager (D5)' => 6,
-            'Section Head (D4SH)' => 7,
-            'Non - Sales (D4)' => 8,
-            'Marketing Support' => 8
+            'User',
+            'GoA Holder',
+            'Administrator',
+            'Hod',
+            'Secretary'
         ];
-       
-        foreach($roles as $role => $levelNumber){
+
+        foreach ($roles as $role) {
             Role::updateOrCreate([
                 'name' => $role
-            ], 
-            [
-                'name' => $role,
-            ]
-            );
+            ]);
         }
     }
 
-    public function departmentSeeder(){
+    public function levelSeeder()
+    {
+        $levels = [
+            [
+                'id' => 'D7',
+                'name' => 'Director'
+            ],
+            [
+                'id' => 'D6',
+                'name' => 'Senior Manager'
+            ],
+            [
+                'id' => 'D5',
+                'name' => 'Manager'
+            ],
+            [
+                'id' => 'D4SH',
+                'name' => 'Section Head'
+            ],
+            [
+                'id' => 'D4',
+                'name' => 'Supervisor'
+            ],
+            [
+                'id' => 'D3',
+                'name' => 'Staff'
+            ],
+            [
+                'id' => 'NSP',
+                'name' => 'National Sales & Promotion (Senior Manager)'
+            ],
+            [
+                'id' => 'KAM',
+                'name' => 'Key Account Manager'
+            ],
+            [
+                'id' => 'RSM',
+                'name' => 'Regional Sales Manager'
+            ],
+            [
+                'id' => 'MS',
+                'name' => 'Marketing Support'
+            ]
+        ];
+
+        foreach ($levels as $level) {
+            Level::updateOrCreate([
+                'level_id' => $level['id'],
+                'name' => $level['name'],
+            ]);
+        }
+    }
+
+    public function costCenterSeeder()
+    {
+        $filename = Storage::path('data/cost_center.csv');
+
+        $costCenters = $this->csvToArray($filename);
+
+        foreach($costCenters as $cost) {
+            CostCenter::updateOrCreate([
+                'cost_center_id' => $cost['Cost Center'],
+                'currency' => $cost['Currency'],
+                'description' => $cost['Description']
+            ]);
+        }
+    }
+
+
+    public function departmentSeeder()
+    {
         $deparments = ['IT', 'Finance'];
-        foreach($deparments as $deparment){
+        foreach ($deparments as $deparment) {
             Department::updateOrCreate([
                 'name' => $deparment
-            ], [    
+            ], [
                 'name' => $deparment
             ]);
         }
     }
 
-    public function userSeeder(){
+    public function userSeeder()
+    {
 
         $financeId = Department::where('name', 'Finance')->first()->id;
 
@@ -80,7 +149,7 @@ class DatabaseSeeder extends Seeder
             'vendor_number' => 21010000,
             'department_id' => null,
             'email' => 'kevin@rectmedia.com',
-            'name' => 'Kevin', 
+            'name' => 'Kevin',
             'password' => bcrypt('qwerty'),
             'role_id' => Role::where('name', 'Super Admin')->first()->id,
             'head_department_id' => null,
@@ -98,7 +167,7 @@ class DatabaseSeeder extends Seeder
             'vendor_number' => 21010001,
             'department_id' => null,
             'email' => 'director@rectmedia.com',
-            'name' => 'Director', 
+            'name' => 'Director',
             'password' => bcrypt('qwerty'),
             'role_id' => Role::where('name', 'Director')->first()->id,
             'head_department_id' => null,
@@ -115,7 +184,7 @@ class DatabaseSeeder extends Seeder
             'vendor_number' => 21010002,
             'department_id' => $itId,
             'email' => 'headit@rectmedia.com',
-            'name' => 'Head IT', 
+            'name' => 'Head IT',
             'password' => bcrypt('qwerty'),
             'role_id' => Role::where('name', 'National Sales & Promotion (Senior Manager)')->first()->id,
             'head_department_id' => null,
@@ -124,7 +193,7 @@ class DatabaseSeeder extends Seeder
             'remark' => null
         ]);
 
-         // HEAD FINANCE DEPARTMENT
+        // HEAD FINANCE DEPARTMENT
         $headFinance = User::updateOrCreate([
             'email' => 'headfinance@rectmedia.com'
         ], [
@@ -132,7 +201,7 @@ class DatabaseSeeder extends Seeder
             'vendor_number' => 21010003,
             'department_id' => $financeId,
             'email' => 'headfinance@rectmedia.com',
-            'name' => 'Head Finance', 
+            'name' => 'Head Finance',
             'password' => bcrypt('qwerty'),
             'role_id' => Role::where('name', 'National Sales & Promotion (Senior Manager)')->first()->id,
             'head_department_id' => null,
@@ -149,7 +218,7 @@ class DatabaseSeeder extends Seeder
             'vendor_number' => 21010004,
             'department_id' => $itId,
             'email' => 'user@rectmedia.com',
-            'name' => 'User', 
+            'name' => 'User',
             'password' => bcrypt('qwerty'),
             'role_id' => Role::where('name', 'Section Head (D4SH)')->first()->id,
             'head_department_id' => $headIt->id,
@@ -166,7 +235,7 @@ class DatabaseSeeder extends Seeder
             'vendor_number' => 21010005,
             'department_id' => $financeId,
             'email' => 'finance@rectmedia.com',
-            'name' => 'Finance', 
+            'name' => 'Finance',
             'password' => bcrypt('qwerty'),
             'role_id' => Role::where('name', 'Section Head (D4SH)')->first()->id,
             'head_department_id' => $headFinance->id,
@@ -177,7 +246,8 @@ class DatabaseSeeder extends Seeder
     }
 
 
-    public function approvalCardSeeder(){
+    public function approvalCardSeeder()
+    {
         // TELEPHONE
         ApprovalCard::updateOrCreate([
             'name' => 'Telephone',
@@ -275,5 +345,25 @@ class DatabaseSeeder extends Seeder
             'currency' => 'IDR',
             'remark' => 'Contohnya parkir di gedung MCC'
         ]);
+    }
+
+    private function csvToArray($filename = '', $delimiter = ',')
+    {
+        if (!file_exists($filename) || !is_readable($filename))
+            return false;
+
+        $header = null;
+        $data = array();
+        if (($handle = fopen($filename, 'r')) !== false) {
+            while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
+                if (!$header)
+                    $header = $row;
+                else
+                    $data[] = array_combine($header, $row);
+            }
+            fclose($handle);
+        }
+
+        return $data;
     }
 }

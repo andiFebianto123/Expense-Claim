@@ -8,6 +8,7 @@ use App\Models\Level;
 use App\Models\Department;
 use App\Models\ApprovalCard;
 use App\Models\CostCenter;
+use App\Models\ExpenseCode;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
@@ -26,11 +27,13 @@ class DatabaseSeeder extends Seeder
 
         $this->costCenterSeeder();
 
-        // DEPARTMENT SEEDER
-        //$this->departmentSeeder();
+        $this->departmentSeeder();
 
-        // USER SEEDER
-        //$this->userSeeder();
+        $this->userSeeder();
+
+        $this->expenseCodeSeeder();
+
+        $this->userSeeder();
 
         // APPROVAL CARD SEEDER
         //$this->approvalCardSeeder();
@@ -48,6 +51,8 @@ class DatabaseSeeder extends Seeder
 
         foreach ($roles as $role) {
             Role::updateOrCreate([
+                'name' => $role
+            ], [
                 'name' => $role
             ]);
         }
@@ -101,6 +106,8 @@ class DatabaseSeeder extends Seeder
         foreach ($levels as $level) {
             Level::updateOrCreate([
                 'level_id' => $level['id'],
+            ], [
+                'level_id' => $level['id'],
                 'name' => $level['name'],
             ]);
         }
@@ -112,8 +119,10 @@ class DatabaseSeeder extends Seeder
 
         $costCenters = $this->csvToArray($filename);
 
-        foreach($costCenters as $cost) {
+        foreach ($costCenters as $cost) {
             CostCenter::updateOrCreate([
+                'cost_center_id' => $cost['Cost Center'],
+            ], [
                 'cost_center_id' => $cost['Cost Center'],
                 'currency' => $cost['Currency'],
                 'description' => $cost['Description']
@@ -124,125 +133,76 @@ class DatabaseSeeder extends Seeder
 
     public function departmentSeeder()
     {
-        $deparments = ['IT', 'Finance'];
-        foreach ($deparments as $deparment) {
+        $filename = Storage::path('data/department.csv');
+
+        $departments = $this->csvToArray($filename);
+
+        foreach ($departments as $department) {
+            $isNone = false;
+            if ($department['Department ID'] == 'NONE') {
+                $isNone = true;
+            }
             Department::updateOrCreate([
-                'name' => $deparment
+                'department_id' => $department['Department ID'],
             ], [
-                'name' => $deparment
+                'department_id' => $department['Department ID'],
+                'name' => $department['Name'],
+                'is_none' => $isNone
+            ]);
+        }
+    }
+
+    public function expenseCodeSeeder()
+    {
+        $filename = Storage::path('data/expense_code.csv');
+
+        $expenseCodes = $this->csvToArray($filename);
+
+        foreach ($expenseCodes as $code) {
+            ExpenseCode::updateOrCreate([
+                'account_number' => $code['Account Number'],
+            ], [
+                'account_number' => $code['Account Number'],
+                'description' => $code['Account Description'],
             ]);
         }
     }
 
     public function userSeeder()
     {
+        $filename = Storage::path('data/users.csv');
 
-        $financeId = Department::where('name', 'Finance')->first()->id;
+        $users = $this->csvToArray($filename);
 
-        $itId = Department::where('name', 'IT')->first()->id;
+        foreach ($users as $user) {
+            $userRole = explode(', ', $user['Role']);
+            if (count($userRole) >= 2) {
+                $userRole = $userRole[count($userRole) - 1];
+            }
 
-        // SUPER ADMIN
-        $director = User::updateOrCreate([
-            'email' => 'kevin@rectmedia.com'
-        ], [
-            'employee_id' => '21.01.0000',
-            'vendor_number' => 21010000,
-            'department_id' => null,
-            'email' => 'kevin@rectmedia.com',
-            'name' => 'Kevin',
-            'password' => bcrypt('qwerty'),
-            'role_id' => Role::where('name', 'Super Admin')->first()->id,
-            'head_department_id' => null,
-            'goa_id' => null,
-            'respective_director_id' => null,
-            'remark' => null
-        ]);
+            $level = Level::where('level_id', $user['Level'])->first();
+            $role = Role::where('name', $userRole)->first();
 
+            $costCenter = CostCenter::where('cost_center_id', $user['Cost Center'])->first();
+            $bpidExist = User::where('bpid',  $user['BPID'])->exists();
 
-        // DIRECTOR
-        $director = User::updateOrCreate([
-            'email' => 'director@rectmedia.com'
-        ], [
-            'employee_id' => '21.01.0001',
-            'vendor_number' => 21010001,
-            'department_id' => null,
-            'email' => 'director@rectmedia.com',
-            'name' => 'Director',
-            'password' => bcrypt('qwerty'),
-            'role_id' => Role::where('name', 'Director')->first()->id,
-            'head_department_id' => null,
-            'goa_id' => null,
-            'respective_director_id' => null,
-            'remark' => null
-        ]);
-
-        // HEAD IT DEPARTMENT
-        $headIt = User::updateOrCreate([
-            'email' => 'headit@rectmedia.com'
-        ], [
-            'employee_id' => '21.01.0002',
-            'vendor_number' => 21010002,
-            'department_id' => $itId,
-            'email' => 'headit@rectmedia.com',
-            'name' => 'Head IT',
-            'password' => bcrypt('qwerty'),
-            'role_id' => Role::where('name', 'National Sales & Promotion (Senior Manager)')->first()->id,
-            'head_department_id' => null,
-            'goa_id' => $director->id,
-            'respective_director_id' => $director->id,
-            'remark' => null
-        ]);
-
-        // HEAD FINANCE DEPARTMENT
-        $headFinance = User::updateOrCreate([
-            'email' => 'headfinance@rectmedia.com'
-        ], [
-            'employee_id' => '21.01.0003',
-            'vendor_number' => 21010003,
-            'department_id' => $financeId,
-            'email' => 'headfinance@rectmedia.com',
-            'name' => 'Head Finance',
-            'password' => bcrypt('qwerty'),
-            'role_id' => Role::where('name', 'National Sales & Promotion (Senior Manager)')->first()->id,
-            'head_department_id' => null,
-            'goa_id' => $director->id,
-            'respective_director_id' => $director->id,
-            'remark' => null
-        ]);
-
-        // NORMAL USER
-        User::updateOrCreate([
-            'email' => 'user@rectmedia.com'
-        ], [
-            'employee_id' => '21.01.0004',
-            'vendor_number' => 21010004,
-            'department_id' => $itId,
-            'email' => 'user@rectmedia.com',
-            'name' => 'User',
-            'password' => bcrypt('qwerty'),
-            'role_id' => Role::where('name', 'Section Head (D4SH)')->first()->id,
-            'head_department_id' => $headIt->id,
-            'goa_id' => $director->id,
-            'respective_director_id' => $director->id,
-            'remark' => null
-        ]);
-
-        // FINANCE USER
-        User::updateOrCreate([
-            'email' => 'finance@rectmedia.com'
-        ], [
-            'employee_id' => '21.01.0005',
-            'vendor_number' => 21010005,
-            'department_id' => $financeId,
-            'email' => 'finance@rectmedia.com',
-            'name' => 'Finance',
-            'password' => bcrypt('qwerty'),
-            'role_id' => Role::where('name', 'Section Head (D4SH)')->first()->id,
-            'head_department_id' => $headFinance->id,
-            'goa_id' => $director->id,
-            'respective_director_id' => $director->id,
-            'remark' => null
-        ]);
+            if (!empty($level) && !empty($role) && !empty($costCenter) && !$bpidExist) {
+                User::updateOrCreate([
+                    'user_id' => $user['UserID'],
+                ], [
+                    'user_id' => $user['UserID'],
+                    'vendor_number' => random_int(100000, 999999),
+                    'name' =>  $user['Name'],
+                    'email' => $user['Email'],
+                    'bpid' =>  $user['BPID'],
+                    'level_id' => $level->id,
+                    'role_id' => $role->id,
+                    'is_active' => true,
+                    'password' => bcrypt('qwerty'),
+                    'cost_center_id' => $costCenter->id
+                ]);
+            }
+        }
     }
 
 

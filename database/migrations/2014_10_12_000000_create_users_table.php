@@ -25,13 +25,18 @@ class CreateUsersTable extends Migration
             $table->string('password');
             $table->unsignedBigInteger('role_id');
             $table->unsignedBigInteger('cost_center_id');
-            // $table->unsignedBigInteger('department_id')->nullable();
+            $table->unsignedBigInteger('department_id')->nullable();
             // $table->unsignedBigInteger('head_department_id')->nullable();
             // $table->unsignedBigInteger('goa_id')->nullable();
             // $table->unsignedBigInteger('respective_director_id')->nullable();
             $table->string('remark')->nullable();
             $table->rememberToken();
             $table->timestamps();
+
+            $table->foreign('department_id')
+            ->references('id')
+            ->on('departments')
+            ->onUpdate('cascade');
 
             $table->foreign('level_id')
             ->references('id')

@@ -25,9 +25,21 @@ class UserRequest extends FormRequest
      */
     public function rules()
     {
+        if(count(\Request::segments()) == 2){
+            // jika melakukan edit
+            $id = \Request::segments()[1];
+            return [
+                'user_id' => 'required|max:255|unique:mst_users,user_id,' . $id,
+                'email' => 'required|max:255|unique:mst_users,email,' . $id,
+                'password' => 'required|max:255',
+                'bpid' => 'required|max:255',
+            ];
+        }
         return [
-            'password' => 'required',
-            'bpid' => 'required',
+            'user_id' => 'required|max:255|unique:mst_users,user_id',
+            'email' => 'required|max:255|unique:mst_users,email',
+            'password' => 'required|max:255',
+            'bpid' => 'required|max:255',
         ];
     }
 

@@ -25,6 +25,13 @@ class RoleRequest extends FormRequest
      */
     public function rules()
     {
+        if(count(\Request::segments()) == 2){
+            // jika melakukan edit
+            $id = \Request::segments()[1];
+            return [
+                'level_id' => 'required|max:255|unique:mst_roles,name,' . $id,
+            ];
+        }
         return [
             'name' => 'required|max:255|unique:mst_roles,name'
         ];

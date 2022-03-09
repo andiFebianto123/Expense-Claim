@@ -16,10 +16,6 @@ class Department extends Model
 
     public const FINANCE = 'Finance';
 
-    public function contoh(){
-        return 'Halloo';
-    }
-
     public function headdepartment(){
         return $this->hasOne(HeadDepartment::class);
     }

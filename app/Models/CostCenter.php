@@ -8,4 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class CostCenter extends Model
 {
     use HasFactory;
+    protected $table = 'mst_cost_centers';
+
 }

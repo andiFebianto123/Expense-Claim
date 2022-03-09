@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateCostCentersTable extends Migration
+class CreateMstRolesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,9 @@ class CreateCostCentersTable extends Migration
      */
     public function up()
     {
-        Schema::create('cost_centers', function (Blueprint $table) {
+        Schema::create('mst_roles', function (Blueprint $table) {
             $table->id();
-            $table->string('cost_center_id')->unique();
-            $table->string('currency');
-            $table->string('description');
+            $table->string('name')->unique();
             $table->timestamps();
         });
     }
@@ -29,6 +27,6 @@ class CreateCostCentersTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('cost_centers');
+        Schema::dropIfExists('mst_roles');
     }
 }

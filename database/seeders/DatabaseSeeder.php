@@ -5,11 +5,14 @@ namespace Database\Seeders;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Level;
-use App\Models\Department;
-use App\Models\ApprovalCard;
 use App\Models\CostCenter;
+use App\Models\Department;
+use App\Models\MstExpense;
 use App\Models\ExpenseCode;
+use App\Models\ApprovalCard;
+use App\Models\MstExpenseType;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class DatabaseSeeder extends Seeder
@@ -34,6 +37,8 @@ class DatabaseSeeder extends Seeder
         $this->expenseCodeSeeder();
 
         $this->userSeeder();
+
+        $this->expenseSeeder();
 
         // APPROVAL CARD SEEDER
         //$this->approvalCardSeeder();
@@ -201,6 +206,45 @@ class DatabaseSeeder extends Seeder
                     'password' => bcrypt('qwerty'),
                     'cost_center_id' => $costCenter->id
                 ]);
+            }
+        }
+    }
+
+    public function expenseSeeder()
+    {
+        $filename = Storage::path('data/expense_type.csv');
+
+        $expenses = $this->csvToArray($filename);
+
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('mst_expense_types')->truncate();
+        DB::table('mst_expenses')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        foreach ($expenses as $item) {
+            $level = Level::where('level_id', $item['Level'])->first();
+            $expenseCode = ExpenseCode::where('account_number', $item['Expense Code'])->first();
+
+            if (!empty($level) && !empty($expenseCode)) {
+                $expense = new MstExpense;
+                $expense->type = $item['Expense Type'];
+                $expense->save();
+
+                $limit = str_replace(',', '', $item['Limit']);
+                $expenseType = new MstExpenseType;
+                $expenseType->expense_id = $expense->id;
+                $expenseType->level_id = $level->id;
+                $expenseType->limit = (int) $limit;
+                $expenseType->expense_code_id = $expenseCode->id;
+                $expenseType->is_traf = trim($item['TRAFApproval']) == 'Yes' ? true : false;
+                $expenseType->is_bod = trim($item['BoDApproval']) == 'Yes' ? true : false;
+                $expenseType->is_gm = trim($item['Remark']) == 'Approval Respective Director' ? true : false;
+                $expenseType->is_limit_person = trim($item['Remark']) == 'Limit per person' ? true : false;
+                $expenseType->currency = trim($item['Currency']);
+                $expenseType->limit_business_proposal = null;
+                $expenseType->remark = trim($item['Remark']);
+
+                $expenseType->save();
             }
         }
     }

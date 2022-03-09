@@ -62,12 +62,12 @@ class CreateTransExpenseClaimDetailsTable extends Migration
 
             $table->foreign('level_id')
             ->references('id')
-            ->on('levels')
+            ->on('mst_levels')
             ->onUpdate('cascade');
 
             $table->foreign('expense_code_id')
             ->references('id')
-            ->on('expense_codes')
+            ->on('mst_expense_codes')
             ->onUpdate('cascade');
         });
     }

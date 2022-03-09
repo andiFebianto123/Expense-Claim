@@ -34,24 +34,24 @@ class CreateUsersTable extends Migration
             $table->timestamps();
 
             $table->foreign('department_id')
-            ->references('id')
-            ->on('departments')
-            ->onUpdate('cascade');
+                ->references('id')
+                ->on('mst_departments')
+                ->onUpdate('cascade');
 
             $table->foreign('level_id')
-            ->references('id')
-            ->on('levels')
-            ->onUpdate('cascade');
+                ->references('id')
+                ->on('mst_levels')
+                ->onUpdate('cascade');
 
             $table->foreign('role_id')
-            ->references('id')
-            ->on('roles')
-            ->onUpdate('cascade');
+                ->references('id')
+                ->on('mst_roles')
+                ->onUpdate('cascade');
 
             $table->foreign('cost_center_id')
-            ->references('id')
-            ->on('cost_centers')
-            ->onUpdate('cascade');
+                ->references('id')
+                ->on('mst_cost_centers')
+                ->onUpdate('cascade');
         });
     }
 

@@ -8,4 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class ExpenseCode extends Model
 {
     use HasFactory;
+    protected $table = 'mst_expense_codes';
+
 }

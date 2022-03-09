@@ -8,4 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class MstExpense extends Model
 {
     use HasFactory;
+
+    protected $fillable = ['type'];
 }

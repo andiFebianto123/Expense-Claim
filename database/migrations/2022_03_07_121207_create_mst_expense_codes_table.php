@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateDepartmentsTable extends Migration
+class CreateMstExpenseCodesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,10 @@ class CreateDepartmentsTable extends Migration
      */
     public function up()
     {
-        Schema::create('departments', function (Blueprint $table) {
+        Schema::create('mst_expense_codes', function (Blueprint $table) {
             $table->id();
-            $table->string('department_id')->unique();
-            $table->string('name');
-            $table->boolean('is_none');
+            $table->string('account_number');
+            $table->string('description');
             $table->timestamps();
         });
     }
@@ -29,6 +28,6 @@ class CreateDepartmentsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('departments');
+        Schema::dropIfExists('mst_expense_codes');
     }
 }

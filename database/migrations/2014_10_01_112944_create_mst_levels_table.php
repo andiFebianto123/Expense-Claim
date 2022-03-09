@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateExpenseCodesTable extends Migration
+class CreateMstLevelsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,10 @@ class CreateExpenseCodesTable extends Migration
      */
     public function up()
     {
-        Schema::create('expense_codes', function (Blueprint $table) {
+        Schema::create('mst_levels', function (Blueprint $table) {
             $table->id();
-            $table->string('account_number');
-            $table->string('description');
+            $table->string('level_id')->unique();
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -28,6 +28,6 @@ class CreateExpenseCodesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('expense_codes');
+        Schema::dropIfExists('mst_levels');
     }
 }

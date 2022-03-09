@@ -44,33 +44,33 @@ class CreateTransExpenseClaimsTable extends Migration
 
             $table->foreign('request_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
 
             $table->foreign('hod_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
 
             $table->foreign('hod_delegation_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
 
 
             $table->foreign('finance_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
 
             $table->foreign('rejected_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
 
             $table->foreign('canceled_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
         });
     }

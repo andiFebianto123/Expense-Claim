@@ -26,7 +26,7 @@ class CreateHeadDepartmentsTable extends Migration
 
             $table->foreign('user_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
         });
     }

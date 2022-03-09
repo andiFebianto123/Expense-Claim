@@ -33,13 +33,13 @@ class CreateTransGoaApprovalsTable extends Migration
 
             $table->foreign('goa_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
 
 
             $table->foreign('goa_delegation_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
         });
     }

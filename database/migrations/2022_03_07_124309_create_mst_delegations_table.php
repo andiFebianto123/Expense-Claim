@@ -23,12 +23,12 @@ class CreateMstDelegationsTable extends Migration
 
             $table->foreign('from_user_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
 
             $table->foreign('to_user_id')
             ->references('id')
-            ->on('users')
+            ->on('mst_users')
             ->onUpdate('cascade');
 
             $table->timestamps();

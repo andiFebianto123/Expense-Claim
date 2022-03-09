@@ -13,7 +13,7 @@ class CreateUsersTable extends Migration
      */
     public function up()
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('mst_users', function (Blueprint $table) {
             $table->id();
             $table->string('user_id')->unique();
             $table->string('vendor_number');

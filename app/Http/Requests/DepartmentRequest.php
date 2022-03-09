@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use App\Http\Requests\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UserRequest extends FormRequest
+class DepartmentRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,21 +25,8 @@ class UserRequest extends FormRequest
      */
     public function rules()
     {
-        if(count(\Request::segments()) == 2){
-            // jika melakukan edit
-            $id = \Request::segments()[1];
-            return [
-                'user_id' => 'required|max:255|unique:mst_users,user_id,' . $id,
-                'email' => 'required|max:255|unique:mst_users,email,' . $id,
-                'password' => 'required|max:255',
-                'bpid' => 'required|max:255|unique:mst_users,bpid,'. $id,
-            ];
-        }
         return [
-            'user_id' => 'required|max:255|unique:mst_users,user_id',
-            'email' => 'required|max:255|unique:mst_users,email',
-            'password' => 'required|max:255',
-            'bpid' => 'required|max:255|unique:mst_users,bpid',
+            // 'name' => 'required|min:5|max:255'
         ];
     }
 

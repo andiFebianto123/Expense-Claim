@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Hash;
 use Exception;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class LoginController extends BackpackLoginController{
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\Response|\Illuminate\Http\JsonResponse
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws \Illuminate\Validation\ValidationException 
      */
     public function login(Request $request)
     {
@@ -31,6 +32,7 @@ class LoginController extends BackpackLoginController{
 
             return $this->sendLockoutResponse($request);
         }
+
         
         $checkUserMail = User::where($this->username(), $request->{$this->username()})
         ->orWhere('user_id', $request->{$this->username()})
@@ -49,7 +51,16 @@ class LoginController extends BackpackLoginController{
             // jika user telah ketemu
             $request->request->remove('email'); // to remove property from $request
             $request->request->add(['email' => $checkUserMail->email]); // to add new property to $request
+            if (!Hash::check($request->password, $checkUserMail->password)) {
+                // The old password matches the hash in the database
+                $this->incrementLoginAttempts($request);
+                throw ValidationException::withMessages([
+                    'password' => ["Password is not exists"],
+                ]);
+            }
         }
+
+       
         
         DB::beginTransaction();
         try{

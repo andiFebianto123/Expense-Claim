@@ -61,3 +61,4 @@
 <li class='nav-item'><a class='nav-link' href='{{ backpack_url('level') }}'><i class='nav-icon la la-question'></i> Levels</a></li>
 <li class='nav-item'><a class='nav-link' href='{{ backpack_url('user') }}'><i class='nav-icon la la-question'></i> Users</a></li>
 <li class='nav-item'><a class='nav-link' href='{{ backpack_url('goa-holder') }}'><i class='nav-icon la la-question'></i> Goa holders</a></li>
+<li class='nav-item'><a class='nav-link' href='{{ backpack_url('department') }}'><i class='nav-icon la la-question'></i> Departments</a></li>

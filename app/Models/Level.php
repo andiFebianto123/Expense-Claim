@@ -11,4 +11,9 @@ class Level extends Model
     use HasFactory, CrudTrait;
     protected $fillable = ['level_id', 'name'];
     protected $table = 'mst_levels';
+
+    public function expense_type()
+    {
+        return $this->hasMany(ExpenseType::class, 'level_id');
+    }
 }

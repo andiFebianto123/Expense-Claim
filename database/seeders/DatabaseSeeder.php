@@ -238,8 +238,7 @@ class DatabaseSeeder extends Seeder
                 $expenseType->expense_code_id = $expenseCode->id;
                 $expenseType->is_traf = trim($item['TRAFApproval']) == 'Yes' ? true : false;
                 $expenseType->is_bod = trim($item['BoDApproval']) == 'Yes' ? true : false;
-                $expenseType->is_gm = trim($item['Remark']) == 'Approval Respective Director' ? true : false;
-                $expenseType->is_limit_person = trim($item['Remark']) == 'Limit per person' ? true : false;
+                $expenseType->is_bp_approval = trim($item['BusinessPurposesApproval']) == 'Yes' ? true : false;
                 $expenseType->currency = trim($item['Currency']);
                 $expenseType->limit_business_proposal = null;
                 $expenseType->remark = trim($item['Remark']);

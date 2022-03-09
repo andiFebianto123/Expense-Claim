@@ -156,7 +156,8 @@ return [
     'attributes' => [
         'approval_card_id' => 'expense type',
         'cost_center' => 'cost center',
-        'expense_code' => 'expense code'
+        'expense_code' => 'expense code',
+        'expense_id' => 'expense id'
     ],
 
 ];

@@ -9,7 +9,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class GoaHolder extends Model
 {
+    use \Backpack\CRUD\app\Models\Traits\CrudTrait;
     use HasFactory;
+    protected $fillable = [
+        'user_id',
+        'name',
+        'limit',
+        'head_department_id',
+    ];
+    
     public function user(){
         return $this->belongsTo(User::class, 'user_id');
     }

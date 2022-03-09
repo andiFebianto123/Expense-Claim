@@ -92,4 +92,5 @@ Route::group([
     Route::crud('level', 'LevelCrudController');
     Route::crud('user', 'UserCrudController');
     Route::crud('goa-holder', 'GoaHolderCrudController');
+    Route::crud('expense-type', 'ExpenseTypeCrudController');
 }); // this should be the absolute last line of this file

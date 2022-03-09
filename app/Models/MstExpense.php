@@ -10,4 +10,9 @@ class MstExpense extends Model
     use HasFactory;
 
     protected $fillable = ['type'];
+
+    public function expense_type()
+    {
+        return $this->hasMany(ExpenseType::class, 'expense_id');
+    }
 }

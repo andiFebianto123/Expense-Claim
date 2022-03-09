@@ -21,27 +21,26 @@ class CreateMstExpenseTypesTable extends Migration
             $table->unsignedBigInteger('expense_code_id');
             $table->boolean('is_traf');
             $table->boolean('is_bod');
-            $table->boolean('is_gm');
-            $table->boolean('is_limit_person');
+            $table->boolean('is_bp_approval');
             $table->string('currency');
             $table->unsignedBigInteger('limit_business_proposal')->nullable();
             $table->string('remark')->nullable();
             $table->timestamps();
 
             $table->foreign('expense_id')
-            ->references('id')
-            ->on('mst_expenses')
-            ->onUpdate('cascade');
+                ->references('id')
+                ->on('mst_expenses')
+                ->onUpdate('cascade');
 
             $table->foreign('level_id')
-            ->references('id')
-            ->on('mst_levels')
-            ->onUpdate('cascade');
+                ->references('id')
+                ->on('mst_levels')
+                ->onUpdate('cascade');
 
             $table->foreign('expense_code_id')
-            ->references('id')
-            ->on('mst_expense_codes')
-            ->onUpdate('cascade');
+                ->references('id')
+                ->on('mst_expense_codes')
+                ->onUpdate('cascade');
         });
     }
 

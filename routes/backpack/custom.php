@@ -90,4 +90,5 @@ Route::group([
     Route::crud('expense-finance-ap-history', 'ExpenseFinanceApHistoryCrudController');
     Route::crud('role', 'RoleCrudController');
     Route::crud('level', 'LevelCrudController');
+    Route::crud('user', 'UserCrudController');
 }); // this should be the absolute last line of this file

@@ -3,7 +3,10 @@
 namespace App\Models;
 
 use App\Models\Role;
+use App\Models\Level;
+use App\Models\CostCenter;
 use App\Models\Department;
+use App\Models\HeadDepartment;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -26,14 +29,13 @@ class User extends Authenticatable
         'name',
         'email',
         'bpid',
-        'password',
         'level_id',
+        'password',
         'role_id',
+        'cost_center_id',
         'department_id',
-        'head_department_id',
-        'goa_id',
-        'respective_director_id',
-        'remark'
+        'remark',
+        'is_active',
     ];
 
     /**
@@ -56,6 +58,10 @@ class User extends Authenticatable
     ];
 
 
+    public function level(){
+        return $this->belongsTo(Level::class, 'level_id');
+    }
+
     public function role(){
         return $this->belongsTo(Role::class, 'role_id');
     }
@@ -64,15 +70,19 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class, 'department_id');
     }
 
-    public function headdepartment(){
-        return $this->belongsTo(User::class, 'head_department_id');
+    public function costcenter(){
+        return $this->belongsTo(CostCenter::class, 'cost_center_id');
     }
 
-    public function goa(){
-        return $this->belongsTo(User::class, 'goa_id');
-    }
+    // public function headdepartment(){
+    //     return $this->belongsTo(User::class, 'head_department_id');
+    // }
 
-    public function respectivedirector(){
-        return $this->belongsTo(User::class, 'respective_director_id');
-    }
+    // public function goa(){
+    //     return $this->belongsTo(User::class, 'goa_id');
+    // }
+
+    // public function respectivedirector(){
+    //     return $this->belongsTo(User::class, 'respective_director_id');
+    // }
 }

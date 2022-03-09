@@ -57,7 +57,7 @@ class UserAccessControlCrudController extends CrudController
         CRUD::column('role_id')->label('Role')->type('select')->entity('role')
         ->attribute('name')->model(Role::class)->orderLogic(function ($query, $column, $columnDirection) {
             return $query->leftJoin('roles as r', 'r.id', '=', 'users.role_id')
-            ->orderBy('r.name', $columnDirection)->select('users.*');
+            ->orderBy('r.name', $columnDirection)->select('users.*'); 
         })->limit(60);
         CRUD::column('department_id')->label('Department')->type('select')->entity('department')
         ->attribute('name')->model(Department::class)->orderLogic(function ($query, $column, $columnDirection) {
@@ -75,7 +75,7 @@ class UserAccessControlCrudController extends CrudController
         ->attribute('name')->model(Department::class)->orderLogic(function ($query, $column, $columnDirection) {
             return $query->leftJoin('users as g', 'g.id', '=', 'users.goa_id')
             ->orderBy('g.name', $columnDirection)->select('users.*');
-        });
+        }); 
         
         CRUD::column('respective_director_id')->label('Respective Director')->type('select')->entity('respectivedirector')
         ->attribute('name')->model(Department::class)->orderLogic(function ($query, $column, $columnDirection) {

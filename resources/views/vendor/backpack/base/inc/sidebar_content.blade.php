@@ -63,3 +63,5 @@
 <li class='nav-item'><a class='nav-link' href='{{ backpack_url('goa-holder') }}'><i class='nav-icon la la-question'></i> Goa holders</a></li>
 <li class='nav-item'><a class='nav-link' href='{{ backpack_url('department') }}'><i class='nav-icon la la-question'></i> Departments</a></li>
 <li class='nav-item'><a class='nav-link' href='{{ backpack_url('expense-type') }}'><i class='nav-icon la la-question'></i> Expense types</a></li>
+
+<li class='nav-item'><a class='nav-link' href='{{ backpack_url('cost-center') }}'><i class='nav-icon la la-question'></i> Cost centers</a></li>

@@ -94,4 +94,5 @@ Route::group([
     Route::crud('goa-holder', 'GoaHolderCrudController');
     Route::crud('department', 'DepartmentCrudController');
     Route::crud('expense-type', 'ExpenseTypeCrudController');
+    Route::crud('cost-center', 'CostCenterCrudController');
 }); // this should be the absolute last line of this file

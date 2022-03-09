@@ -10,6 +10,7 @@ class Role extends Model
     use \Backpack\CRUD\app\Models\Traits\CrudTrait;
     use HasFactory;
 
+    protected $table = 'mst_roles';
     protected $fillable = ['name'];  
 
     public const SUPER_ADMIN = 'Super Admin';

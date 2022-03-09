@@ -10,6 +10,7 @@ class Department extends Model
 {
     use HasFactory, CrudTrait;
 
+    protected $table = 'mst_departments';
     protected $fillable = ['name'];    
 
     public const FINANCE = 'Finance';

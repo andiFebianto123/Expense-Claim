@@ -8,7 +8,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\UserAccessControlRequest;
-use Backpack\CRUD\app\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\ChangePasswordRequest;
 
 class MyAccountController extends Controller
 {

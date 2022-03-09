@@ -49,14 +49,15 @@ class LoginController extends BackpackLoginController{
             ]);
         }else{
             // jika user telah ketemu
-            $request->request->remove('email'); // to remove property from $request
-            $request->request->add(['email' => $checkUserMail->email]); // to add new property to $request
             if (!Hash::check($request->password, $checkUserMail->password)) {
                 // The old password matches the hash in the database
                 $this->incrementLoginAttempts($request);
                 throw ValidationException::withMessages([
                     'password' => ["Password is not exists"],
                 ]);
+            }else{
+                $request->request->remove('email'); // to remove property from $request
+                $request->request->add(['email' => $checkUserMail->email]); // to add new property to $request
             }
         }
 

@@ -11,7 +11,7 @@ class Role extends Model
     use HasFactory;
 
     protected $table = 'mst_roles';
-    protected $fillable = ['name'];  
+    protected $fillable = ['name'];
 
     public const SUPER_ADMIN = 'Super Admin';
     public const DIRECTOR = 'Director';

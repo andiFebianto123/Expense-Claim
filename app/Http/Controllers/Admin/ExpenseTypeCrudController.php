@@ -72,7 +72,6 @@ class ExpenseTypeCrudController extends CrudController
             'name'     => 'limit',
             'label'    => 'Limit',
             'type'     => 'number',
-            'prefix'        => 'Rp ',
             'decimals'      => 2,
             'dec_point'     => ',',
             'thousands_sep' => '.',

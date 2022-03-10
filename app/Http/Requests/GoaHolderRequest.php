@@ -25,8 +25,21 @@ class GoaHolderRequest extends FormRequest
      */
     public function rules()
     {
+        if(count(\Request::segments()) == 2){
+            // jika melakukan edit
+            $id = \Request::segments()[1];
+            return [
+                // 'name' => 'required|min:5|max:255'
+                'user_id' => 'required|unique:goa_holders,user_id,' . $id,
+                'name' => 'required|max:255|unique:goa_holders,name,' . $id,
+                'limit' => 'required|integer',
+            ];
+        }
         return [
-            // 'name' => 'required|min:5|max:255'
+            'user_id' => 'required|unique:goa_holders,user_id',
+            'name' => 'required|max:255|unique:goa_holders,name',
+            'limit' => 'required|integer',
+            // 'head_department_id' => 'required'
         ];
     }
 

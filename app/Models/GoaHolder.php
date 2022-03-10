@@ -22,6 +22,6 @@ class GoaHolder extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
     public function headdepartment(){
-        return $this->belongsTo(HeadDepartment::class, 'head_department_id');
+        return $this->belongsTo(GoaHolder::class, 'head_department_id');
     }
 }

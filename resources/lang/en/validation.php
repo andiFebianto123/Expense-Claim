@@ -160,4 +160,7 @@ return [
         'expense_id' => 'expense id'
     ],
 
+    // CUSTOM
+    'data_not_exists' => "No :name currently available",
+
 ];

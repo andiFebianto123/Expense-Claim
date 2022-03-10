@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\GoaHolder;
 use App\Http\Requests\GoaHolderRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
@@ -39,10 +40,47 @@ class GoaHolderCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        CRUD::column('user_id');
-        CRUD::column('name');
-        CRUD::column('limit');
-        CRUD::column('head_department_id');
+        CRUD::addColumn([
+            'label'     => "BPID",
+            'type'      => 'select',
+            'name'      => 'bpid',
+            'entity'    => 'user',
+            'attribute' => 'bpid',
+            'key' => 'bpid',
+            'orderable'  => true,
+            'orderLogic' => function ($query, $column, $columnDirection) {
+                return $query->leftJoin('mst_users', 'mst_users.id', '=', 'goa_holders.user_id')
+                    ->orderBy('mst_users.bpid', $columnDirection)->select('goa_holders.*');
+            }
+        ]);
+        CRUD::column('user_id')->label('Name')
+        ->searchLogic(function($query, $column, $searchTerm){
+            $query->orWhereHas('user', function ($q) use ($column, $searchTerm) {
+                $q->where('name', 'like', '%'.$searchTerm.'%');
+            });
+        });
+        CRUD::column('name')->label('GoA Holder');
+        CRUD::column('limit')->label('Limit')->type('number');
+        // CRUD::column('head_department_id')->label('Head Of Department'); 
+        CRUD::column('head_department_id')->label('Head Of Department')->type('closure')
+        ->function(function($entry){
+            if($entry->headdepartment){
+                if($entry->headdepartment->user){
+                    return $entry->headdepartment->user->name;
+                }
+            }
+            return '-';
+        })
+        ->orderLogic(function ($query, $column, $columnDirection) {
+            return $query->leftJoin('goa_holders as gh', 'gh.id', '=', 'goa_holders.head_department_id')
+            ->leftJoin('mst_users as user', 'user.id', '=', 'gh.user_id')
+            ->orderBy('user.name', $columnDirection)->select('goa_holders.*');
+        })
+        ->searchLogic(function($query, $column, $searchTerm){
+            $query->orWhereHas('headdepartment.user', function ($q) use ($column, $searchTerm) {
+                $q->where('name', 'like', '%'.$searchTerm.'%');
+            });
+        });
         /**
          * Columns can be defined using the fluent syntax or array syntax:
          * - CRUD::column('price')->type('number');
@@ -62,8 +100,9 @@ class GoaHolderCrudController extends CrudController
 
         CRUD::field('user_id');
         CRUD::field('name');
-        CRUD::field('limit');
-        CRUD::field('head_department_id');
+        CRUD::field('limit')->type('number');
+        CRUD::field('head_department_id')->label('Head Of Department')->type('select2_from_array')
+        ->options(GoaHolder::select('id', 'name')->get()->pluck('name', 'id'));
         /**
          * Fields can be defined using the fluent syntax or array syntax:
          * - CRUD::field('price')->type('number');

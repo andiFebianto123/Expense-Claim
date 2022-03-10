@@ -263,7 +263,7 @@ class DepartmentCrudController extends CrudController
             $user = User::where('id', $user_head_department)->first();
             if($user == null){
                 // cek apakah user datanya ada atau tidak
-                $errors['user_head_department_id'] = "User is not exist";
+                $errors['user_head_department_id'] = trans('validation.data_not_exists', ['name' => 'User']);
                 
             }
 
@@ -357,8 +357,7 @@ class DepartmentCrudController extends CrudController
             $user = User::where('id', $user_head_department)->first();
             if($user == null){
                 // cek apakah user datanya ada atau tidak
-                $errors['user_head_department_id'] = "User is not exist";
-                
+                $errors['user_head_department_id'] = trans('validation.data_not_exists', ['name' => 'User']);
             }
 
             if(count($errors) != 0){

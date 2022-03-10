@@ -65,3 +65,4 @@
 <li class='nav-item'><a class='nav-link' href='{{ backpack_url('expense-type') }}'><i class='nav-icon la la-question'></i> Expense types</a></li>
 
 <li class='nav-item'><a class='nav-link' href='{{ backpack_url('cost-center') }}'><i class='nav-icon la la-question'></i> Cost centers</a></li>
+<li class='nav-item'><a class='nav-link' href='{{ backpack_url('delegation') }}'><i class='nav-icon la la-question'></i> Delegations</a></li>

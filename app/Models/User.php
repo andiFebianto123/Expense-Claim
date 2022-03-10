@@ -60,20 +60,34 @@ class User extends Authenticatable
     ];
 
 
-    public function level(){
+    public function level()
+    {
         return $this->belongsTo(Level::class, 'level_id');
     }
 
-    public function role(){
+    public function role()
+    {
         return $this->belongsTo(Role::class, 'role_id');
     }
 
-    public function department(){
+    public function department()
+    {
         return $this->belongsTo(Department::class, 'department_id');
     }
 
-    public function costcenter(){
+    public function costcenter()
+    {
         return $this->belongsTo(CostCenter::class, 'cost_center_id');
+    }
+
+    public function from_delegation()
+    {
+        return $this->hasMany(MstDelegation::class, 'from_user_id');
+    }
+
+    public function to_delegation()
+    {
+        return $this->hasMany(MstDelegation::class, 'to_user_id');
     }
 
     // public function headdepartment(){

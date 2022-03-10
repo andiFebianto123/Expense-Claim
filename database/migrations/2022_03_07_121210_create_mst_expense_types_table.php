@@ -15,7 +15,7 @@ class CreateMstExpenseTypesTable extends Migration
     {
         Schema::create('mst_expense_types', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('expense_id');
+            $table->string('name');
             $table->unsignedBigInteger('level_id');
             $table->unsignedBigInteger('limit')->nullable();
             $table->unsignedBigInteger('expense_code_id');
@@ -26,11 +26,7 @@ class CreateMstExpenseTypesTable extends Migration
             $table->unsignedBigInteger('limit_business_proposal')->nullable();
             $table->string('remark')->nullable();
             $table->timestamps();
-
-            $table->foreign('expense_id')
-                ->references('id')
-                ->on('mst_expenses')
-                ->onUpdate('cascade');
+            $table->softDeletes();
 
             $table->foreign('level_id')
                 ->references('id')

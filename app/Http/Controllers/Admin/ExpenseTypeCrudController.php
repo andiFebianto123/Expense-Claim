@@ -33,15 +33,9 @@ class ExpenseTypeCrudController extends CrudController
     protected function setupListOperation()
     {
         CRUD::addColumn([
-            'name'     => 'expense_type',
+            'name'     => 'name',
             'label'    => 'Expense Type',
-            'type'     => 'closure',
-            'function' => function ($entry) {
-                $expenseType = MstExpense::where('id', $entry->expense_id)->first();
-                return $expenseType->type ?? '-';
-            },
-            'orderable' => false,
-            'searchLogic' => false
+            'type'     => 'text',
         ]);
 
         CRUD::addColumn([
@@ -138,7 +132,7 @@ class ExpenseTypeCrudController extends CrudController
         CRUD::setValidation(ExpenseTypeRequest::class);
 
         CRUD::addField([
-            'name'  => 'expense_type',
+            'name'  => 'name',
             'label' => "Expense Type",
             'type'  => 'text',
         ]);
@@ -235,13 +229,6 @@ class ExpenseTypeCrudController extends CrudController
 
         DB::beginTransaction();
         try {
-            $expense = new MstExpense;
-            $expense->type = $request->expense_type;
-            $expense->save();
-
-            $this->crud->addField(['name' => 'expense_id', 'type' => 'hidden']);
-            $this->crud->getRequest()->merge(['expense_id' => $expense->id]);
-
             $item = $this->crud->create($this->crud->getStrippedSaveRequest());
             $this->data['entry'] = $this->crud->entry = $item;
 
@@ -272,14 +259,6 @@ class ExpenseTypeCrudController extends CrudController
 
         $this->data['id'] = $id;
 
-        $expense = MstExpense::where('id', $this->data['entry']['expense_id'])->first();
-
-        $this->crud->modifyField('expense_type', [
-            'label'     => "Expense Type",
-            'type'      => 'text',
-            'default'   => $expense->type
-        ]);
-
         return view($this->crud->getEditView(), $this->data);
     }
 
@@ -292,26 +271,6 @@ class ExpenseTypeCrudController extends CrudController
 
         DB::beginTransaction();
         try {
-            $expenseType = $this->crud->getEntry($id);
-
-            $expense = MstExpense::where('id', $expenseType->expense_id)->first();
-            $errors = [];
-
-            if ($expense == null) {
-                $errors['expense_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_id')])];
-            }
-
-            if (count($errors) != 0) {
-                DB::rollback();
-                return $this->redirectUpdateCrud($id, $errors);
-            }
-
-            $expense->type = $request->expense_type;
-            $expense->save();
-
-            $this->crud->addField(['name' => 'expense_id', 'type' => 'hidden']);
-            $this->crud->getRequest()->merge(['expense_id' => $expense->id]);
-
             $item = $this->crud->update(
                 $request->get($this->crud->model->getKeyName()),
                 $this->crud->getStrippedSaveRequest()
@@ -338,11 +297,14 @@ class ExpenseTypeCrudController extends CrudController
         try {
             $id = $this->crud->getCurrentEntryId() ?? $id;
 
-            $expenseType = ExpenseType::where('id', $id)->first();
-            $mst = MstExpense::where('id', $expenseType->expense_id)->first();
+            $type = ExpenseType::where('id', $id)->first();
+            $expenses = MstExpense::where('type_id', $id)->get();
 
-            $result = $expenseType->delete();
-            $mst->delete();
+            foreach ($expenses as $expense) {
+                $expense->delete();
+            }
+
+            $result = $type->delete();
 
             DB::commit();
             return $result;

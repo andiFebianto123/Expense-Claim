@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Requests\ExpenseTypeRequest;
 use App\Models\ExpenseCode;
 use App\Models\ExpenseType;
+use App\Traits\RedirectCrud;
 use App\Models\MstExpenseType;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
@@ -20,6 +21,7 @@ class ExpenseTypeCrudController extends CrudController
     use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
+    use RedirectCrud;
 
     public function setup()
     {
@@ -70,7 +72,6 @@ class ExpenseTypeCrudController extends CrudController
             'name'     => 'limit',
             'label'    => 'Limit',
             'type'     => 'number',
-            'prefix'        => 'Rp ',
             'decimals'      => 2,
             'dec_point'     => ',',
             'thousands_sep' => '.',

@@ -10,7 +10,7 @@ use App\Models\Department;
 use App\Models\MstExpense;
 use App\Models\ExpenseCode;
 use App\Models\ApprovalCard;
-use App\Models\MstExpenseType;
+use App\Models\ExpenseType;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -231,7 +231,7 @@ class DatabaseSeeder extends Seeder
                 $expense->save();
 
                 $limit = str_replace(',', '', $item['Limit']);
-                $expenseType = new MstExpenseType;
+                $expenseType = new ExpenseType;
                 $expenseType->expense_id = $expense->id;
                 $expenseType->level_id = $level->id;
                 $expenseType->limit = (int) $limit;

@@ -81,8 +81,8 @@ class UserCrudController extends CrudController
             'name'      => 'head_department',
             'function' => function($entry){
                 if($entry->department){
-                    if($entry->department->headdepartment){
-                        return $entry->department->headdepartment->user->name;
+                    if($entry->department){
+                        return $entry->department->name;
                     }
                 }else{
                     return '-';
@@ -90,14 +90,17 @@ class UserCrudController extends CrudController
             },
             'orderable' => true,
             'orderLogic' => function($query, $column, $columnDirection){
-                return $query->leftJoin('departments as d', 'd.id', '=', 'mst_users.department_id')
-                ->leftJoin('head_departments as hd', 'hd.department_id', '=', 'd.id')
-                ->leftJoin('mst_users as user_head_department', 'user_head_department.id', '=', 'hd.user_id')
-                ->orderBy('user_head_department.name', $columnDirection)
+                // return $query->leftJoin('departments as d', 'd.id', '=', 'mst_users.department_id')
+                // ->leftJoin('head_departments as hd', 'hd.department_id', '=', 'd.id')
+                // ->leftJoin('mst_users as user_head_department', 'user_head_department.id', '=', 'hd.user_id')
+                // ->orderBy('user_head_department.name', $columnDirection)
+                // ->select('mst_users.*');
+                return $query->leftJoin('mst_departments as d', 'd.id', '=', 'mst_users.department_id')
+                ->orderBy('d.name', $columnDirection)
                 ->select('mst_users.*');
             },
             'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhereHas('department.headdepartment.user', function ($q) use ($column, $searchTerm) {
+                $query->orWhereHas('department', function ($q) use ($column, $searchTerm) {
                     $q->where('name', 'like', '%'.$searchTerm.'%');
                 });
             }
@@ -108,36 +111,36 @@ class UserCrudController extends CrudController
             'type'      => 'closure',
             'name'      => 'goa',
             'function' => function($entry){
-                if($entry->department){
-                    if($entry->department->headdepartment){
-                        if($entry->department->headdepartment->goaholders){
-                            return $entry->department->headdepartment->goaholders->user->name;
-                        }
+                if($entry->approvaluser){
+                    if($entry->approvaluser->goaholder){
+                        return $entry->approvaluser->goaholder->name;
                     }
-                }else{
-                    return '-';
                 }
+                return '-';
             },
             'orderable' => true,
             'orderLogic' => function($query, $column, $columnDirection){
-                return $query->leftJoin('departments as d', 'd.id', '=', 'mst_users.department_id')
-                ->leftJoin('head_departments as hd', 'hd.department_id', '=', 'd.id')
-                ->leftJoin('goa_holders as goa', 'goa.head_department_id', '=', 'hd.id')
-                ->leftJoin('mst_users as user_goa_department', 'user_goa_department.id', '=', 'goa.user_id')
-                ->orderBy('user_goa_department.name', $columnDirection)
-                ->select('mst_users.*');
+                // return $query->leftJoin('departments as d', 'd.id', '=', 'mst_users.department_id')
+                // ->leftJoin('head_departments as hd', 'hd.department_id', '=', 'd.id')
+                // ->leftJoin('goa_holders as goa', 'goa.head_department_id', '=', 'hd.id')
+                // ->leftJoin('mst_users as user_goa_department', 'user_goa_department.id', '=', 'goa.user_id')
+                // ->orderBy('user_goa_department.name', $columnDirection)
+                // ->select('mst_users.*');
+                return $query->leftJoin('approval_users as au', 'au.user_id', '=', 'mst_users.id')
+                ->leftJoin('goa_holders as gh', 'gh.id' , '=' , 'au.goa_holder_id')
+                ->orderBy('gh.name', $columnDirection)->select('mst_users.*');
             },
             'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhereHas('department.headdepartment.goaholders.user', function ($q) use ($column, $searchTerm) {
+                $query->orWhereHas('approvaluser.goaholder', function ($q) use ($column, $searchTerm) {
                     $q->where('name', 'like', '%'.$searchTerm.'%');
                 });
             }
         ]);
 
         CRUD::column('cost_center_id')->label('Cost Center')->type('select')->entity('costcenter')
-        ->attribute('description')->orderLogic(function ($query, $column, $columnDirection) {
-            return $query->leftJoin('cost_centers as cc', 'cc.id', '=', 'mst_users.cost_center_id')
-            ->orderBy('cc.description', $columnDirection)->select('mst_users.*');
+        ->attribute('cost_center_id')->orderLogic(function ($query, $column, $columnDirection) {
+            return $query->leftJoin('mst_cost_centers as cc', 'cc.id', '=', 'mst_users.cost_center_id')
+            ->orderBy('cc.cost_center_id', $columnDirection)->select('mst_users.*');
         });
 
         // CRUD::column('remark')->orderable(false)->searchLogic(false);

@@ -25,8 +25,19 @@ class DepartmentRequest extends FormRequest
      */
     public function rules()
     {
+        if(count(\Request::segments()) == 2){
+            // jika melakukan edit
+            $id = \Request::segments()[1];
+            return [
+                // 'name' => 'required|min:5|max:255'
+                'department_id' => 'required|max:255|unique:mst_departments,department_id,' . $id,
+                'name' => 'required|max:255|unique:mst_departments,name,' . $id
+            ];
+        }
         return [
             // 'name' => 'required|min:5|max:255'
+            'department_id' => 'required|max:255|unique:mst_departments,department_id',
+            'name' => 'required|max:255|unique:mst_departments,name'
         ];
     }
 

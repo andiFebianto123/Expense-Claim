@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Role;
 use App\Models\Level;
+use App\Models\ApprovalUser;
 use App\Models\CostCenter;
 use App\Models\Department;
 use App\Models\HeadDepartment;
@@ -74,6 +75,9 @@ class User extends Authenticatable
 
     public function costcenter(){
         return $this->belongsTo(CostCenter::class, 'cost_center_id');
+    }
+    public function approvaluser(){
+        return $this->hasOne(ApprovalUser::class);
     }
 
     // public function headdepartment(){

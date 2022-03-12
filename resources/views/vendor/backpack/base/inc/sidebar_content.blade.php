@@ -66,3 +66,4 @@
 
 <li class='nav-item'><a class='nav-link' href='{{ backpack_url('cost-center') }}'><i class='nav-icon la la-question'></i> Cost centers</a></li>
 <li class='nav-item'><a class='nav-link' href='{{ backpack_url('delegation') }}'><i class='nav-icon la la-question'></i> Delegations</a></li>
+<li class='nav-item'><a class='nav-link' href='{{ backpack_url('expense') }}'><i class='nav-icon la la-question'></i> Expenses</a></li>

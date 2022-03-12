@@ -15,8 +15,14 @@ class CreateMstExpensesTable extends Migration
     {
         Schema::create('mst_expenses', function (Blueprint $table) {
             $table->id();
-            $table->string('type');
+            $table->unsignedBigInteger('type_id');
+            $table->foreign('type_id')
+                ->references('id')
+                ->on('mst_expense_types')
+                ->onUpdate('cascade');
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

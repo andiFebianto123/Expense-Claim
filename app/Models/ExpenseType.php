@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use \Backpack\CRUD\app\Models\Traits\CrudTrait;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ExpenseType extends Model
 {
-    use HasFactory, CrudTrait;
+    use HasFactory, CrudTrait, SoftDeletes;
     protected $table = 'mst_expense_types';
-    protected $fillable = ['expense_id', 'level_id', 'limit', 'expense_code_id', 'is_bod', 'is_traf', 'is_bp_approval', 'currency', 'remark'];
+    protected $fillable = ['name', 'level_id', 'limit', 'expense_code_id', 'is_bod', 'is_traf', 'is_bp_approval', 'currency', 'remark'];
 
     public function level()
     {
@@ -24,6 +25,6 @@ class ExpenseType extends Model
 
     public function mst_expense()
     {
-        return $this->belongsTo(MstExpense::class, 'expense_id');
+        return $this->hasMany(MstExpense::class, 'type_id');
     }
 }

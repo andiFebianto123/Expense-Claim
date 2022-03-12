@@ -65,19 +65,16 @@ class GoaHolderCrudController extends CrudController
         CRUD::column('head_department_id')->label('Head Of Department')->type('closure')
         ->function(function($entry){
             if($entry->headdepartment){
-                if($entry->headdepartment->user){
-                    return $entry->headdepartment->user->name;
-                }
+                return $entry->headdepartment->name;
             }
             return '-';
         })
         ->orderLogic(function ($query, $column, $columnDirection) {
             return $query->leftJoin('goa_holders as gh', 'gh.id', '=', 'goa_holders.head_department_id')
-            ->leftJoin('mst_users as user', 'user.id', '=', 'gh.user_id')
-            ->orderBy('user.name', $columnDirection)->select('goa_holders.*');
+            ->orderBy('gh.name', $columnDirection)->select('goa_holders.*');
         })
         ->searchLogic(function($query, $column, $searchTerm){
-            $query->orWhereHas('headdepartment.user', function ($q) use ($column, $searchTerm) {
+            $query->orWhereHas('headdepartment', function ($q) use ($column, $searchTerm) {
                 $q->where('name', 'like', '%'.$searchTerm.'%');
             });
         });

@@ -40,12 +40,12 @@ class LoginController extends BackpackLoginController{
         if($checkUserMail == null){
             $this->incrementLoginAttempts($request);
             throw ValidationException::withMessages([
-                $this->username() => ["Email or User ID is not exists"],
+                $this->username() => [trans('auth.failed')],
             ]);
         }else if($checkUserMail->is_active != 1){
             $this->incrementLoginAttempts($request);
             throw ValidationException::withMessages([
-                $this->username() => ["Acount is not active"],
+                $this->username() => [trans('auth.failed')],
             ]);
         }else{
             // jika user telah ketemu
@@ -53,7 +53,7 @@ class LoginController extends BackpackLoginController{
                 // The old password matches the hash in the database
                 $this->incrementLoginAttempts($request);
                 throw ValidationException::withMessages([
-                    'password' => ["Password is not exists"],
+                    $this->username() => [trans('auth.failed')],
                 ]);
             }else{
                 $request->request->remove('email'); // to remove property from $request

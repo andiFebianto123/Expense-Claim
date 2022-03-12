@@ -8,6 +8,7 @@ use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 use App\Models\ApprovalUser;
 use App\Models\GoaHolder;
 use App\Models\HeadDepartment;
+use App\Models\Department;
 use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -217,18 +218,19 @@ class DepartmentCrudController extends CrudController
 
         CRUD::field('name');
 
-        CRUD::addField([
-            'name' => 'user_head_department_id',
-            'label' => "Head Of Department",
-            'type' => 'select2_from_array',
-            'allows_null' => false,
-            'options' => $this->user(),
-        ]);
+        // CRUD::addField([
+        //     'name' => 'user_head_department_id',
+        //     'label' => "Head Of Department",
+        //     'type' => 'select2_from_array',
+        //     'allows_null' => true,
+        //     'options' => $this->user(),
+        // ]);
 
         CRUD::addField([
             'name'        => 'is_none', // the name of the db column
             'label'       => 'Is None', // the input label
             'type'        => 'radio',
+            'default'     => 0,
             'options'     => [
                 // the key will be stored in the db, the value will be shown as label;
                 0 => "No",
@@ -253,25 +255,24 @@ class DepartmentCrudController extends CrudController
 
             $errors = [];
 
-            $user_head_department = $request->user_head_department_id;
-
             $saveRequest = $this->crud->getStrippedSaveRequest();
 
-            unset($saveRequest['user_head_department_id']);
 
-            // cek user
-            $user = User::where('id', $user_head_department)->first();
-            if($user == null){
-                // cek apakah user datanya ada atau tidak
-                $errors['user_head_department_id'] = trans('validation.data_not_exists', ['name' => 'User']);
+            // // cek user
+            // $user = User::where('id', $user_head_department)->first();
+            // if($user == null){
+            //     // cek apakah user datanya ada atau tidak
+            //     $errors['user_head_department_id'] = trans('validation.data_not_exists', ['name' => 'User']);
                 
+            // }
+
+            if($request->is_none == 1){
+                $cek_is_none = Department::where('is_none', 1)->first();
+                if($cek_is_none != null){
+                    $errors['is_none'] = "Tidak bisa pilih Yes karena sudah ada";
+                }
             }
 
-            // $cek_user_head_department = HeadDepartment::where('user_id', $user_head_department)->first();
-            // if(($user != null && $cek_user_head_department != null)){
-            //     // cek apakah data user tersebut telah menjadi kepala department lainya
-            //     $errors['user_head_department_id'] = "The user has been used in other departments";
-            // }
 
             if(count($errors) != 0){
                 DB::rollBack();
@@ -281,13 +282,6 @@ class DepartmentCrudController extends CrudController
             // insert item in the db
             $item = $this->crud->create($saveRequest);
             $this->data['entry'] = $this->crud->entry = $item;
-
-            if($item->getKey()){
-                $head_department = new HeadDepartment;
-                $head_department->department_id = $item->getKey();
-                $head_department->user_id = $user_head_department;
-                $head_department->save();
-            }
 
             DB::commit();
             // show a success message
@@ -312,7 +306,32 @@ class DepartmentCrudController extends CrudController
      */
     protected function setupUpdateOperation()
     {
-        $this->setupCreateOperation();
+        // $this->setupCreateOperation();
+        CRUD::setValidation(DepartmentRequest::class);
+
+        CRUD::field('department_id')->label('Department ID');
+
+        CRUD::field('name');
+
+        CRUD::addField([
+            'name' => 'user_head_department_id',
+            'label' => "Head Of Department",
+            'type' => 'select2_from_array',
+            'allows_null' => true,
+            'options' => $this->user(),
+        ]);
+
+        CRUD::addField([
+            'name'        => 'is_none', // the name of the db column
+            'label'       => 'Is None', // the input label
+            'type'        => 'radio',
+            'default'     => 0,
+            'options'     => [
+                // the key will be stored in the db, the value will be shown as label;
+                0 => "No",
+                1 => "Yes"
+            ],
+        ]);
     }
     public function edit($id)
     {
@@ -345,6 +364,8 @@ class DepartmentCrudController extends CrudController
 
             $errors = [];
 
+            $id = $request->id;
+
             $user_head_department = $request->user_head_department_id;
 
             $saveRequest = $this->crud->getStrippedSaveRequest();
@@ -354,28 +375,31 @@ class DepartmentCrudController extends CrudController
             // dd($saveRequest);
 
             // cek user
-            $user = User::where('id', $user_head_department)->first();
-            if($user == null){
-                // cek apakah user datanya ada atau tidak
-                $errors['user_head_department_id'] = trans('validation.data_not_exists', ['name' => 'User']);
+            // $user = User::where('id', $user_head_department)->first();
+            // if($user == null){
+            //     // cek apakah user datanya ada atau tidak
+            //     $errors['user_head_department_id'] = trans('validation.data_not_exists', ['name' => 'User']);
+            // }
+
+            $cek_is_none = Department::where('is_none', 1)->first();
+
+            if($cek_is_none != null){
+                if(($cek_is_none->id != $id) && ($request->is_none == 1)){
+                    $errors['is_none'] = "Tidak bisa pilih Yes karena sudah ada";
+                }else if(($cek_is_none->id == $id) && ($request->is_none == 0)){
+                    // jika data department yang is_none yes ternyata adalah datanya sendiri dan dia milih no
+                    $errors['is_none'] = "Maaf status anda sudah tetap, jangan diubah";
+                }
             }
 
             if(count($errors) != 0){
                 DB::rollBack();
-                return $this->redirectStoreCrud($errors);
+                return $this->redirectUpdateCrud($id, $errors);
             }
 
             $item = $this->crud->update($request->get($this->crud->model->getKeyName()),
                             $saveRequest);
             $this->data['entry'] = $this->crud->entry = $item;
-
-            if($item->getKey()){
-                $editHeadDepartment = HeadDepartment::where('department_id', $request->id)
-                ->update([
-                    "department_id" => $item->getKey(),
-                    "user_id" => $user_head_department
-                ]);
-            }
 
             DB::commit();
             // show a success message

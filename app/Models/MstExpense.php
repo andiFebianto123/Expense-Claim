@@ -11,16 +11,10 @@ class MstExpense extends Model
 {
     use HasFactory, CrudTrait, SoftDeletes;
 
-    protected $fillable = ['type_id'];
+    protected $fillable = ['name'];
 
     public function expense_type()
     {
-        return $this->belongsTo(ExpenseType::class, 'type_id');
+        return $this->hasMany(ExpenseType::class, 'type_id');
     }
-
-    public function level()
-    {
-        return $this->belongsTo(Level::class, 'level_id');
-    }
-
 }

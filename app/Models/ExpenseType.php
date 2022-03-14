@@ -11,7 +11,7 @@ class ExpenseType extends Model
 {
     use HasFactory, CrudTrait, SoftDeletes;
     protected $table = 'mst_expense_types';
-    protected $fillable = ['name', 'level_id', 'limit', 'expense_code_id', 'is_bod', 'is_traf', 'is_bp_approval', 'currency', 'remark'];
+    protected $fillable = ['expense_id', 'level_id', 'limit', 'expense_code_id', 'is_bod', 'is_traf', 'is_bp_approval', 'bod_level', 'limit_business_proposal', 'currency', 'remark'];
 
     public function level()
     {
@@ -25,6 +25,11 @@ class ExpenseType extends Model
 
     public function mst_expense()
     {
-        return $this->hasMany(MstExpense::class, 'type_id');
+        return $this->belongsTo(MstExpense::class, 'expense_id');
+    }
+
+    public function expense_type_dept()
+    {
+        return $this->hasMany(MstExpenseTypeDepartment::class, 'expense_type_id');
     }
 }

@@ -25,8 +25,7 @@ class ExpenseRequest extends FormRequest
     public function rules()
     {
         return [
-            'level_id' => 'required',
-            'type_name' => 'required'
+            'name' => 'required',
         ];
     }
 

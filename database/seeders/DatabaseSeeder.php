@@ -226,9 +226,18 @@ class DatabaseSeeder extends Seeder
             $expenseCode = ExpenseCode::where('account_number', $item['Expense Code'])->first();
 
             if (!empty($level) && !empty($expenseCode)) {
+                $expense = MstExpense::where('name', $item['Expense Type'])->first();
+
+                if (empty($expense)) {
+                    $expense = new MstExpense;
+                }
+
+                $expense->name = $item['Expense Type'];
+                $expense->save();
+
                 $limit = str_replace(',', '', $item['Limit']);
                 $expenseType = new ExpenseType;
-                $expenseType->name = $item['Expense Type'];
+                $expenseType->expense_id = $expense->id;
                 $expenseType->level_id = $level->id;
                 $expenseType->limit = (int) $limit;
                 $expenseType->expense_code_id = $expenseCode->id;

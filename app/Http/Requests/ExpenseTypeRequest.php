@@ -25,14 +25,17 @@ class ExpenseTypeRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required',
-            'level_id' => 'required',
-            'limit' => 'required',
-            'currency' => 'required',
-            'expense_code_id' => 'required',
-            'is_traf' => 'required',
-            'is_bod' => 'required',
-            'is_bp_approval' => 'required',
+            'expense_name' => 'required|string',
+            'level_id' => 'required|numeric',
+            'limit' => 'nullable|numeric',
+            'currency' => 'required|string',
+            'expense_code_id' => 'required|numeric',
+            'is_traf' => 'required|boolean',
+            'is_bod' => 'required|boolean',
+            'is_bp_approval' => 'required|boolean',
+            'bod_level' => 'nullable|string',
+            'limit_business_proposal' => 'nullable|numeric',
+            'department' => 'nullable|string'
         ];
     }
 

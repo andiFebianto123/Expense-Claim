@@ -245,14 +245,18 @@ class UserCrudController extends CrudController
             if($cost_center == null){
                 $errors['cost_center_id'] = trans('validation.exists', ['attribute' => 'Cost Center']);
             }
-            $department = Department::where('id', $request->department_id)->first();
-            if($department == null){
-                $errors['department_id'] = trans('validation.exists', ['attribute' => 'Department']);
+            if($request->department_id != null){
+                $department = Department::where('id', $request->department_id)->first();
+                if($department == null){
+                    $errors['department_id'] = trans('validation.exists', ['attribute' => 'Department']);
+                }
             }
 
-            $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
-            if($goaholder == null){
-                $errors['department_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
+            if($request->goa_holder_id != null){
+                $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
+                if($goaholder == null){
+                    $errors['department_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
+                }
             }
 
             if (count($errors) != 0) {
@@ -335,15 +339,21 @@ class UserCrudController extends CrudController
             if($cost_center == null){
                 $errors['cost_center_id'] = trans('validation.exists', ['attribute' => 'Cost Center']);
             }
-            $department = Department::where('id', $request->department_id)->first();
-            if($department == null){
-                $errors['department_id'] = trans('validation.exists', ['attribute' => 'Department']);
+            
+            if($request->department_id != null){
+                $department = Department::where('id', $request->department_id)->first();
+                if($department == null){
+                    $errors['department_id'] = trans('validation.exists', ['attribute' => 'Department']);
+                }
             }
 
-            $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
-            if($goaholder == null){
-                $errors['department_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
+            if($request->goa_holder_id != null){
+                $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
+                if($goaholder == null){
+                    $errors['department_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
+                }
             }
+            
 
             if (count($errors) != 0) {
                 DB::rollback();

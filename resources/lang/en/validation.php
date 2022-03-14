@@ -160,7 +160,7 @@ return [
         'cost_center' => 'cost center',
         'expense_code' => 'expense code',
         'expense_id' => 'expense id',
-        'expense_type' => 'expense type'
+        'expense_name' => 'expense name'
     ],
 
     // CUSTOM

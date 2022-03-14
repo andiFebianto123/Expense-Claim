@@ -353,8 +353,10 @@ class DepartmentCrudController extends CrudController
             $cek_is_none = Department::where('is_none', 1)->first();
 
             $user = User::where('id', $request->user_id)->first();
-            if($user == null){
-                $errors['user_id'] = trans('validation.data_not_exists', ['name' => trans('validation.attributes.user_id')]);
+            if($request->user_id != null){  
+                if($user == null){
+                    $errors['user_id'] = trans('validation.data_not_exists', ['name' => trans('validation.attributes.user_id')]);
+                }    
             }
 
             if($cek_is_none != null){

@@ -255,7 +255,7 @@ class UserCrudController extends CrudController
             if($request->goa_holder_id != null){
                 $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
                 if($goaholder == null){
-                    $errors['department_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
+                    $errors['goa_holder_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
                 }
             }
 
@@ -350,7 +350,7 @@ class UserCrudController extends CrudController
             if($request->goa_holder_id != null){
                 $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
                 if($goaholder == null){
-                    $errors['department_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
+                    $errors['goa_holder_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
                 }
             }
             

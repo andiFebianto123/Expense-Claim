@@ -55,21 +55,18 @@ class DepartmentCrudController extends CrudController
             'type'      => 'closure',
             'name'      => 'nik',
             'function' => function($entry){
-                if($entry->headdepartment){
-                    if($entry->headdepartment->user){
-                        return $entry->headdepartment->user->user_id;
-                    }
+                if($entry->user){
+                    return $entry->user->user_id;
                 }
                 return '-';
             },
             'orderable' => true,
             'orderLogic' => function($query, $column, $columnDirection){
-                return $query->leftJoin('head_departments as hd', 'hd.department_id', '=', 'mst_departments.id')
-                ->leftJoin('mst_users as users_head_department', 'users_head_department.id', '=', 'hd.user_id')
+                return $query->leftJoin('mst_users as users_head_department', 'users_head_department.id', '=', 'mst_departments.user_id')
                 ->orderBy('users_head_department.user_id', $columnDirection)->select('mst_departments.*');
             },
             'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhereHas('headdepartment.user', function ($q) use ($column, $searchTerm) {
+                $query->orWhereHas('user', function ($q) use ($column, $searchTerm) {
                     $q->where('user_id', 'like', '%'.$searchTerm.'%');
                 });
             }
@@ -79,21 +76,18 @@ class DepartmentCrudController extends CrudController
             'type'      => 'closure',
             'name'      => 'hod',
             'function' => function($entry){
-                if($entry->headdepartment){
-                    if($entry->headdepartment->user){
-                        return $entry->headdepartment->user->name;
-                    }
+                if($entry->user){
+                    return $entry->user->name;
                 }
                 return '-';
             },
             'orderable' => true,
             'orderLogic' => function($query, $column, $columnDirection){
-                return $query->leftJoin('head_departments as hd', 'hd.department_id', '=', 'mst_departments.id')
-                ->leftJoin('mst_users as users_head_department', 'users_head_department.id', '=', 'hd.user_id')
+                $query->leftJoin('mst_users as users_head_department', 'users_head_department.id', '=', 'mst_departments.user_id')
                 ->orderBy('users_head_department.name', $columnDirection)->select('mst_departments.*');
             },
             'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhereHas('headdepartment.user', function ($q) use ($column, $searchTerm) {
+                $query->orWhereHas('user', function ($q) use ($column, $searchTerm) {
                     $q->where('name', 'like', '%'.$searchTerm.'%');
                 });
             }
@@ -103,27 +97,21 @@ class DepartmentCrudController extends CrudController
             'type'      => 'closure',
             'name'      => 'goa_holder',
             'function' => function($entry){
-                if($entry->headdepartment){
-                    if($entry->headdepartment->user){
-                        if($entry->headdepartment->user->approvaluser){
-                            if($entry->headdepartment->user->approvaluser->goaholder){
-                                return $entry->headdepartment->user->approvaluser->goaholder->name;
-                            }
-                        }
+                if($entry->user){
+                    if($entry->user->goa){
+                        return $entry->user->goa->name;
                     }
                 }
                 return '-';
             },
             'orderable' => true,
             'orderLogic' => function($query, $column, $columnDirection){
-                return $query->leftJoin('head_departments as hd', 'hd.department_id', '=', 'mst_departments.id')
-                ->leftJoin('mst_users as user_hd', 'user_hd.id', '=', 'hd.user_id')
-                ->leftJoin('approval_users', 'approval_users.user_id', '=', 'user_hd.id')
-                ->leftJoin('goa_holders', 'goa_holders.id', '=', 'approval_users.goa_holder_id')
+                return $query->leftJoin('mst_users as user_hd', 'user_hd.id', '=', 'mst_departments.user_id')
+                ->leftJoin('goa_holders', 'goa_holders.id', '=', 'user_hd.goa_holder_id')
                 ->orderBy('goa_holders.name', $columnDirection)->select('mst_departments.*');
             },
             'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhereHas('headdepartment.user.approvaluser.goaholder', function ($q) use ($column, $searchTerm) {
+                $query->orWhereHas('user.goa', function ($q) use ($column, $searchTerm) {
                     $q->where('name', 'like', '%'.$searchTerm.'%');
                 });
             }
@@ -134,24 +122,21 @@ class DepartmentCrudController extends CrudController
             'type'      => 'closure',
             'name'      => 'cost_center',
             'function' => function($entry){
-                if($entry->headdepartment){
-                    if($entry->headdepartment->user){
-                        if($entry->headdepartment->user->costcenter){
-                            return $entry->headdepartment->user->costcenter->cost_center_id;
-                        }
+                if($entry->user){
+                    if($entry->user->costcenter){
+                        return $entry->user->costcenter->cost_center_id;
                     }
                 }
                 return '-';
             },
             'orderable' => true,
             'orderLogic' => function($query, $column, $columnDirection){
-                return $query->leftJoin('head_departments as hd', 'hd.department_id', '=', 'mst_departments.id')
-                ->leftJoin('mst_users as user_hd', 'user_hd.id', '=', 'hd.user_id')
+                return $query->leftJoin('mst_users as user_hd', 'user_hd.id', '=', 'mst_departments.user_id')
                 ->leftJoin('mst_cost_centers as cost', 'cost.id', '=', 'user_hd.cost_center_id')
                 ->orderBy('cost.cost_center_id', $columnDirection)->select('mst_departments.*');
             },
             'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhereHas('headdepartment.user.costcenter', function ($q) use ($column, $searchTerm) {
+                $query->orWhereHas('user.costcenter', function ($q) use ($column, $searchTerm) {
                     $q->where('cost_center_id', 'like', '%'.$searchTerm.'%');
                 });
             }
@@ -161,24 +146,21 @@ class DepartmentCrudController extends CrudController
             'type'      => 'closure',
             'name'      => 'cost_center_name',
             'function' => function($entry){
-                if($entry->headdepartment){
-                    if($entry->headdepartment->user){
-                        if($entry->headdepartment->user->costcenter){
-                            return $entry->headdepartment->user->costcenter->description;
-                        }
+                if($entry->user){
+                    if($entry->user->costcenter){
+                        return $entry->user->costcenter->description;
                     }
                 }
                 return '-';
             },
             'orderable' => true,
             'orderLogic' => function($query, $column, $columnDirection){
-                return $query->leftJoin('head_departments as hd', 'hd.department_id', '=', 'mst_departments.id')
-                ->leftJoin('mst_users as user_hd', 'user_hd.id', '=', 'hd.user_id')
+                return $query->leftJoin('mst_users as user_hd', 'user_hd.id', '=', 'mst_departments.user_id')
                 ->leftJoin('mst_cost_centers as cost', 'cost.id', '=', 'user_hd.cost_center_id')
                 ->orderBy('cost.description', $columnDirection)->select('mst_departments.*');
             },
             'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhereHas('headdepartment.user.costcenter', function ($q) use ($column, $searchTerm) {
+                $query->orWhereHas('user.costcenter', function ($q) use ($column, $searchTerm) {
                     $q->where('description', 'like', '%'.$searchTerm.'%');
                 });
             }
@@ -314,7 +296,7 @@ class DepartmentCrudController extends CrudController
         CRUD::field('name');
 
         CRUD::addField([
-            'name' => 'user_head_department_id',
+            'name' => 'user_id',
             'label' => "Head Of Department",
             'type' => 'select2_from_array',
             'allows_null' => true,
@@ -366,29 +348,21 @@ class DepartmentCrudController extends CrudController
 
             $id = $request->id;
 
-            $user_head_department = $request->user_head_department_id;
-
             $saveRequest = $this->crud->getStrippedSaveRequest();
-
-            unset($saveRequest['user_head_department_id']);
-
-            // dd($saveRequest);
-
-            // cek user
-            // $user = User::where('id', $user_head_department)->first();
-            // if($user == null){
-            //     // cek apakah user datanya ada atau tidak
-            //     $errors['user_head_department_id'] = trans('validation.data_not_exists', ['name' => 'User']);
-            // }
 
             $cek_is_none = Department::where('is_none', 1)->first();
 
+            $user = User::where('id', $request->user_id)->first();
+            if($user == null){
+                $errors['user_id'] = trans('validation.data_not_exists', ['name' => trans('validation.attributes.user_id')]);
+            }
+
             if($cek_is_none != null){
                 if(($cek_is_none->id != $id) && ($request->is_none == 1)){
-                    $errors['is_none'] = "Tidak bisa pilih Yes karena sudah ada";
+                    $errors['is_none'] = trans('validation.exists', ['attribute' => 'Is None']);;
                 }else if(($cek_is_none->id == $id) && ($request->is_none == 0)){
                     // jika data department yang is_none yes ternyata adalah datanya sendiri dan dia milih no
-                    $errors['is_none'] = "Maaf status anda sudah tetap, jangan diubah";
+                    $errors['is_none'] = trans('validation.not_changed_data', ['attribute' => 'Is None']);
                 }
             }
 
@@ -425,14 +399,6 @@ class DepartmentCrudController extends CrudController
         // get entry ID from Request (makes sure its the last ID for nested resources)
         $id = $this->crud->getCurrentEntryId() ?? $id;
 
-        DB::beginTransaction();
-        try{
-            HeadDepartment::where('department_id', $id)->delete();
-            DB::commit();
-        }catch (Exception $e) {
-            DB::rollBack();
-            throw $e;
-        }
         return $this->crud->delete($id);
     }
 }

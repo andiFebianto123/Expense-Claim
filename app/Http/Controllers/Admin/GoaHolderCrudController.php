@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\User;
 use App\Models\GoaHolder;
+use App\Traits\RedirectCrud;
+use Illuminate\Support\Facades\DB;
 use App\Http\Requests\GoaHolderRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
@@ -14,6 +17,7 @@ use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
  */
 class GoaHolderCrudController extends CrudController
 {
+    use RedirectCrud;
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
@@ -107,6 +111,59 @@ class GoaHolderCrudController extends CrudController
          */
     }
 
+
+    public function store(){
+        $this->crud->hasAccessOrFail('create');
+        DB::beginTransaction();
+        try{
+            $request = $this->crud->validateRequest();
+            $errors = [];
+
+            $head_of_department = $request->head_department_id;
+
+            $user = User::where('id', $request->user_id)->first();
+            if($user == null){
+                $errors['user_id'] = trans('validation.in', ['attribute' => trans('validation.attributes.user_id')]);
+            }
+
+            if($head_of_department != null){
+                $user = User::whereExists(function($query) use($head_of_department){
+                    $query->select('*')
+                     ->from('goa_holders')
+                     ->whereRaw('goa_holders.user_id = mst_users.id')
+                     ->whereRaw("goa_holders.id = $head_of_department");
+                })->first();
+                if($user != null){
+                    if($request->user_id == $user->id){
+                        $errors['head_department_id'] = trans('validation.data_join_same', ['name' => trans('validation.attributes.head_of_department')]);
+                    }
+                }else{
+                    // jika datanya kosong
+                    $errors['head_department_id'] = trans('validation.in', ['attribute' => trans('validation.attributes.head_of_department')]);
+                }
+            }
+            if (count($errors) != 0) {
+                DB::rollback();
+                return $this->redirectStoreCrud($errors);
+            }
+            // insert item in the db
+            $item = $this->crud->create($this->crud->getStrippedSaveRequest());
+            $this->data['entry'] = $this->crud->entry = $item;
+
+            // show a success message
+            \Alert::success(trans('backpack::crud.insert_success'))->flash();
+            DB::commit();
+
+            // save the redirect choice for next time
+            $this->crud->setSaveAction();
+
+            return $this->crud->performSaveAction($item->getKey());
+        }catch(Exception $e){
+            DB::rollback();
+            throw $e;
+        }
+    }
+
     /**
      * Define what happens when the Update operation is loaded.
      * 
@@ -115,6 +172,63 @@ class GoaHolderCrudController extends CrudController
      */
     protected function setupUpdateOperation()
     {
-        $this->setupCreateOperation();
+        $this->setupCreateOperation(); 
+    }
+    public function update()
+    {
+        $this->crud->hasAccessOrFail('update');
+
+        DB::beginTransaction();
+        try{
+            // execute the FormRequest authorization and validation, if one is required
+            $request = $this->crud->validateRequest();
+
+            $errors = [];
+            $id = $request->id;
+
+            $head_of_department = $request->head_department_id;
+
+            $user = User::where('id', $request->user_id)->first();
+            if($user == null){
+                $errors['user_id'] = trans('validation.in', ['attribute' => trans('validation.attributes.user_id')]);
+            }
+
+            if($head_of_department != null){
+                $user = User::whereExists(function($query) use($head_of_department){
+                    $query->select('*')
+                     ->from('goa_holders')
+                     ->whereRaw('goa_holders.user_id = mst_users.id')
+                     ->whereRaw("goa_holders.id = $head_of_department");
+                })->first();
+                if($user != null){
+                    if($request->user_id == $user->id){
+                        $errors['head_department_id'] = trans('validation.data_join_same', ['name' => trans('validation.attributes.head_of_department')]);
+                    }
+                }else{
+                    // jika datanya kosong
+                    $errors['head_department_id'] = trans('validation.in', ['attribute' => trans('validation.attributes.head_of_department')]);
+                }
+            }
+            if (count($errors) != 0) {
+                DB::rollback();
+                return $this->redirectUpdateCrud($id, $errors);
+            }
+
+            // update the row in the db
+            $item = $this->crud->update($request->get($this->crud->model->getKeyName()),
+                                $this->crud->getStrippedSaveRequest());
+            $this->data['entry'] = $this->crud->entry = $item;
+
+            // show a success message
+            \Alert::success(trans('backpack::crud.update_success'))->flash();
+            DB::commit();
+            // save the redirect choice for next time
+            $this->crud->setSaveAction();
+
+            return $this->crud->performSaveAction($item->getKey());
+        }catch(Exception $e){
+            DB::rollback();
+            throw $e;
+        }
     }
 }

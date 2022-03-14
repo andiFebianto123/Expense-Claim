@@ -32,13 +32,15 @@ class GoaHolderRequest extends FormRequest
                 // 'name' => 'required|min:5|max:255'
                 'user_id' => 'required|unique:goa_holders,user_id,' . $id,
                 'name' => 'required|max:255|unique:goa_holders,name,' . $id,
-                'limit' => 'required|integer',
+                'limit' => 'nullable|integer|nullable',
+                'head_department_id' => 'nullable',
             ];
         }
         return [
             'user_id' => 'required|unique:goa_holders,user_id',
-            'name' => 'required|max:255|unique:goa_holders,name',
-            'limit' => 'required|integer',
+            'name' => 'nullable|max:255|unique:goa_holders,name',
+            'limit' => 'nullable|integer|nullable',
+            'head_department_id' => 'nullable',
             // 'head_department_id' => 'required'
         ];
     }

@@ -154,6 +154,8 @@ return [
     */
 
     'attributes' => [
+        'user_id' => 'User',
+        'head_of_department' => 'Head Of Department',
         'approval_card_id' => 'expense type',
         'cost_center' => 'cost center',
         'expense_code' => 'expense code',
@@ -163,5 +165,7 @@ return [
 
     // CUSTOM
     'data_not_exists' => "No :name currently available",
+    'data_join_same' => ":name can't join for yourself",
+    'not_changed_data' => ':name does not need to be changed',
 
 ];

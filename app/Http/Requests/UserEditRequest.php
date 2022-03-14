@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use App\Http\Requests\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UserRequest extends FormRequest
+class UserEditRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -33,7 +33,7 @@ class UserRequest extends FormRequest
                 'vendor_number' => 'required|max:255|unique:mst_users,vendor_number,' . $id,
                 'name' => 'required|max:255',
                 'email' => 'required|max:255|unique:mst_users,email,' . $id,
-                'password' => 'required|min:8|max:255|confirmed',
+                'password' => 'nullable|min:8|max:255|confirmed',
                 'bpid' => 'required|max:255|unique:mst_users,bpid,'. $id,
                 'level_id' => 'required',
                 'role_id' => 'required',
@@ -49,7 +49,7 @@ class UserRequest extends FormRequest
             'vendor_number' => 'required|max:255|unique:mst_users,vendor_number',
             'name' => 'required|max:255',
             'email' => 'required|max:255|unique:mst_users,email',
-            'password' => 'required|min:8|max:255|confirmed',
+            'password' => 'nullable|min:8|max:255|confirmed',
             'bpid' => 'required|max:255|unique:mst_users,bpid',
             'level_id' => 'required',
             'role_id' => 'required',

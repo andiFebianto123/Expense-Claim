@@ -99,7 +99,7 @@ class CostCenterCrudController extends CrudController
             $errors = [];
 
             if ($costCenter) {
-                $errors['cost_center'] = [trans('validation.unique', ['attribute' => trans('validation.attributes.cost_center')])];
+                $errors['cost_center_id'] = [trans('validation.unique', ['attribute' => trans('validation.attributes.cost_center')])];
             }
 
             if (count($errors) != 0) {
@@ -153,7 +153,7 @@ class CostCenterCrudController extends CrudController
             $errors = [];
 
             if ($costCenter) {
-                $errors['cost_center'] = [trans('validation.unique', ['attribute' => trans('validation.attributes.cost_center')])];
+                $errors['cost_center_id'] = [trans('validation.unique', ['attribute' => trans('validation.attributes.cost_center')])];
             }
 
             if (count($errors) != 0) {

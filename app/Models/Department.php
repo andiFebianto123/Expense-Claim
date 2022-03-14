@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Department extends Model
 {
-    use HasFactory, CrudTrait;
+    use HasFactory, CrudTrait; 
 
     protected $table = 'mst_departments';
     protected $fillable = ['department_id', 'name', 'is_none'];
@@ -23,7 +23,7 @@ class Department extends Model
         return $this->hasOne(HeadDepartment::class);
     }
     public function user(){
-        return $this->hasOne(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function getUserHeadDepartmentIdAttribute(){

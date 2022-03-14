@@ -2,8 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Exception;
+use App\Models\User;
+use App\Models\Role;
+use App\Models\Level;
+use App\Models\GoaHolder;
+use App\Models\Department;
 use App\Models\CostCenter;
+use App\Traits\RedirectCrud;
+use Illuminate\Support\Facades\DB;
 use App\Http\Requests\UserRequest;
+use App\Http\Requests\UserEditRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -14,6 +23,7 @@ use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
  */
 class UserCrudController extends CrudController
 {
+    use RedirectCrud;
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
@@ -111,27 +121,18 @@ class UserCrudController extends CrudController
             'type'      => 'closure',
             'name'      => 'goa',
             'function' => function($entry){
-                if($entry->approvaluser){
-                    if($entry->approvaluser->goaholder){
-                        return $entry->approvaluser->goaholder->name;
-                    }
+                if($entry->goa){
+                    return $entry->goa->name;
                 }
                 return '-';
             },
             'orderable' => true,
             'orderLogic' => function($query, $column, $columnDirection){
-                // return $query->leftJoin('departments as d', 'd.id', '=', 'mst_users.department_id')
-                // ->leftJoin('head_departments as hd', 'hd.department_id', '=', 'd.id')
-                // ->leftJoin('goa_holders as goa', 'goa.head_department_id', '=', 'hd.id')
-                // ->leftJoin('mst_users as user_goa_department', 'user_goa_department.id', '=', 'goa.user_id')
-                // ->orderBy('user_goa_department.name', $columnDirection)
-                // ->select('mst_users.*');
-                return $query->leftJoin('approval_users as au', 'au.user_id', '=', 'mst_users.id')
-                ->leftJoin('goa_holders as gh', 'gh.id' , '=' , 'au.goa_holder_id')
+                return $query->leftJoin('goa_holders as gh', 'gh.user_id' , '=' , 'mst_users.goa_holder_id')
                 ->orderBy('gh.name', $columnDirection)->select('mst_users.*');
             },
             'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhereHas('approvaluser.goaholder', function ($q) use ($column, $searchTerm) {
+                $query->orWhereHas('goa', function ($q) use ($column, $searchTerm) {
                     $q->where('name', 'like', '%'.$searchTerm.'%');
                 });
             }
@@ -159,9 +160,13 @@ class UserCrudController extends CrudController
      * @see https://backpackforlaravel.com/docs/crud-operation-create
      * @return void
      */
-    protected function setupCreateOperation()
+    protected function setupCreateOperation($type = false)
     {
-        CRUD::setValidation(UserRequest::class);
+        if($type == 'edit'){
+            CRUD::setValidation(UserEditRequest::class);
+        }else{
+            CRUD::setValidation(UserRequest::class);
+        }
 
         CRUD::field('user_id')->label('User ID');
         CRUD::field('vendor_number');
@@ -169,22 +174,32 @@ class UserCrudController extends CrudController
         CRUD::field('email');
         CRUD::field('bpid');
         CRUD::field('password');
-        CRUD::field('level_id');
-        CRUD::field('role_id');
+        CRUD::addField([
+            'name'  => 'password_confirmation',
+            'label' => 'Confirm Password',
+            'type'  => 'password'
+        ]);
+
+        CRUD::field('level_id')->allows_null(true);
+        CRUD::field('role_id')->allows_null(true);
 
         CRUD::field('cost_center_id')->label('Cost Center')->type('select')->type('select2_from_array')
+        ->allows_null(true)
         ->options(CostCenter::select('id', 'description')->get()->pluck('description', 'id'));
 
         CRUD::field('department_id');
 
-        CRUD::field('remark');
+        CRUD::field('goa_holder_id')->label('Goa Holder')->type('select2_from_array')
+        ->allows_null(true)
+        ->options(GoaHolder::select('id', 'name')->get()->pluck('name', 'id'));
+
+        CRUD::field('remark')->type('textarea');
         CRUD::addField([   // select_from_array
             'name'        => 'is_active',
             'label'       => "Activation",
-            'type'        => 'select_from_array',
+            'type'        => 'select2_from_array',
             'options'     => ['0' => 'Inactive', '1' => 'Active'],
-            'allows_null' => false,
-            'default'     => '1',
+            'allows_null' => true,
             // 'allows_multiple' => true, // OPTIONAL; needs you to cast this to array in your model;
         ]);
 
@@ -195,6 +210,75 @@ class UserCrudController extends CrudController
          */
     }
 
+
+    public function store(){
+        $this->crud->hasAccessOrFail('create');
+
+        DB::beginTransaction();
+        try{
+            // execute the FormRequest authorization and validation, if one is required
+            $request = $this->crud->validateRequest();
+
+            $errors = [];
+
+            if ($request->input('password_confirmation')) {
+                $request->request->remove('password_confirmation');
+            } 
+
+            if ($request->input('password')) {
+                $request->request->set('password', bcrypt($request->input('password')));
+            } else {
+                $request->request->remove('password');
+            }
+
+            $level = Level::where('id', $request->level_id)->first();
+            if($level == null){
+                $errors['level_id'] = trans('validation.exists', ["attribute" => 'Level']);
+            }
+
+            $role = Role::where('id', $request->role_id)->first();
+            if($role == null){
+                $errors['role_id'] = trans('validation.exists', ["attribute" => 'Role']);
+            }
+
+            $cost_center = CostCenter::where('id', $request->cost_center_id)->first();
+            if($cost_center == null){
+                $errors['cost_center_id'] = trans('validation.exists', ['attribute' => 'Cost Center']);
+            }
+            $department = Department::where('id', $request->department_id)->first();
+            if($department == null){
+                $errors['department_id'] = trans('validation.exists', ['attribute' => 'Department']);
+            }
+
+            $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
+            if($goaholder == null){
+                $errors['department_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
+            }
+
+            if (count($errors) != 0) {
+                DB::rollback();
+                return $this->redirectStoreCrud($errors);
+            }
+
+            // insert item in the db
+            $item = $this->crud->create($this->crud->getStrippedSaveRequest());
+            $this->data['entry'] = $this->crud->entry = $item;
+            // show a success message
+            \Alert::success(trans('backpack::crud.insert_success'))->flash();
+
+            DB::commit();
+            // save the redirect choice for next time
+            $this->crud->setSaveAction();
+
+            return $this->crud->performSaveAction($item->getKey());
+        }catch(Exception $e){
+            DB::rollBack();
+            throw $e;
+        }
+        
+    }
+
+
     /**
      * Define what happens when the Update operation is loaded.
      * 
@@ -203,6 +287,87 @@ class UserCrudController extends CrudController
      */
     protected function setupUpdateOperation()
     {
-        $this->setupCreateOperation();
+        $this->setupCreateOperation('edit');
+    }
+    public function update()
+    {
+        $this->crud->hasAccessOrFail('update');
+
+        DB::beginTransaction();
+        try{
+
+            // execute the FormRequest authorization and validation, if one is required
+            $request = $this->crud->validateRequest();
+
+            $id = $request->id;
+
+            $errors = [];
+
+            if($request->password != null){
+                if ($request->input('password_confirmation')) {
+                    $request->request->remove('password_confirmation');
+                } 
+    
+                if ($request->input('password')) {
+                    $request->request->set('password', bcrypt($request->input('password')));
+                } else {
+                    $request->request->remove('password');
+                }
+            }else{
+                $request->request->remove('password_confirmation');
+                $user = User::where('id', $id)->first();
+                if($user != null){
+                    $request->request->set('password', bcrypt($user->password));
+                }
+            }
+
+            $level = Level::where('id', $request->level_id)->first();
+            if($level == null){
+                $errors['level_id'] = trans('validation.exists', ["attribute" => 'Level']);
+            }
+
+            $role = Role::where('id', $request->role_id)->first();
+            if($role == null){
+                $errors['role_id'] = trans('validation.exists', ["attribute" => 'Role']);
+            }
+
+            $cost_center = CostCenter::where('id', $request->cost_center_id)->first();
+            if($cost_center == null){
+                $errors['cost_center_id'] = trans('validation.exists', ['attribute' => 'Cost Center']);
+            }
+            $department = Department::where('id', $request->department_id)->first();
+            if($department == null){
+                $errors['department_id'] = trans('validation.exists', ['attribute' => 'Department']);
+            }
+
+            $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
+            if($goaholder == null){
+                $errors['department_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
+            }
+
+            if (count($errors) != 0) {
+                DB::rollback();
+                return $this->redirectUpdateCrud($id, $errors);
+            }
+
+            // $this->crud->getStrippedSaveRequest()
+            // update the row in the db
+            $item = $this->crud->update($request->get($this->crud->model->getKeyName()), $request->toArray());
+            $this->data['entry'] = $this->crud->entry = $item;
+
+            // show a success message
+            \Alert::success(trans('backpack::crud.update_success'))->flash();
+
+            DB::commit();
+            // save the redirect choice for next time
+            $this->crud->setSaveAction();
+
+            return $this->crud->performSaveAction($item->getKey());
+
+        }catch(Exception $e){
+            DB::rollback();
+            throw $e;
+        }
+
     }
 }

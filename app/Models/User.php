@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Role;
 use App\Models\Level;
+use App\Models\GoaHolder;
 use App\Models\ApprovalUser;
 use App\Models\CostCenter;
 use App\Models\Department;
@@ -37,6 +38,7 @@ class User extends Authenticatable
         'role_id',
         'cost_center_id',
         'department_id',
+        'goa_holder_id',
         'remark',
         'is_active',
     ];
@@ -60,7 +62,6 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-
     public function level()
     {
         return $this->belongsTo(Level::class, 'level_id');
@@ -80,9 +81,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(CostCenter::class, 'cost_center_id');
     }
-    public function approvaluser(){
-        return $this->hasOne(ApprovalUser::class);
-    }
+    // public function approvaluser(){
+    //     return $this->hasOne(ApprovalUser::class);
+    // }
 
     public function from_delegation()
     {
@@ -98,9 +99,9 @@ class User extends Authenticatable
     //     return $this->belongsTo(User::class, 'head_department_id');
     // }
 
-    // public function goa(){
-    //     return $this->belongsTo(User::class, 'goa_id');
-    // }
+    public function goa(){
+        return $this->belongsTo(GoaHolder::class, 'goa_holder_id');
+    }
 
     // public function respectivedirector(){
     //     return $this->belongsTo(User::class, 'respective_director_id');

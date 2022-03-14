@@ -14,7 +14,7 @@ use App\Http\Controllers\Admin\ExpenseUserRequestHistoryCrudController;
 // This route file is loaded automatically by Backpack\Base.
 // Routes you generate using Backpack\Generators will be placed here.
 
-Route::group( 
+Route::group(
     [
         'namespace'  => 'App\Http\Controllers',
         'middleware' => config('backpack.base.web_middleware', 'web'),
@@ -46,48 +46,52 @@ Route::group([
     // APPROVAL CARD
     Route::crud('approval-card', 'ApprovalCardCrudController');
 
-    // EXPENSE USER REQUEST
-    Route::crud('expense-user-request', 'ExpenseUserRequestCrudController');
-    Route::post('expense-user-request/new-request', [ExpenseUserRequestCrudController::class, 'newRequest']);
-    Route::delete('expense-user-request/{id}/cancel', [ExpenseUserRequestCrudController::class, 'cancel']);
-    Route::prefix('expense-user-request/{header_id}')->group(function () {
-        Route::crud('detail', 'ExpenseUserRequestDetailCrudController');
-        Route::post('detail/submit', [ExpenseUserRequestDetailCrudController::class, 'submit']);
-        Route::get('detail/{id}/document', [ExpenseUserRequestDetailCrudController::class, 'document']);
-    });
-    Route::crud('expense-user-request-history', 'ExpenseUserRequestHistoryCrudController');
-    Route::delete('expense-user-request-history/{id}/cancel', [ExpenseUserRequestHistoryCrudController::class, 'cancel']);
+    Route::middleware('access.expense')->group(function () {
+        // EXPENSE USER REQUEST
+        Route::crud('expense-user-request', 'ExpenseUserRequestCrudController');
+        Route::post('expense-user-request/new-request', [ExpenseUserRequestCrudController::class, 'newRequest']);
+        Route::delete('expense-user-request/{id}/cancel', [ExpenseUserRequestCrudController::class, 'cancel']);
+        Route::prefix('expense-user-request/{header_id}')->group(function () {
+            Route::crud('detail', 'ExpenseUserRequestDetailCrudController');
+            Route::post('detail/submit', [ExpenseUserRequestDetailCrudController::class, 'submit']);
+            Route::get('detail/{id}/document', [ExpenseUserRequestDetailCrudController::class, 'document']);
+        });
+        Route::crud('expense-user-request-history', 'ExpenseUserRequestHistoryCrudController');
+        Route::delete('expense-user-request-history/{id}/cancel', [ExpenseUserRequestHistoryCrudController::class, 'cancel']);
 
-    // EXPENSE APPROVER HOD
-    Route::crud('expense-approver-hod', 'ExpenseApproverHodCrudController');
-    Route::prefix('expense-approver-hod/{header_id}')->group(function () {
-        Route::crud('detail', 'ExpenseApproverHodDetailCrudController');
-        Route::post('detail/approve', [ExpenseApproverHodDetailCrudController::class, 'approve']);
-        Route::post('detail/revise', [ExpenseApproverHodDetailCrudController::class, 'revise']);
-        Route::post('detail/reject', [ExpenseApproverHodDetailCrudController::class, 'reject']);
-        Route::get('detail/{id}/document', [ExpenseApproverHodDetailCrudController::class, 'document']);
-    });
-    Route::crud('expense-approver-hod-history', 'ExpenseApproverHodHistoryCrudController');
+        // EXPENSE APPROVER HOD
+        Route::crud('expense-approver-hod', 'ExpenseApproverHodCrudController');
+        Route::prefix('expense-approver-hod/{header_id}')->group(function () {
+            Route::crud('detail', 'ExpenseApproverHodDetailCrudController');
+            Route::post('detail/approve', [ExpenseApproverHodDetailCrudController::class, 'approve']);
+            Route::post('detail/revise', [ExpenseApproverHodDetailCrudController::class, 'revise']);
+            Route::post('detail/reject', [ExpenseApproverHodDetailCrudController::class, 'reject']);
+            Route::get('detail/{id}/document', [ExpenseApproverHodDetailCrudController::class, 'document']);
+        });
+        Route::crud('expense-approver-hod-history', 'ExpenseApproverHodHistoryCrudController');
 
-    // EXPENSE APPROVER GOA
-    Route::crud('expense-approver-goa', 'ExpenseApproverGoaCrudController');
-    Route::prefix('expense-approver-goa/{header_id}')->group(function () {
-        Route::crud('detail', 'ExpenseApproverGoaDetailCrudController');
-        Route::post('detail/approve', [ExpenseApproverGoaDetailCrudController::class, 'approve']);
-        Route::post('detail/revise', [ExpenseApproverGoaDetailCrudController::class, 'revise']);
-        Route::post('detail/reject', [ExpenseApproverGoaDetailCrudController::class, 'reject']);
-        Route::get('detail/{id}/document', [ExpenseApproverGoaDetailCrudController::class, 'document']);
-    });
-    Route::crud('expense-approver-goa-history', 'ExpenseApproverGoaHistoryCrudController');
+        // EXPENSE APPROVER GOA
+        Route::crud('expense-approver-goa', 'ExpenseApproverGoaCrudController');
+        Route::prefix('expense-approver-goa/{header_id}')->group(function () {
+            Route::crud('detail', 'ExpenseApproverGoaDetailCrudController');
+            Route::post('detail/approve', [ExpenseApproverGoaDetailCrudController::class, 'approve']);
+            Route::post('detail/revise', [ExpenseApproverGoaDetailCrudController::class, 'revise']);
+            Route::post('detail/reject', [ExpenseApproverGoaDetailCrudController::class, 'reject']);
+            Route::get('detail/{id}/document', [ExpenseApproverGoaDetailCrudController::class, 'document']);
+        });
+        Route::crud('expense-approver-goa-history', 'ExpenseApproverGoaHistoryCrudController');
 
-    // EXPENSE FINANCE AP
-    Route::crud('expense-finance-ap', 'ExpenseFinanceApCrudController');
-    Route::post('expense-finance-ap/upload', [ExpenseFinanceApCrudController::class, 'uploadSap']);
-    Route::prefix('expense-finance-ap/{header_id}')->group(function () {
-        Route::crud('detail', 'ExpenseFinanceApDetailCrudController');
-        Route::get('detail/{id}/document', [ExpenseFinanceApDetailCrudController::class, 'document']);
+        // EXPENSE FINANCE AP
+        Route::crud('expense-finance-ap', 'ExpenseFinanceApCrudController');
+        Route::post('expense-finance-ap/upload', [ExpenseFinanceApCrudController::class, 'uploadSap']);
+        Route::prefix('expense-finance-ap/{header_id}')->group(function () {
+            Route::crud('detail', 'ExpenseFinanceApDetailCrudController');
+            Route::get('detail/{id}/document', [ExpenseFinanceApDetailCrudController::class, 'document']);
+        });
+
+        Route::crud('expense-finance-ap-history', 'ExpenseFinanceApHistoryCrudController');
     });
-    Route::crud('expense-finance-ap-history', 'ExpenseFinanceApHistoryCrudController');
+
     Route::crud('role', 'RoleCrudController');
     Route::crud('level', 'LevelCrudController');
     Route::crud('user', 'UserCrudController');

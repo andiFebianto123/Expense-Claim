@@ -32,6 +32,7 @@ class ExpenseTypeCrudController extends CrudController
         CRUD::setEntityNameStrings('expense type', 'expense types');
 
         $this->crud->setCreateView('expense_claim.expense_type.create');
+        $this->crud->setUpdateView('expense_claim.expense_type.edit');
     }
 
     protected function setupListOperation()
@@ -323,7 +324,7 @@ class ExpenseTypeCrudController extends CrudController
 
             $expenseType->save();
 
-            $departments = Department::whereIn('id', $request->department_id)->get();
+            $departments = Department::whereIn('id', $request->department_id ?? [])->get();
 
             foreach ($departments as $department) {
                 $expenseTypeDept = new MstExpenseTypeDepartment;
@@ -402,12 +403,12 @@ class ExpenseTypeCrudController extends CrudController
 
             if (count($errors) != 0) {
                 DB::rollback();
-                return $this->redirectUpdateCruds($id, $errors);
+                return $this->redirectUpdateCrud($id, $errors);
             }
 
             MstExpenseTypeDepartment::where('expense_type_id', $id)->delete();
 
-            $departments = Department::whereIn('id', $request->department_id)->get();
+            $departments = Department::whereIn('id', $request->department_id ?? [])->get();
 
             foreach ($departments as $department) {
                 $expenseTypeDept = new MstExpenseTypeDepartment;

@@ -10,7 +10,7 @@
     $allowMaster = in_array($role, [$classRole::SUPER_ADMIN, $classRole::DIRECTOR]);
     $allowLevelOne = in_array($role, [$classRole::SUPER_ADMIN, $classRole::NATIONAL_SALES]);
     $allowLevelTwo = in_array($role, [$classRole::SUPER_ADMIN, $classRole::DIRECTOR]);
-    $allowAll = in_array($role, [$classRole::USER, $classRole::GOA_HOLDER, $classRole::ADMINISTRATOR, $classRole::HOD, $classRole::SECRETARY]);
+    $allowAll = in_array($role, [$classRole::USER, $classRole::GOA_HOLDER, $classRole::ADMIN, $classRole::HOD, $classRole::SECRETARY]);
 
     $classDepartment = 'App\Models\Department';
     $allowFinance = $role === $classRole::SUPER_ADMIN || $department === $classDepartment::FINANCE;

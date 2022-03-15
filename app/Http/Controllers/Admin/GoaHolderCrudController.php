@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Role;
 use App\Models\User;
 use App\Models\GoaHolder;
 use App\Traits\RedirectCrud;
@@ -31,6 +32,10 @@ class GoaHolderCrudController extends CrudController
      */
     public function setup()
     {
+        $roleName = backpack_user()->role->name;
+        if(!in_array($roleName, [Role::ADMIN])){
+            $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
+        }
         CRUD::setModel(\App\Models\GoaHolder::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/goa-holder');
         CRUD::setEntityNameStrings('goa holder', 'goa holders');

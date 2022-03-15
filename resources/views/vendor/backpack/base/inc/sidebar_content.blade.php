@@ -22,6 +22,28 @@
     <li class="nav-item"><a class="nav-link" href="{{backpack_url('approval-card')}}"><i class="la la-cc-mastercard nav-icon"></i> Approval Card</a></li>    
 @endif
 
+<li class="nav-title">Master</li>
+@foreach ((new App\Helpers\Sidebar())->generate() as $key => $menu)
+    @if(in_array($role, $menu['access']))
+    <li class="nav-item @if($menu['childrens']) nav-dropdown @endif">
+        <a class="nav-link parent @if($menu['childrens']) nav-dropdown-toggle @endif" href="{{  $menu['url'] }}">
+            <i class="nav-icon la {{$menu['icon']}}"></i> {{$menu['label']}}
+        </a>
+        @if($menu['childrens'])
+        <ul class="nav-dropdown-items">
+            @foreach($menu['childrens'] as $key2 => $child)
+            <li class="nav-item">
+                <a class="nav-link childs" href="{{ $child['url'] }}">
+                <span>• {{$child['label']}}</span>
+                </a>
+            </li>
+            @endforeach
+        </ul>
+        @endif
+    </li> 
+    @endif
+@endforeach
+
 <li class="nav-title">Expense</li>
 <li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-envelope-square"></i> User Request</a>
     <ul class="nav-dropdown-items">
@@ -57,13 +79,3 @@
     </ul>
 </li>
 @endif
-<li class='nav-item'><a class='nav-link' href='{{ backpack_url('role') }}'><i class='nav-icon la la-question'></i> Roles</a></li>
-<li class='nav-item'><a class='nav-link' href='{{ backpack_url('level') }}'><i class='nav-icon la la-question'></i> Levels</a></li>
-<li class='nav-item'><a class='nav-link' href='{{ backpack_url('user') }}'><i class='nav-icon la la-question'></i> Users</a></li>
-<li class='nav-item'><a class='nav-link' href='{{ backpack_url('goa-holder') }}'><i class='nav-icon la la-question'></i> Goa holders</a></li>
-<li class='nav-item'><a class='nav-link' href='{{ backpack_url('department') }}'><i class='nav-icon la la-question'></i> Departments</a></li>
-<li class='nav-item'><a class='nav-link' href='{{ backpack_url('expense-type') }}'><i class='nav-icon la la-question'></i> Expense types</a></li>
-
-<li class='nav-item'><a class='nav-link' href='{{ backpack_url('cost-center') }}'><i class='nav-icon la la-question'></i> Cost centers</a></li>
-<li class='nav-item'><a class='nav-link' href='{{ backpack_url('delegation') }}'><i class='nav-icon la la-question'></i> Delegations</a></li>
-<li class='nav-item'><a class='nav-link' href='{{ backpack_url('expense') }}'><i class='nav-icon la la-question'></i> Expenses</a></li>

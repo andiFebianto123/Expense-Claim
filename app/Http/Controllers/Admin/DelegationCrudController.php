@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\User;
+use App\Models\Role;
 use App\Http\Requests\DelegationRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
@@ -17,6 +18,10 @@ class DelegationCrudController extends CrudController
 
     public function setup()
     {
+        $roleName = backpack_user()->role->name;
+        if(!in_array($roleName, [Role::ADMIN, Role::GOA_HOLDER, Role::HOD, Role::SECRETARY])){
+            $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
+        }
         CRUD::setModel(\App\Models\MstDelegation::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/delegation');
         CRUD::setEntityNameStrings('delegation', 'delegations');

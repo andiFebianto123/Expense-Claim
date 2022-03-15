@@ -16,4 +16,9 @@ class Role extends Model
     public const SUPER_ADMIN = 'Super Admin';
     public const DIRECTOR = 'Director';
     public const NATIONAL_SALES = 'National Sales & Promotion (Senior Manager)';
+    public const ADMIN = 'Administrator';
+    public const GOA_HOLDER = 'GoA Holder';
+    public const HOD = 'Hod';
+    public const SECRETARY = 'Secretary';
+    public const USER = 'User';
 }

@@ -37,6 +37,10 @@ class UserCrudController extends CrudController
      */
     public function setup()
     {
+        $roleName = backpack_user()->role->name;
+        if(!in_array($roleName, [Role::ADMIN])){
+            $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
+        }
         CRUD::setModel(\App\Models\User::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/user');
         CRUD::setEntityNameStrings('user', 'users');
@@ -265,7 +269,8 @@ class UserCrudController extends CrudController
             }
 
             // insert item in the db
-            $item = $this->crud->create($this->crud->getStrippedSaveRequest());
+            // $this->crud->getStrippedSaveRequest()
+            $item = $this->crud->create($request->toArray());
             $this->data['entry'] = $this->crud->entry = $item;
             // show a success message
             \Alert::success(trans('backpack::crud.insert_success'))->flash();

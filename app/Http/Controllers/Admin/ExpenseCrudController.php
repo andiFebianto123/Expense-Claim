@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Role;
 use App\Traits\RedirectCrud;
 use App\Http\Requests\ExpenseRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -18,6 +19,10 @@ class ExpenseCrudController extends CrudController
 
     public function setup()
     {
+        $roleName = backpack_user()->role->name;
+        if(!in_array($roleName, [Role::ADMIN, Role::USER, Role::GOA_HOLDER, Role::HOD, Role::SECRETARY])){
+            $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
+        }
         CRUD::setModel(\App\Models\MstExpense::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense');
         CRUD::setEntityNameStrings('expense', 'expenses');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use Exception;
+use App\Models\Role;
 use App\Models\CostCenter;
 use App\Traits\RedirectCrud;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,10 @@ class CostCenterCrudController extends CrudController
 
     public function setup()
     {
+        $roleName = backpack_user()->role->name;
+        if(!in_array($roleName, [Role::ADMIN])){
+            $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
+        }
         CRUD::setModel(\App\Models\CostCenter::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/cost-center');
         CRUD::setEntityNameStrings('cost center', 'cost centers');

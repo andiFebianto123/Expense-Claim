@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use Exception;
+use App\Models\Role;
 use App\Models\Level;
 use App\Models\MstExpense;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,10 @@ class ExpenseTypeCrudController extends CrudController
 
     public function setup()
     {
+        $roleName = backpack_user()->role->name;
+        if(!in_array($roleName, [Role::ADMIN, Role::USER, Role::GOA_HOLDER, Role::HOD, Role::SECRETARY])){
+            $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
+        }
         CRUD::setModel(\App\Models\ExpenseType::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-type');
         CRUD::setEntityNameStrings('expense type', 'expense types');

@@ -10,6 +10,7 @@
     $allowMaster = in_array($role, [$classRole::SUPER_ADMIN, $classRole::DIRECTOR]);
     $allowLevelOne = in_array($role, [$classRole::SUPER_ADMIN, $classRole::NATIONAL_SALES]);
     $allowLevelTwo = in_array($role, [$classRole::SUPER_ADMIN, $classRole::DIRECTOR]);
+    $allowAll = in_array($role, [$classRole::USER, $classRole::GOA_HOLDER, $classRole::ADMINISTRATOR, $classRole::HOD, $classRole::SECRETARY]);
 
     $classDepartment = 'App\Models\Department';
     $allowFinance = $role === $classRole::SUPER_ADMIN || $department === $classDepartment::FINANCE;
@@ -44,6 +45,7 @@
     @endif
 @endforeach
 
+@if($allowAll)
 <li class="nav-title">Expense</li>
 <li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-envelope-square"></i> User Request</a>
     <ul class="nav-dropdown-items">
@@ -51,6 +53,7 @@
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-user-request-history')}}"> History</a></li>
     </ul>
 </li>
+@endif
 
 @if ($allowLevelOne)
 <li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-angle-right"></i> Approver HoD</a>

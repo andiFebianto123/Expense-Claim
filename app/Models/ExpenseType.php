@@ -13,6 +13,9 @@ class ExpenseType extends Model
     protected $table = 'mst_expense_types';
     protected $fillable = ['expense_id', 'level_id', 'limit', 'expense_code_id', 'is_bod', 'is_traf', 'is_bp_approval', 'bod_level', 'limit_business_proposal', 'currency', 'remark'];
 
+    public const RESPECTIVE_DIRECTOR = "Respective Director";
+    public const GENERAL_MANAGER = "General Manager";
+
     public function level()
     {
         return $this->belongsTo(Level::class, 'level_id');
@@ -31,5 +34,10 @@ class ExpenseType extends Model
     public function expense_type_dept()
     {
         return $this->hasMany(MstExpenseTypeDepartment::class, 'expense_type_id');
+    }
+
+    public function expense_claim_detail()
+    {
+        return $this->hasMany(ExpenseClaimDetail::class, 'expense_type_id');
     }
 }

@@ -160,12 +160,15 @@ return [
         'cost_center' => 'cost center',
         'expense_code' => 'expense code',
         'expense_id' => 'expense id',
-        'expense_name' => 'expense name'
+        'expense_name' => 'expense name',
+        'expense_type' => 'expense type',
+        'cost' => 'Cost',
+        'limit' => 'Limit'
     ],
 
     // CUSTOM
     'data_not_exists' => "No :name currently available",
     'data_join_same' => ":name can't join for yourself",
     'not_changed_data' => ':name does not need to be changed',
-
+    'limit' => ":attr1 exceeding :attr2 of :value"
 ];

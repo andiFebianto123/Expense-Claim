@@ -16,4 +16,9 @@ class ExpenseCode extends Model
     {
         return $this->hasMany(ExpenseType::class, 'expense_code_id');
     }
+
+    public function expense_claim_detail()
+    {
+        return $this->hasMany(ExpenseClaimDetail::class, 'expense_code_id');
+    }
 }

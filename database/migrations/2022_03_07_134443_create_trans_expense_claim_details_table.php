@@ -21,14 +21,14 @@ class CreateTransExpenseClaimDetailsTable extends Migration
             // $table->string('expense_type');
             // $table->unsignedBigInteger('expense_type_id');
             // $table->string('expense_type');
-            // $table->string('cost_center');
+            $table->unsignedBigInteger('cost_center_id');
             // $table->string('expense_code');
 
-            $table->unsignedBigInteger('expense_id');
-            $table->string('expense_type');
+            $table->unsignedBigInteger('expense_type_id');
+            $table->string('expense_name');
 
             $table->unsignedBigInteger('level_id');
-            $table->string('detail_level_id')->unique();
+            $table->string('detail_level_id');
             $table->string('level_name');
 
             $table->unsignedBigInteger('limit')->nullable();
@@ -39,8 +39,9 @@ class CreateTransExpenseClaimDetailsTable extends Migration
 
             $table->boolean('is_traf');
             $table->boolean('is_bod');
-            $table->boolean('is_gm');
+            $table->boolean('is_bp_approval');
             $table->boolean('is_limit_person');
+            $table->unsignedInteger('total_person')->nullable();
             $table->unsignedBigInteger('limit_business_proposal')->nullable();
             $table->string('remark_expense_type')->nullable();
 
@@ -48,27 +49,35 @@ class CreateTransExpenseClaimDetailsTable extends Migration
             $table->unsignedBigInteger('cost');
             $table->string('remark')->nullable();
             $table->string('document', 500)->nullable();
-            $table->timestamps();
 
             $table->foreign('expense_claim_id')
-            ->references('id')
-            ->on('trans_expense_claims')
-            ->onUpdate('cascade');
-
-            $table->foreign('expense_id')
-            ->references('id')
-            ->on('mst_expenses')
-            ->onUpdate('cascade');
+                ->references('id')
+                ->on('trans_expense_claims')
+                ->onUpdate('cascade');
 
             $table->foreign('level_id')
-            ->references('id')
-            ->on('mst_levels')
-            ->onUpdate('cascade');
+                ->references('id')
+                ->on('mst_levels')
+                ->onUpdate('cascade');
+
+            $table->foreign('expense_type_id')
+                ->references('id')
+                ->on('mst_expense_types')
+                ->onUpdate('cascade');
 
             $table->foreign('expense_code_id')
-            ->references('id')
-            ->on('mst_expense_codes')
-            ->onUpdate('cascade');
+                ->references('id')
+                ->on('mst_expense_codes')
+                ->onUpdate('cascade');
+
+
+            $table->foreign('cost_center_id')
+                ->references('id')
+                ->on('mst_cost_centers')
+                ->onUpdate('cascade');
+
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

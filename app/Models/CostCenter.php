@@ -11,4 +11,9 @@ class CostCenter extends Model
     use HasFactory, CrudTrait;
     protected $table = 'mst_cost_centers';
     protected $fillable = ['cost_center_id', 'currency', 'description'];
+
+    public function expense_claim_detail()
+    {
+        return $this->hasMany(ExpenseClaimDetail::class, 'cost_center_id');
+    }
 }

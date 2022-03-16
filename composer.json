@@ -2,11 +2,15 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "keywords": [
+        "framework",
+        "laravel"
+    ],
     "license": "MIT",
     "require": {
         "php": "^7.3|^8.0",
         "backpack/crud": "^5.0",
+        "backpack/pro": "^1.0",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^9.0",
@@ -29,6 +33,12 @@
             "Database\\Seeders\\": "database/seeders/"
         }
     },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://repo.backpackforlaravel.com/"
+        }
+    ],
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/"

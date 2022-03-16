@@ -11,6 +11,7 @@ use App\Models\MstExpense;
 use App\Models\ExpenseCode;
 use App\Models\ApprovalCard;
 use App\Models\ExpenseType;
+use App\Models\GoaHolder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -40,6 +41,8 @@ class DatabaseSeeder extends Seeder
 
         $this->expenseSeeder();
 
+        $this->goaSeeder();
+
         // APPROVAL CARD SEEDER
         //$this->approvalCardSeeder();
     }
@@ -51,7 +54,8 @@ class DatabaseSeeder extends Seeder
             'GoA Holder',
             'Administrator',
             'Hod',
-            'Secretary'
+            'Secretary',
+            'Finance AP'
         ];
 
         foreach ($roles as $role) {
@@ -187,11 +191,14 @@ class DatabaseSeeder extends Seeder
 
             $level = Level::where('level_id', $user['Level'])->first();
             $role = Role::where('name', $userRole)->first();
+            $department = Department::where('name', $user['Head of Department'])->first();
 
             $costCenter = CostCenter::where('cost_center_id', $user['Cost Center'])->first();
-            $bpidExist = User::where('bpid',  $user['BPID'])->exists();
+            $bpidExist = User::where('bpid',  $user['BPID'])->first();
 
-            if (!empty($level) && !empty($role) && !empty($costCenter) && !$bpidExist) {
+            $bpIdPass = empty($bpidExist) || ($bpidExist && ($bpidExist->user_id == $user['UserID']));
+
+            if (!empty($level) && !empty($role) && !empty($costCenter) && $bpIdPass) {
                 User::updateOrCreate([
                     'user_id' => $user['UserID'],
                 ], [
@@ -201,6 +208,7 @@ class DatabaseSeeder extends Seeder
                     'email' => $user['Email'],
                     'bpid' =>  $user['BPID'],
                     'level_id' => $level->id,
+                    'department_id' => $department->id ?? null,
                     'role_id' => $role->id,
                     'is_active' => true,
                     'password' => bcrypt('qwerty'),
@@ -249,6 +257,38 @@ class DatabaseSeeder extends Seeder
                 $expenseType->remark = trim($item['Remark']);
 
                 $expenseType->save();
+            }
+        }
+    }
+
+    public function goaSeeder()
+    {
+        $filename = Storage::path('data/goa_holders.csv');
+
+        $goaHolders = $this->csvToArray($filename);
+
+        foreach ($goaHolders as $goa) {
+            $user = User::where('bpid', $goa["BP ID"])->first();
+            $limit = str_replace(',', '', $goa['Limit']);
+
+            if (!empty($user)) {
+                GoaHolder::updateOrCreate([
+                    'user_id' => $user->id,
+                ], [
+                    'user_id' => $user->id,
+                    'name' => $goa['GoA Holder'],
+                    'limit' => (int) $limit,
+                ]);
+            }
+        }
+
+        foreach ($goaHolders as $goa) {
+            $headOfDept = GoaHolder::where('name', $goa['Head Of Deparment'])->first();
+
+            if (!empty($headOfDept)) {
+                $goaHolder = GoaHolder::where('name', $goa["GoA Holder"])->first();
+                $goaHolder->head_department_id = $headOfDept->id;
+                $goaHolder->save();
             }
         }
     }

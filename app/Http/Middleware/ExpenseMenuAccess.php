@@ -19,7 +19,7 @@ class ExpenseMenuAccess
     {
         $role = backpack_user()->role->name;
 
-        $grantAccess = in_array($role, [Role::USER, Role::GOA_HOLDER, Role::ADMINISTRATOR, Role::HOD, Role::SECRETARY]);
+        $grantAccess = in_array($role, [Role::USER, Role::GOA_HOLDER, Role::ADMIN, Role::HOD, Role::SECRETARY]);
 
         if (!$grantAccess) {
             abort(403, trans('custom.error_permission_message'));

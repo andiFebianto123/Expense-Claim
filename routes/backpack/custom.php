@@ -95,6 +95,7 @@ Route::group([
     Route::crud('role', 'RoleCrudController');
     Route::crud('level', 'LevelCrudController');
     Route::crud('user', 'UserCrudController');
+    Route::get('user/report', 'UserCrudController@printReportExpense');
     Route::crud('goa-holder', 'GoaHolderCrudController');
     Route::crud('department', 'DepartmentCrudController');
     Route::crud('expense-type', 'ExpenseTypeCrudController');

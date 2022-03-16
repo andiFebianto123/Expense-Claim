@@ -9,6 +9,7 @@ use App\Models\Level;
 use App\Models\GoaHolder;
 use App\Models\Department;
 use App\Models\CostCenter;
+use App\Library\ReportClaim;
 use App\Traits\RedirectCrud;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\UserRequest;
@@ -384,5 +385,9 @@ class UserCrudController extends CrudController
             throw $e;
         }
 
+    }
+    public function printReportExpense(){
+        $print = new ReportClaim;
+        return $print->renderPdf();
     }
 }

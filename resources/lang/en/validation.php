@@ -164,7 +164,9 @@ return [
         'expense_type' => 'expense type',
         'cost' => 'Cost',
         'limit' => 'Limit',
-        'date' => 'Date'
+        'date' => 'Date',
+        'document' => 'Document',
+        "expense_claim" => 'Expense Claim'
     ],
 
     // CUSTOM

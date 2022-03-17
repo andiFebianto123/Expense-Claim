@@ -414,6 +414,15 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 ];
             }
 
+            if ($expenseType->is_traf && $request->document == null) {
+                $errors['document'] = [
+                    trans(
+                        'validation.required',
+                        ['attribute' => trans('validation.attributes.document'),]
+                    )
+                ];
+            }
+
             if (count($errors) != 0) {
                 DB::rollback();
                 return $this->redirectStoreCrud($errors);
@@ -439,7 +448,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->is_limit_person = $isLimitPerson;
             $expenseClaimDetail->total_person = $request->total_person ?? null;
             $expenseClaimDetail->currency = $expenseType->currency;
-            $expenseClaimDetail->cost = $request->cost;
+            $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->remark = $request->remark;
             $expenseClaimDetail->document = $request->document;
 
@@ -491,7 +500,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->data['title'] = $this->crud->getTitle() ?? trans('backpack::crud.edit') . ' ' . $this->crud->entity_name;
         $this->data['expenseTypes'] = $this->getUserExpenseTypes();
         $this->data['configs']['usd_to_idr'] = Config::where('key', CONFIG::USD_TO_IDR)->first();
-        
+
         $this->data['id'] = $id;
 
         // load the view from /resources/views/vendor/backpack/crud/ if it exists, otherwise load the one in the package
@@ -506,6 +515,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $request = $this->crud->validateRequest();
         DB::beginTransaction();
         try {
+            $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)->first();
             $cost = $request->cost;
 
             $isLimitPerson = (bool) $request->is_limit_person ?? false;
@@ -544,6 +554,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 ->first();
 
             $errors = [];
+
+            if ($expenseClaimDetail == null) {
+                $errors[] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_claim')])];
+            }
 
             if ($expenseType == null) {
                 $errors['expense_type_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_type')])];
@@ -594,12 +608,19 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 ];
             }
 
+            if ($expenseType->is_traf && $request->document == null) {
+                $errors['document'] = [
+                    trans(
+                        'validation.required',
+                        ['attribute' => trans('validation.attributes.document'),]
+                    )
+                ];
+            }
+
             if (count($errors) != 0) {
                 DB::rollback();
                 return $this->redirectUpdateCrud($id, $errors);
             }
-
-            $expenseClaimDetail = new ExpenseClaimDetail;
 
             $expenseClaimDetail->expense_claim_id = $this->crud->headerId;
             $expenseClaimDetail->date = $request->date;
@@ -619,13 +640,13 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->is_limit_person = $isLimitPerson;
             $expenseClaimDetail->total_person = $request->total_person ?? null;
             $expenseClaimDetail->currency = $expenseType->currency;
-            $expenseClaimDetail->cost = $request->cost;
+            $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->remark = $request->remark;
             $expenseClaimDetail->document = $request->document;
 
             $expenseClaimDetail->save();
 
-            \Alert::success(trans('backpack::crud.insert_success'))->flash();
+            \Alert::success(trans('backpack::crud.update_success'))->flash();
 
             $this->crud->setSaveAction();
 

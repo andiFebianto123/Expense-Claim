@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Database\QueryException;
 use App\Models\Role;
 use App\Http\Requests\DepartmentRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -242,7 +243,7 @@ class DepartmentCrudController extends CrudController
 
             $errors = [];
 
-            $saveRequest = $this->crud->getStrippedSaveRequest();
+            $saveRequest = $this->crud->getStrippedSaveRequest($request);
 
 
             // // cek user
@@ -256,7 +257,7 @@ class DepartmentCrudController extends CrudController
             if($request->is_none == 1){
                 $cek_is_none = Department::where('is_none', 1)->first();
                 if($cek_is_none != null){
-                    $errors['is_none'] = "Tidak bisa pilih Yes karena sudah ada";
+                    $errors['is_none'] = trans('validation.exists', ['attribute' => 'Is None']);
                 }
             }
 
@@ -353,14 +354,14 @@ class DepartmentCrudController extends CrudController
 
             $id = $request->id;
 
-            $saveRequest = $this->crud->getStrippedSaveRequest();
+            $saveRequest = $this->crud->getStrippedSaveRequest($request);
 
             $cek_is_none = Department::where('is_none', 1)->first();
 
             $user = User::where('id', $request->user_id)->first();
             if($request->user_id != null){  
                 if($user == null){
-                    $errors['user_id'] = trans('validation.data_not_exists', ['name' => trans('validation.attributes.user_id')]);
+                    $errors['user_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.user_id')]);
                 }    
             }
 
@@ -369,7 +370,7 @@ class DepartmentCrudController extends CrudController
                     $errors['is_none'] = trans('validation.exists', ['attribute' => 'Is None']);;
                 }else if(($cek_is_none->id == $id) && ($request->is_none == 0)){
                     // jika data department yang is_none yes ternyata adalah datanya sendiri dan dia milih no
-                    $errors['is_none'] = trans('validation.not_changed_data', ['attribute' => 'Is None']);
+                    $errors['is_none'] = trans('validation.exists', ['attribute' => 'Is None']);
                 }
             }
 
@@ -403,9 +404,21 @@ class DepartmentCrudController extends CrudController
     {
         $this->crud->hasAccessOrFail('delete');
 
-        // get entry ID from Request (makes sure its the last ID for nested resources)
-        $id = $this->crud->getCurrentEntryId() ?? $id;
+        DB::beginTransaction();
+        try {
+            $id = $this->crud->getCurrentEntryId() ?? $id;
 
-        return $this->crud->delete($id);
+            $response = $this->crud->delete($id);
+            DB::commit();
+            return $response;
+        } catch (Exception $e) {
+            DB::rollBack();
+            if($e instanceof QueryException){
+                if(isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451){
+                    return response()->json(['message' => trans('custom.model_has_relation')], 403);
+                }
+            }
+            throw $e;
+        }
     }
 }

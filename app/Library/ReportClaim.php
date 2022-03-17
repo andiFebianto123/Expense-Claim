@@ -1,6 +1,6 @@
 <?php
 namespace App\Library;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportClaim {
 
@@ -27,7 +27,7 @@ class ReportClaim {
             'rowEmptyExpenseTable' => $this->rowEmptyExpenseTable,
             'rowEmptyExpenseTableReport' => $this->rowEmptyExpenseTableReport,
         ])
-        ->setPaper('A4', 'landscape');
+        ->setPaper('a4', 'landscape');
         return $pdf->stream();
     }
 }

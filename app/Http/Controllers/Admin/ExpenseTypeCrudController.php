@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use Exception;
+use Illuminate\Database\QueryException;
 use App\Models\Role;
 use App\Models\Level;
 use App\Models\MstExpense;
@@ -428,7 +429,7 @@ class ExpenseTypeCrudController extends CrudController
 
             $item = $this->crud->update(
                 $request->get($this->crud->model->getKeyName()),
-                $this->crud->getStrippedSaveRequest()
+                $this->crud->getStrippedSaveRequest($request)
             );
             $this->data['entry'] = $this->crud->entry = $item;
 
@@ -464,6 +465,11 @@ class ExpenseTypeCrudController extends CrudController
             return $result;
         } catch (Exception $e) {
             DB::rollBack();
+            if($e instanceof QueryException){
+                if(isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451){
+                    return response()->json(['message' => trans('custom.model_has_relation')], 403);
+                }
+            }
             throw $e;
         }
     }

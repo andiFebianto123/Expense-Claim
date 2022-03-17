@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Exception;
 use App\Models\Role;
 use App\Http\Requests\LevelRequest;
+use Illuminate\Database\QueryException;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -83,5 +85,26 @@ class LevelCrudController extends CrudController
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
+    }
+    public function destroy($id)
+    {
+        $this->crud->hasAccessOrFail('delete');
+
+        DB::beginTransaction();
+        try {
+            $id = $this->crud->getCurrentEntryId() ?? $id;
+
+            $response = $this->crud->delete($id);
+            DB::commit();
+            return $response;
+        } catch (Exception $e) {
+            DB::rollBack();
+            if($e instanceof QueryException){
+                if(isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451){
+                    return response()->json(['message' => trans('custom.model_has_relation')], 403);
+                }
+            }
+            throw $e;
+        }
     }
 }

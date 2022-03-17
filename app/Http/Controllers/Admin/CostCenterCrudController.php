@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use Exception;
+use Illuminate\Database\QueryException;
 use App\Models\Role;
 use App\Models\CostCenter;
 use App\Traits\RedirectCrud;
@@ -112,7 +113,7 @@ class CostCenterCrudController extends CrudController
                 return $this->redirectStoreCrud($errors);
             }
 
-            $item = $this->crud->create($this->crud->getStrippedSaveRequest());
+            $item = $this->crud->create($this->crud->getStrippedSaveRequest($request));
             $this->data['entry'] = $this->crud->entry = $item;
 
             \Alert::success(trans('backpack::crud.insert_success'))->flash();
@@ -168,7 +169,7 @@ class CostCenterCrudController extends CrudController
 
             $item = $this->crud->update(
                 $request->get($this->crud->model->getKeyName()),
-                $this->crud->getStrippedSaveRequest()
+                $this->crud->getStrippedSaveRequest($request)
             );
             $this->data['entry'] = $this->crud->entry = $item;
 
@@ -192,10 +193,16 @@ class CostCenterCrudController extends CrudController
         try {
             $id = $this->crud->getCurrentEntryId() ?? $id;
 
+            $response = $this->crud->delete($id);
             DB::commit();
-            return $this->crud->delete($id);
+            return $response;
         } catch (Exception $e) {
             DB::rollBack();
+            if($e instanceof QueryException){
+                if(isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451){
+                    return response()->json(['message' => trans('custom.model_has_relation')], 403);
+                }
+            }
             throw $e;
         }
     }

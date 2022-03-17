@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Exception;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\GoaHolder;
 use App\Traits\RedirectCrud;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 use App\Http\Requests\GoaHolderRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
@@ -152,7 +154,7 @@ class GoaHolderCrudController extends CrudController
                 return $this->redirectStoreCrud($errors);
             }
             // insert item in the db
-            $item = $this->crud->create($this->crud->getStrippedSaveRequest());
+            $item = $this->crud->create($this->crud->getStrippedSaveRequest($request));
             $this->data['entry'] = $this->crud->entry = $item;
 
             // show a success message
@@ -207,7 +209,7 @@ class GoaHolderCrudController extends CrudController
                 })->first();
                 if($user != null){
                     if($request->user_id == $user->id){
-                        $errors['head_department_id'] = trans('validation.data_join_same', ['name' => trans('validation.attributes.head_of_department')]);
+                        $errors['head_department_id'] = trans('validation.in', ['attribute' => trans('validation.attributes.head_of_department')]);
                     }
                 }else{
                     // jika datanya kosong
@@ -221,7 +223,7 @@ class GoaHolderCrudController extends CrudController
 
             // update the row in the db
             $item = $this->crud->update($request->get($this->crud->model->getKeyName()),
-                                $this->crud->getStrippedSaveRequest());
+                                $this->crud->getStrippedSaveRequest($request));
             $this->data['entry'] = $this->crud->entry = $item;
 
             // show a success message
@@ -233,6 +235,27 @@ class GoaHolderCrudController extends CrudController
             return $this->crud->performSaveAction($item->getKey());
         }catch(Exception $e){
             DB::rollback();
+            throw $e;
+        }
+    }
+    public function destroy($id)
+    {
+        $this->crud->hasAccessOrFail('delete');
+
+        DB::beginTransaction();
+        try {
+            $id = $this->crud->getCurrentEntryId() ?? $id;
+
+            $response = $this->crud->delete($id);
+            DB::commit();
+            return $response;
+        } catch (Exception $e) {
+            DB::rollBack();
+            if($e instanceof QueryException){
+                if(isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451){
+                    return response()->json(['message' => trans('custom.model_has_relation')], 403);
+                }
+            }
             throw $e;
         }
     }

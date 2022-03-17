@@ -6,6 +6,7 @@ use Exception;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Level;
+use App\Library\GetLog;
 use App\Models\GoaHolder;
 use App\Models\Department;
 use App\Models\CostCenter;
@@ -430,7 +431,12 @@ class UserCrudController extends CrudController
     }
 
     public function printReportExpense(){
-        $print = new ReportClaim;
-        return $print->renderPdf();
+        $n = new GetLog('log_import_user_20220316_112321.txt', 'W');
+        $n->getString(1, 'Success');
+        $n->getString(2, 'Failed');
+        $n->getString(3, 'Failed');
+        $n->close();
+        // $print = new ReportClaim;
+        // return $print->renderPdf();
     }
 }

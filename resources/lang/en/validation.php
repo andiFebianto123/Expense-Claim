@@ -163,7 +163,8 @@ return [
         'expense_name' => 'expense name',
         'expense_type' => 'expense type',
         'cost' => 'Cost',
-        'limit' => 'Limit'
+        'limit' => 'Limit',
+        'date' => 'Date'
     ],
 
     // CUSTOM
@@ -172,4 +173,5 @@ return [
     'not_changed_data' => ':name does not need to be changed',
     'limit' => ":attr1 exceeding :attr2 of :value",
     'not_active' => "Your account is not active",
+    'limit_bp' => ":attr1 exceeding :attr2 of :value, need to check Business Approval",
 ];

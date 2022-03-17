@@ -27,7 +27,7 @@
         $crud->markFieldTypeAsLoaded($field);
     @endphp
      @push('crud_fields_scripts')
-     <script src="{{ asset('packages/cleave/cleave.min.js') }}"></script>
+     <script src="{{ asset('js/app.js') }}"></script>
      <script>
          var cleaveOpts = {
              numeral: true,

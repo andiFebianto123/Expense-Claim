@@ -22,6 +22,7 @@ class CreateMstExpenseTypesTable extends Migration
             $table->boolean('is_traf');
             $table->boolean('is_bod');
             $table->boolean('is_bp_approval');
+            $table->boolean('is_limit_person');
             $table->string('currency');
             $table->string('bod_level', 255)->nullable();
             $table->unsignedBigInteger('limit_business_proposal')->nullable();

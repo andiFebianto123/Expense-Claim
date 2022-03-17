@@ -22,7 +22,7 @@ class ExpenseCrudController extends CrudController
     public function setup()
     {
         $roleName = backpack_user()->role->name;
-        if(!in_array($roleName, [Role::ADMIN, Role::USER, Role::GOA_HOLDER, Role::HOD, Role::SECRETARY])){
+        if(!in_array($roleName, [Role::ADMIN])){
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
         }
         CRUD::setModel(\App\Models\MstExpense::class);

@@ -11,5 +11,7 @@ class Config extends Model
     protected $table = 'mst_configs';
     protected $fillable = ['key', 'type', 'value'];
 
+    public const USD = 'USD';
+    public const IDR = 'IDR';
     public const USD_TO_IDR = 'USD to IDR';
 }

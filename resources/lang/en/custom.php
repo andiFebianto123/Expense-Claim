@@ -52,5 +52,6 @@ return [
     'reject_confirmation_not_title' => 'NOT rejected',
     'reject_confirmation_not_message' => "There's been an error. Your item might not have been rejected.",
     'expense_claim_reject_success' => 'Successfully reject the expense claim.',
+    'model_has_relation' => 'The selected data has already had relation with other data',
 
 ];

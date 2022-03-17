@@ -32,12 +32,18 @@ class LoginController extends BackpackLoginController{
 
             return $this->sendLockoutResponse($request);
         }
-
         
         $checkUserMail = User::where($this->username(), $request->{$this->username()})
         ->orWhere('user_id', $request->{$this->username()})
         ->first();
+        
         if($checkUserMail == null){
+            $this->incrementLoginAttempts($request);
+            throw ValidationException::withMessages([
+                $this->username() => [trans('auth.failed')],
+            ]);
+        }else if(!Hash::check($request->password, $checkUserMail->password)){
+            // The old password matches the hash in the database
             $this->incrementLoginAttempts($request);
             throw ValidationException::withMessages([
                 $this->username() => [trans('auth.failed')],
@@ -45,24 +51,14 @@ class LoginController extends BackpackLoginController{
         }else if($checkUserMail->is_active != 1){
             $this->incrementLoginAttempts($request);
             throw ValidationException::withMessages([
-                $this->username() => [trans('auth.failed')],
+                $this->username() => [trans('validation.not_active')],
             ]);
         }else{
-            // jika user telah ketemu
-            if (!Hash::check($request->password, $checkUserMail->password)) {
-                // The old password matches the hash in the database
-                $this->incrementLoginAttempts($request);
-                throw ValidationException::withMessages([
-                    $this->username() => [trans('auth.failed')],
-                ]);
-            }else{
-                $request->request->remove('email'); // to remove property from $request
-                $request->request->add(['email' => $checkUserMail->email]); // to add new property to $request
-            }
+            // jika user telah ketemu                
+            $request->request->remove('email'); // to remove property from $request
+            $request->request->add(['email' => $checkUserMail->email]); // to add new property to $request
         }
 
-       
-        
         DB::beginTransaction();
         try{
             if ($this->attemptLogin($request)) {

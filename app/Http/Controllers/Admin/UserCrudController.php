@@ -9,6 +9,7 @@ use App\Models\Level;
 use App\Models\GoaHolder;
 use App\Models\Department;
 use App\Models\CostCenter;
+use App\Library\ReportClaim;
 use App\Traits\RedirectCrud;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\UserRequest;
@@ -184,14 +185,15 @@ class UserCrudController extends CrudController
             'type'  => 'password'
         ]);
 
-        CRUD::field('level_id')->allows_null(true);
-        CRUD::field('role_id')->allows_null(true);
+        CRUD::field('level_id')->allows_null(true)->type('relationship');
+        ;
+        CRUD::field('role_id')->allows_null(true)->type('relationship');
 
-        CRUD::field('cost_center_id')->label('Cost Center')->type('select')->type('select2_from_array')
+        CRUD::field('cost_center_id')->label('Cost Center')->type('select2_from_array')
         ->allows_null(true)
         ->options(CostCenter::select('id', 'description')->get()->pluck('description', 'id'));
 
-        CRUD::field('department_id');
+        CRUD::field('department_id')->type('relationship');
 
         CRUD::field('goa_holder_id')->label('Goa Holder')->type('select2_from_array')
         ->allows_null(true)
@@ -384,5 +386,9 @@ class UserCrudController extends CrudController
             throw $e;
         }
 
+    }
+    public function printReportExpense(){
+        $print = new ReportClaim;
+        return $print->renderPdf();
     }
 }

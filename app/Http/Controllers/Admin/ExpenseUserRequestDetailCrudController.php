@@ -295,7 +295,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             'label'     => 'Document',
             'type'      => 'upload',
             'upload'    => true,
-            'disk'      => 'uploads',
+            'disk'      => 'public',
         ]);
 
         CRUD::addField([
@@ -428,6 +428,13 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 return $this->redirectStoreCrud($errors);
             }
 
+            $currency = $expenseType->currency;
+            if ($currency == Config::USD) {
+                $usdToIdr = Config::where('key', Config::USD_TO_IDR)->first();
+                $cost = (float) $usdToIdr->value * $cost;
+                $currency = Config::IDR;
+            }
+
             $expenseClaimDetail = new ExpenseClaimDetail;
 
             $expenseClaimDetail->expense_claim_id = $this->crud->headerId;
@@ -447,7 +454,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->is_bp_approval = $expenseType->is_bp_approval;
             $expenseClaimDetail->is_limit_person = $isLimitPerson;
             $expenseClaimDetail->total_person = $request->total_person ?? null;
-            $expenseClaimDetail->currency = $expenseType->currency;
+            $expenseClaimDetail->currency = $currency;
             $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->remark = $request->remark;
             $expenseClaimDetail->document = $request->document;
@@ -608,7 +615,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 ];
             }
 
-            if ($expenseType->is_traf && $request->document == null) {
+            if ($expenseType->is_traf && $request->document == null && $expenseClaimDetail->document == null) {
                 $errors['document'] = [
                     trans(
                         'validation.required',
@@ -620,6 +627,13 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             if (count($errors) != 0) {
                 DB::rollback();
                 return $this->redirectUpdateCrud($id, $errors);
+            }
+
+            $currency = $expenseType->currency;
+            if ($currency == Config::USD) {
+                $usdToIdr = Config::where('key', Config::USD_TO_IDR)->first();
+                $cost = (float) $usdToIdr->value * $cost;
+                $currency = Config::IDR;
             }
 
             $expenseClaimDetail->expense_claim_id = $this->crud->headerId;
@@ -639,7 +653,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->is_bp_approval = $expenseType->is_bp_approval;
             $expenseClaimDetail->is_limit_person = $isLimitPerson;
             $expenseClaimDetail->total_person = $request->total_person ?? null;
-            $expenseClaimDetail->currency = $expenseType->currency;
+            $expenseClaimDetail->currency = $currency;
             $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->remark = $request->remark;
             $expenseClaimDetail->document = $request->document;

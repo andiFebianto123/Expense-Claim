@@ -170,5 +170,6 @@ return [
     'data_not_exists' => "No :name currently available",
     'data_join_same' => ":name can't join for yourself",
     'not_changed_data' => ':name does not need to be changed',
-    'limit' => ":attr1 exceeding :attr2 of :value"
+    'limit' => ":attr1 exceeding :attr2 of :value",
+    'not_active' => "Your account is not active",
 ];

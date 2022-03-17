@@ -295,7 +295,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             'label'     => 'Document',
             'type'      => 'upload',
             'upload'    => true,
-            'disk'      => 'uploads',
+            'disk'      => 'public',
         ]);
 
         CRUD::addField([

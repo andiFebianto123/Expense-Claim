@@ -178,6 +178,7 @@ class UserCrudController extends CrudController
         CRUD::field('name');
         CRUD::field('email');
         CRUD::field('bpid');
+        CRUD::field('bpcscode');
         CRUD::field('password');
         CRUD::addField([
             'name'  => 'password_confirmation',
@@ -219,6 +220,7 @@ class UserCrudController extends CrudController
 
     public function store(){
         $this->crud->hasAccessOrFail('create');
+        $this->crud->getRequest()->request->add(['last_imported_at'=> null]);
 
         DB::beginTransaction();
         try{
@@ -237,20 +239,27 @@ class UserCrudController extends CrudController
                 $request->request->remove('password');
             }
 
-            $level = Level::where('id', $request->level_id)->first();
-            if($level == null){
-                $errors['level_id'] = trans('validation.exists', ["attribute" => 'Level']);
+            if($request->level_id != null){
+                $level = Level::where('id', $request->level_id)->first();
+                if($level == null){
+                    $errors['level_id'] = trans('validation.exists', ["attribute" => 'Level']);
+                }
             }
 
-            $role = Role::where('id', $request->role_id)->first();
-            if($role == null){
-                $errors['role_id'] = trans('validation.exists', ["attribute" => 'Role']);
+            if($request->role_id != null){
+                $role = Role::where('id', $request->role_id)->first();
+                if($role == null){
+                    $errors['role_id'] = trans('validation.exists', ["attribute" => 'Role']);
+                }
             }
 
-            $cost_center = CostCenter::where('id', $request->cost_center_id)->first();
-            if($cost_center == null){
-                $errors['cost_center_id'] = trans('validation.exists', ['attribute' => 'Cost Center']);
+            if($request->cost_center_id != null){
+                $cost_center = CostCenter::where('id', $request->cost_center_id)->first();
+                if($cost_center == null){
+                    $errors['cost_center_id'] = trans('validation.exists', ['attribute' => 'Cost Center']);
+                }
             }
+            
             if($request->department_id != null){
                 $department = Department::where('id', $request->department_id)->first();
                 if($department == null){
@@ -270,9 +279,10 @@ class UserCrudController extends CrudController
                 return $this->redirectStoreCrud($errors);
             }
 
+
             // insert item in the db
             // $this->crud->getStrippedSaveRequest()
-            $item = $this->crud->create($request->toArray());
+            $item = $this->crud->create($this->crud->getStrippedSaveRequest($request));
             $this->data['entry'] = $this->crud->entry = $item;
             // show a success message
             \Alert::success(trans('backpack::crud.insert_success'))->flash();
@@ -303,6 +313,7 @@ class UserCrudController extends CrudController
     public function update()
     {
         $this->crud->hasAccessOrFail('update');
+        $this->crud->getRequest()->request->add(['last_imported_at'=> null]);
 
         DB::beginTransaction();
         try{
@@ -332,19 +343,25 @@ class UserCrudController extends CrudController
                 }
             }
 
-            $level = Level::where('id', $request->level_id)->first();
-            if($level == null){
-                $errors['level_id'] = trans('validation.exists', ["attribute" => 'Level']);
+            if($request->level_id != null){
+                $level = Level::where('id', $request->level_id)->first();
+                if($level == null){
+                    $errors['level_id'] = trans('validation.exists', ["attribute" => 'Level']);
+                }
             }
 
-            $role = Role::where('id', $request->role_id)->first();
-            if($role == null){
-                $errors['role_id'] = trans('validation.exists', ["attribute" => 'Role']);
+            if($request->role_id != null){
+                $role = Role::where('id', $request->role_id)->first();
+                if($role == null){
+                    $errors['role_id'] = trans('validation.exists', ["attribute" => 'Role']);
+                }
             }
 
-            $cost_center = CostCenter::where('id', $request->cost_center_id)->first();
-            if($cost_center == null){
-                $errors['cost_center_id'] = trans('validation.exists', ['attribute' => 'Cost Center']);
+            if($request->cost_center_id != null){
+                $cost_center = CostCenter::where('id', $request->cost_center_id)->first();
+                if($cost_center == null){
+                    $errors['cost_center_id'] = trans('validation.exists', ['attribute' => 'Cost Center']);
+                }
             }
             
             if($request->department_id != null){
@@ -359,8 +376,7 @@ class UserCrudController extends CrudController
                 if($goaholder == null){
                     $errors['goa_holder_id'] = trans('validation.exists', ['attribute' => 'Goa Holder']);
                 }
-            }
-            
+            }            
 
             if (count($errors) != 0) {
                 DB::rollback();
@@ -369,7 +385,8 @@ class UserCrudController extends CrudController
 
             // $this->crud->getStrippedSaveRequest()
             // update the row in the db
-            $item = $this->crud->update($request->get($this->crud->model->getKeyName()), $request->toArray());
+            $item = $this->crud->update($request->get($this->crud->model->getKeyName()), 
+            $this->crud->getStrippedSaveRequest($request));
             $this->data['entry'] = $this->crud->entry = $item;
 
             // show a success message
@@ -387,6 +404,31 @@ class UserCrudController extends CrudController
         }
 
     }
+    public function destroy($id)
+    {
+        if($id == backpack_user()->id){
+            $this->crud->denyAccess(['delete']);
+        }
+        $this->crud->hasAccessOrFail('delete');
+
+        DB::beginTransaction();
+        try {
+            $id = $this->crud->getCurrentEntryId() ?? $id;
+
+            $response = $this->crud->delete($id);
+            DB::commit();
+            return $response;
+        } catch (Exception $e) {
+            DB::rollBack();
+            if($e instanceof QueryException){
+                if(isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451){
+                    return response()->json(['message' => trans('custom.model_has_relation')], 403);
+                }
+            }
+            throw $e;
+        }
+    }
+
     public function printReportExpense(){
         $print = new ReportClaim;
         return $print->renderPdf();

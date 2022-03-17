@@ -185,7 +185,6 @@ class ExpenseUserRequestCrudController extends CrudController
             return response()->json(['redirect_url' => backpack_url('expense-user-request/' . $expenseClaim->id .  '/detail')]);
         } catch (Exception $e) {
             DB::rollback();
-            error_log($e->getMessage());
             throw $e;
         }
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use Exception;
 use App\Models\Role;
 use App\Traits\RedirectCrud;
+use Illuminate\Support\Facades\DB;
 use App\Http\Requests\ExpenseRequest;
 use Illuminate\Database\QueryException;
 use Backpack\CRUD\app\Http\Controllers\CrudController;

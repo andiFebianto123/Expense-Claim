@@ -6,15 +6,16 @@ use Exception;
 use Carbon\Carbon;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Config;
 use App\Models\ExpenseType;
 use App\Models\ApprovalCard;
 use App\Models\ExpenseClaim;
+use App\Traits\RedirectCrud;
 use App\Models\ExpenseClaimDetail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseUserRequestDetailRequest;
-use App\Traits\RedirectCrud;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -52,6 +53,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         CRUD::setEntityNameStrings('Expense User Request - Detail', 'Expense User Request - Detail');
 
         $this->crud->setCreateView('expense_claim.request.create');
+        $this->crud->setUpdateView('expense_claim.request.edit');
     }
 
     public function getExpenseClaim($id)
@@ -246,6 +248,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'mst_expense_types.id as expense_type_id',
                 'mst_expense_types.currency as currency',
                 'mst_expense_types.limit as limit',
+                'mst_expense_types.is_bp_approval as bp_approval',
+                'mst_expense_types.is_limit_person as limit_person',
+                'mst_levels.level_id as level',
                 'mst_expenses.name as expense_name',
             )
             ->get();
@@ -260,7 +265,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         CRUD::addField([
             'name' => 'expense_type_id',
             'label' => 'Expense Type',
-            'type'        => 'select_from_array',
+            'type'        => 'select2_from_array',
             'options'     => $this->getUserExpenseTypes()->pluck('expense_name', 'expense_type_id'),
             'allows_null' => false,
             'attributes' => [
@@ -273,7 +278,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             'type' => 'date_picker',
             'label' => 'Date',
             'date_picker_options' => [
-                'startDate' => Carbon::now()->subMonth()->format('d-m-Y'),
+                'startDate' => Carbon::now()->subMonth()->startOfMonth()->format('d-m-Y'),
                 'endDate' => Carbon::now()->format('d-m-Y'),
             ]
         ]);
@@ -284,45 +289,6 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             'label' => 'Cost',
         ]);
 
-        CRUD::addField([
-            'label'     => 'Limit Person',
-            'type'      => 'checkbox',
-            'name'      => 'is_limit_person',
-            'attributes' => [
-                'id' => 'limitPersonId'
-            ]
-        ]);
-
-        CRUD::addField([
-            'label'     => 'Total Person',
-            'type'      => 'number',
-            'name'      => 'total_person',
-            'attributes' => [
-                'id' => 'totalPersonId'
-            ]
-        ]);
-
-        CRUD::addField([
-            'name' => 'currency',
-            'type' => 'text',
-            'label' => 'Currency',
-            'attributes' => [
-                'id' => 'currencyId',
-                'readonly'  => 'readonly',
-                'disabled'  => 'disabled',
-            ]
-        ]);
-
-        CRUD::addField([
-            'name' => 'limit',
-            'type' => 'text',
-            'label' => 'Limit',
-            'attributes' => [
-                'id' => 'limitId',
-                'readonly'  => 'readonly',
-                'disabled'  => 'disabled',
-            ]
-        ]);
 
         CRUD::addField([
             'name'      => 'document',
@@ -347,6 +313,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->data['saveAction'] = $this->crud->getSaveAction();
         $this->data['title'] = $this->crud->getTitle() ?? trans('backpack::crud.add') . ' ' . $this->crud->entity_name;
         $this->data['expenseTypes'] = $this->getUserExpenseTypes();
+        $this->data['configs']['usd_to_idr'] = Config::where('key', CONFIG::USD_TO_IDR)->first();
 
         return view($this->crud->getCreateView(), $this->data);
     }
@@ -359,6 +326,15 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
         DB::beginTransaction();
         try {
+            $cost = $request->cost;
+
+            $isLimitPerson = (bool) $request->is_limit_person ?? false;
+            $isBpApproval = (bool) $request->is_bp_approval ?? false;
+
+            if ($isLimitPerson) {
+                $cost = $request->total_person * $cost;
+            }
+
             $expenseType = ExpenseType::join('mst_expenses', 'mst_expense_types.expense_id', '=', 'mst_expenses.id')
                 ->join('mst_expense_codes', 'mst_expense_types.expense_code_id', '=', 'mst_expense_codes.id')
                 ->where('mst_expense_types.id', $request->expense_type_id)
@@ -370,6 +346,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     'mst_expense_types.is_bp_approval as is_bp_approval',
                     'mst_expense_types.limit as limit',
                     'mst_expense_types.currency as currency',
+                    'mst_expense_types.limit_business_proposal as limit_business_proposal',
                     'mst_expense_codes.id as expense_code_id',
                     'mst_expense_codes.account_number as account_number',
                     'mst_expense_codes.description as description'
@@ -386,8 +363,6 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 )
                 ->first();
 
-            error_log($request->is_limit_person);
-
             $errors = [];
 
             if ($expenseType == null) {
@@ -398,7 +373,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $errors[] = [trans('validation.in', ['attribute' => trans('validation.attributes.user_id')])];
             }
 
-            if ($request->cost > $expenseType->limit) {
+            if ($cost > $expenseType->limit) {
                 $errors['cost'] = [
                     trans(
                         'validation.limit',
@@ -407,6 +382,43 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                             'attr2' => trans('validation.attributes.limit'),
                             'value' => $expenseType->currency . ' ' .  number_format($expenseType->limit, 0, ','),
                         ]
+                    )
+                ];
+            }
+
+            $startDate = Carbon::now()->subMonth()->startOfMonth()->startOfDay();
+            $endDate = Carbon::now()->startOfDay();
+            $requestDate = Carbon::parse($request->date);
+
+            if ($requestDate < $startDate || $requestDate > $endDate) {
+                $errors['date'] = [trans(
+                    'validation.between.numeric',
+                    [
+                        'attribute' => trans('validation.attributes.date'),
+                        'min' => $startDate->toDateString(),
+                        'max' => $endDate->toDateString()
+                    ]
+                )];
+            }
+
+            if ($expenseType->is_bp_approval && $cost > $expenseType->limit_business_proposal && !$isBpApproval) {
+                $errors['cost'] = [
+                    trans(
+                        'validation.limit_bp',
+                        [
+                            'attr1' => trans('validation.attributes.cost'),
+                            'attr2' => trans('validation.attributes.limit'),
+                            'value' => number_format($expenseType->limit_business_proposal, 0, ','),
+                        ]
+                    )
+                ];
+            }
+
+            if ($expenseType->is_traf && $request->document == null) {
+                $errors['document'] = [
+                    trans(
+                        'validation.required',
+                        ['attribute' => trans('validation.attributes.document'),]
                     )
                 ];
             }
@@ -433,9 +445,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->is_traf = $expenseType->is_traf;
             $expenseClaimDetail->is_bod = $expenseType->is_bod;
             $expenseClaimDetail->is_bp_approval = $expenseType->is_bp_approval;
-            $expenseClaimDetail->is_limit_person = $request->is_limit_person;
+            $expenseClaimDetail->is_limit_person = $isLimitPerson;
+            $expenseClaimDetail->total_person = $request->total_person ?? null;
             $expenseClaimDetail->currency = $expenseType->currency;
-            $expenseClaimDetail->cost = $request->cost;
+            $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->remark = $request->remark;
             $expenseClaimDetail->document = $request->document;
 
@@ -485,6 +498,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->data['crud'] = $this->crud;
         $this->data['saveAction'] = $this->crud->getSaveAction();
         $this->data['title'] = $this->crud->getTitle() ?? trans('backpack::crud.edit') . ' ' . $this->crud->entity_name;
+        $this->data['expenseTypes'] = $this->getUserExpenseTypes();
+        $this->data['configs']['usd_to_idr'] = Config::where('key', CONFIG::USD_TO_IDR)->first();
 
         $this->data['id'] = $id;
 
@@ -500,106 +515,145 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $request = $this->crud->validateRequest();
         DB::beginTransaction();
         try {
-            $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
-            $checkStatus = $this->checkStatusForDetail($expenseClaim, 'edit');
-            if ($checkStatus !== true) {
-                DB::rollback();
-                abort(403, $checkStatus);
+            $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)->first();
+            $cost = $request->cost;
+
+            $isLimitPerson = (bool) $request->is_limit_person ?? false;
+            $isBpApproval = (bool) $request->is_bp_approval ?? false;
+
+            if ($isLimitPerson) {
+                $cost = $request->total_person * $cost;
             }
 
-            $expenseClaimDetail = ExpenseClaimDetail::find($id);
-            if ($expenseClaimDetail == null) {
-                DB::rollback();
-                abort(404, trans('custom.model_not_found'));
-            }
+            $expenseType = ExpenseType::join('mst_expenses', 'mst_expense_types.expense_id', '=', 'mst_expenses.id')
+                ->join('mst_expense_codes', 'mst_expense_types.expense_code_id', '=', 'mst_expense_codes.id')
+                ->where('mst_expense_types.id', $request->expense_type_id)
+                ->select(
+                    'mst_expenses.name as expense_name',
+                    'mst_expense_types.id as expense_type_id',
+                    'mst_expense_types.is_traf as is_traf',
+                    'mst_expense_types.is_bod as is_bod',
+                    'mst_expense_types.is_bp_approval as is_bp_approval',
+                    'mst_expense_types.limit as limit',
+                    'mst_expense_types.currency as currency',
+                    'mst_expense_types.limit_business_proposal as limit_business_proposal',
+                    'mst_expense_codes.id as expense_code_id',
+                    'mst_expense_codes.account_number as account_number',
+                    'mst_expense_codes.description as description'
+                )
+                ->first();
+
+            $user = User::join('mst_levels', 'mst_users.level_id', '=', 'mst_levels.id')
+                ->where('mst_users.id', $this->crud->user->id)
+                ->select(
+                    'mst_levels.level_id as level_code',
+                    'mst_levels.name as level_name',
+                    'mst_levels.id as level_id',
+                    'mst_users.cost_center_id as cost_center_id'
+                )
+                ->first();
 
             $errors = [];
 
-            $totalCount = ExpenseClaimDetail::count();
-
-            if ($totalCount > 1 && $request->currency != $expenseClaim->currency) {
-                $errors['currency'] = [trans('custom.expense_claim_detail_same_current', ['currency' => $expenseClaim->currency])];
+            if ($expenseClaimDetail == null) {
+                $errors[] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_claim')])];
             }
 
-            $approvalCard = ApprovalCard::where('id', $request->approval_card_id)
-                ->where('level_id', $this->crud->user->role_id)->first();
-            if ($approvalCard == null) {
-                $errors['approval_card_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.approval_card_id')])];
+            if ($expenseType == null) {
+                $errors['expense_type_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_type')])];
+            }
+
+            if ($user == null) {
+                $errors[] = [trans('validation.in', ['attribute' => trans('validation.attributes.user_id')])];
+            }
+
+            if ($cost > $expenseType->limit) {
+                $errors['cost'] = [
+                    trans(
+                        'validation.limit',
+                        [
+                            'attr1' => trans('validation.attributes.cost'),
+                            'attr2' => trans('validation.attributes.limit'),
+                            'value' => $expenseType->currency . ' ' .  number_format($expenseType->limit, 0, ','),
+                        ]
+                    )
+                ];
+            }
+
+            $startDate = Carbon::now()->subMonth()->startOfMonth()->startOfDay();
+            $endDate = Carbon::now()->startOfDay();
+            $requestDate = Carbon::parse($request->date);
+
+            if ($requestDate < $startDate || $requestDate > $endDate) {
+                $errors['date'] = [trans(
+                    'validation.between.numeric',
+                    [
+                        'attribute' => trans('validation.attributes.date'),
+                        'min' => $startDate->toDateString(),
+                        'max' => $endDate->toDateString()
+                    ]
+                )];
+            }
+
+            if ($expenseType->is_bp_approval && $cost > $expenseType->limit_business_proposal && !$isBpApproval) {
+                $errors['cost'] = [
+                    trans(
+                        'validation.limit_bp',
+                        [
+                            'attr1' => trans('validation.attributes.cost'),
+                            'attr2' => trans('validation.attributes.limit'),
+                            'value' => number_format($expenseType->limit_business_proposal, 0, ','),
+                        ]
+                    )
+                ];
+            }
+
+            if ($expenseType->is_traf && $request->document == null) {
+                $errors['document'] = [
+                    trans(
+                        'validation.required',
+                        ['attribute' => trans('validation.attributes.document'),]
+                    )
+                ];
             }
 
             if (count($errors) != 0) {
                 DB::rollback();
-                return redirect($this->crud->route . '/' . $id . '/edit')->withInput()
-                    ->withErrors($errors);
+                return $this->redirectUpdateCrud($id, $errors);
             }
-            $data = $this->crud->getStrippedSaveRequest();
-            $data['level_id'] = $approvalCard->level_id;
-            $data['level_type'] = $approvalCard->level_type;
 
-            if ($totalCount == 1) {
-                $diffCost = $request->cost;
-            } else {
-                $diffCost = $request->cost - $expenseClaimDetail->cost;
-            }
-            // update the row in the db
-            $item = $this->crud->update(
-                $request->get($this->crud->model->getKeyName()),
-                $data
-            );
-            $this->data['entry'] = $this->crud->entry = $item;
+            $expenseClaimDetail->expense_claim_id = $this->crud->headerId;
+            $expenseClaimDetail->date = $request->date;
+            $expenseClaimDetail->cost_center_id = $user->cost_center_id;
+            $expenseClaimDetail->expense_type_id = $expenseType->expense_type_id;
+            $expenseClaimDetail->expense_name = $expenseType->expense_name;
+            $expenseClaimDetail->level_id = $user->level_id;
+            $expenseClaimDetail->detail_level_id = $user->level_code;
+            $expenseClaimDetail->level_name = $user->level_name;
+            $expenseClaimDetail->limit = $expenseType->limit;
+            $expenseClaimDetail->expense_code_id = $expenseType->expense_code_id;
+            $expenseClaimDetail->account_number = $expenseType->account_number;
+            $expenseClaimDetail->description = $expenseType->description;
+            $expenseClaimDetail->is_traf = $expenseType->is_traf;
+            $expenseClaimDetail->is_bod = $expenseType->is_bod;
+            $expenseClaimDetail->is_bp_approval = $expenseType->is_bp_approval;
+            $expenseClaimDetail->is_limit_person = $isLimitPerson;
+            $expenseClaimDetail->total_person = $request->total_person ?? null;
+            $expenseClaimDetail->currency = $expenseType->currency;
+            $expenseClaimDetail->cost = $cost;
+            $expenseClaimDetail->remark = $request->remark;
+            $expenseClaimDetail->document = $request->document;
 
-            if ($totalCount == 1) {
-                $expenseClaim->value = $diffCost;
-            } else {
-                $expenseClaim->value += $diffCost;
-            }
-            $expenseClaim->currency = $request->currency;
-            $expenseClaim->save();
+            $expenseClaimDetail->save();
 
-            DB::commit();
-
-            // show a success message
             \Alert::success(trans('backpack::crud.update_success'))->flash();
 
-            // save the redirect choice for next time
             $this->crud->setSaveAction();
 
-            return $this->crud->performSaveAction($item->getKey());
-        } catch (Exception $e) {
-            DB::rollback();
-            throw $e;
-        }
-    }
-
-    public function destroy($headerId, $id)
-    {
-        $this->crud->hasAccessOrFail('delete');
-
-        // get entry ID from Request (makes sure its the last ID for nested resources)
-        $id = $this->crud->getCurrentEntryId() ?? $id;
-
-        DB::beginTransaction();
-        try {
-            $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
-            $checkStatus = $this->checkStatusForDetail($expenseClaim, 'delete');
-            if ($checkStatus !== true) {
-                DB::rollback();
-                return response()->json(['message' => $checkStatus], 403);
-            }
-            $expenseClaimDetail = ExpenseClaimDetail::find($id);
-            if ($expenseClaimDetail == null) {
-                DB::rollback();
-                return response()->json(['message' => trans('custom.model_not_found')], 404);
-            }
-            $expenseClaimDetail->delete();
-
-            $expenseClaim->value -= $expenseClaimDetail->cost;
-            $expenseClaim->save();
-
             DB::commit();
-            return 1;
+            return $this->crud->performSaveAction();
         } catch (Exception $e) {
-            DB::rollback();
+            DB::rollBack();
             throw $e;
         }
     }

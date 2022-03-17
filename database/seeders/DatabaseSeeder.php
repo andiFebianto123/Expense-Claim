@@ -5,13 +5,14 @@ namespace Database\Seeders;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Level;
+use App\Models\Config;
+use App\Models\GoaHolder;
 use App\Models\CostCenter;
 use App\Models\Department;
 use App\Models\MstExpense;
 use App\Models\ExpenseCode;
-use App\Models\ApprovalCard;
 use App\Models\ExpenseType;
-use App\Models\GoaHolder;
+use App\Models\ApprovalCard;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +26,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        $this->configSeeder();
+
         $this->roleSeeder();
 
         $this->levelSeeder();
@@ -244,6 +247,7 @@ class DatabaseSeeder extends Seeder
                 $expense->save();
 
                 $limit = str_replace(',', '', $item['Limit']);
+                $isBpApproval =  trim($item['BusinessPurposesApproval']) == 'Yes' ? true : false;
                 $expenseType = new ExpenseType;
                 $expenseType->expense_id = $expense->id;
                 $expenseType->level_id = $level->id;
@@ -251,9 +255,10 @@ class DatabaseSeeder extends Seeder
                 $expenseType->expense_code_id = $expenseCode->id;
                 $expenseType->is_traf = trim($item['TRAFApproval']) == 'Yes' ? true : false;
                 $expenseType->is_bod = trim($item['BoDApproval']) == 'Yes' ? true : false;
-                $expenseType->is_bp_approval = trim($item['BusinessPurposesApproval']) == 'Yes' ? true : false;
+                $expenseType->is_bp_approval = $isBpApproval;
+                $expenseType->is_limit_person = trim($item['Remark']) == 'Limit per person' ? true : false;
                 $expenseType->currency = trim($item['Currency']);
-                $expenseType->limit_business_proposal = null;
+                $expenseType->limit_business_proposal = $isBpApproval ? 720000 : null;
                 $expenseType->remark = trim($item['Remark']);
 
                 $expenseType->save();
@@ -291,6 +296,17 @@ class DatabaseSeeder extends Seeder
                 $goaHolder->save();
             }
         }
+    }
+
+    public function configSeeder()
+    {
+        Config::updateOrCreate([
+            'key' => 'USD to IDR',
+        ], [
+            'key' => 'USD to IDR',
+            'value' => '14276.50',
+            'type' => 'float',
+        ]);
     }
 
 

@@ -33,6 +33,7 @@ class User extends Authenticatable
         'name',
         'email',
         'bpid',
+        'bpcscode',
         'level_id',
         'password',
         'role_id',
@@ -41,6 +42,7 @@ class User extends Authenticatable
         'goa_holder_id',
         'remark',
         'is_active',
+        'last_imported_at',
     ];
 
     /**

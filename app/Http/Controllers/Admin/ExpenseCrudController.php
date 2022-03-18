@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use Exception;
 use App\Models\Role;
 use App\Traits\RedirectCrud;
+use Illuminate\Support\Facades\DB;
 use App\Http\Requests\ExpenseRequest;
 use Illuminate\Database\QueryException;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -22,7 +23,7 @@ class ExpenseCrudController extends CrudController
     public function setup()
     {
         $roleName = backpack_user()->role->name;
-        if(!in_array($roleName, [Role::ADMIN, Role::USER, Role::GOA_HOLDER, Role::HOD, Role::SECRETARY])){
+        if(!in_array($roleName, [Role::ADMIN])){
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
         }
         CRUD::setModel(\App\Models\MstExpense::class);

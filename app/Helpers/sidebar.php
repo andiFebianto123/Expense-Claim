@@ -85,7 +85,7 @@ class Sidebar
         [
             'key' => 'expense',
             'label' => 'Expenses',
-            'access' => [Role::ADMIN, Role::USER, Role::GOA_HOLDER, Role::HOD, Role::SECRETARY],
+            'access' => [Role::ADMIN],
             'icon' => 'la la-file-invoice-dollar',
             'url' => backpack_url('expense'),
             'childrens' => [],
@@ -93,7 +93,7 @@ class Sidebar
         [
             'key' => 'expense_type',
             'label' => 'Expense Types',
-            'access' => [Role::ADMIN, Role::USER, Role::GOA_HOLDER, Role::HOD, Role::SECRETARY],
+            'access' => [Role::ADMIN],
             'icon' => 'la-file-alt',
             'url' => backpack_url('expense-type'),
             'childrens' => [],

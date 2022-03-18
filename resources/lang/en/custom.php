@@ -54,4 +54,11 @@ return [
     'expense_claim_reject_success' => 'Successfully reject the expense claim.',
     'model_has_relation' => 'The selected data has already had relation with other data',
 
+    // Message for log input user cron job
+    'messages' => [
+        'log' => "Line :line, data is :message\n",
+        'success' => "SUCCESS to input or update",
+        'failed' => "FAILED to input or update",
+    ],
+
 ];

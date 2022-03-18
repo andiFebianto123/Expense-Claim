@@ -56,9 +56,9 @@ return [
 
     // Message for log input user cron job
     'messages' => [
-        'log' => "Line :line, data is :message\n",
-        'success' => "SUCCESS to input or update",
-        'failed' => "FAILED to input or update",
+        'log' => "[:time] Line :line, Message: :message\n",
+        'success' => "SUCCESS to input or update data",
+        'failed' => "FAILED to input or update data",
     ],
 
 ];

@@ -84,7 +84,7 @@ class ExpenseClaim extends Model
             self::REJECTED_TWO => 'bg-dark',
             self::CANCELED => 'bg-danger'
         ];
-        return $colors[$status] ?? '';
+        return $colors[$status] ?? 'bg-info';
     }
 
     public function detailRequestButton($crud)

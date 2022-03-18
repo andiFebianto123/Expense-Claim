@@ -39,7 +39,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
 
-        if($this->crud->role !== Role::SUPER_ADMIN && $this->crud->role !== Role::NATIONAL_SALES){
+        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::HOD])) {
             $this->crud->denyAccess(['list', 'update']);
         }
 
@@ -56,26 +56,26 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         
         $expenseClaim = ExpenseClaim::where('id', $id)
         ->where(function($query){
-            $query->where('expense_claims.status', ExpenseClaim::NEED_APPROVAL_ONE)
+            $query->where('trans_expense_claims.status', ExpenseClaim::NEED_APPROVAL_ONE)
             ->orWhere(function($innerQuery){
-                $innerQuery->where('expense_claims.status', '!=', ExpenseClaim::NONE)
-                ->where('expense_claims.status', '!=', ExpenseClaim::NEED_APPROVAL_ONE)
+                $innerQuery->where('trans_expense_claims.status', '!=', ExpenseClaim::NONE)
+                ->where('trans_expense_claims.status', '!=', ExpenseClaim::NEED_APPROVAL_ONE)
                 ->where(function($innerQuery){
-                    $innerQuery->whereNotNull('approval_id')
-                    ->orWhere('expense_claims.status', ExpenseClaim::REJECTED_ONE)
+                    $innerQuery->whereNotNull('hod_id')
+                    ->orWhere('trans_expense_claims.status', ExpenseClaim::REJECTED_ONE)
                     ->orWhere(function($deepestQuery){
                         $deepestQuery
-                        ->where('expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
-                        ->whereNull('approval_id');
+                        ->where('trans_expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
+                        ->whereNull('hod_id');
                     });
                 });
             });
         });
-        if($this->crud->role === Role::NATIONAL_SALES){
-            $expenseClaim->where('expense_claims.approval_temp_id', $this->crud->user->id);
+        if($this->crud->role === Role::HOD){
+            $expenseClaim->where('trans_expense_claims.hod_id', $this->crud->user->id);
         }
         else{
-            $expenseClaim->whereNotNull('expense_claims.approval_temp_id');
+            $expenseClaim->whereNotNull('trans_expense_claims.hod_id');
         }
 
         $expenseClaim =  $expenseClaim->first();
@@ -98,7 +98,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         $this->crud->viewBeforeContent = ['expense_claim.hod.header'];
 
         $this->crud->updateCondition = function($entry){
-            return $this->crud->expenseClaim->status == ExpenseClaim::NEED_APPROVAL_ONE && $this->crud->expenseClaim->approval_temp_id == $this->crud->user->id;
+            return $this->crud->expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL && $this->crud->expenseClaim->hod_id == $this->crud->user->id;
         };
 
         CRUD::addColumns([
@@ -431,10 +431,10 @@ class ExpenseApproverHodDetailCrudController extends CrudController
     }
 
     private function checkStatusForApprover($expenseClaim, $action){
-        if($expenseClaim->approval_temp_id != $this->crud->user->id){
+        if($expenseClaim->hod_id != $this->crud->user->id){
             return trans('custom.error_permission_message');
         }
-        if($expenseClaim->status !== ExpenseClaim::NEED_APPROVAL_ONE) {
+        if($expenseClaim->status !== ExpenseClaim::REQUEST_FOR_APPROVAL) {
             return trans('custom.expense_claim_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.' . $action)]);
         }
         return true;
@@ -453,9 +453,9 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             }
 
             $now = Carbon::now();
-            $expenseClaim->approval_id = $this->crud->user->id;
-            $expenseClaim->approval_date = $now;
-            $expenseClaim->status = ExpenseClaim::NEED_APPROVAL_TWO;
+            $expenseClaim->hod_id = $this->crud->user->id;
+            $expenseClaim->hod_date = $now;
+            $expenseClaim->status = ExpenseClaim::APPROVED_BY_HOD;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();
 

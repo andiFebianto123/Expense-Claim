@@ -6,7 +6,8 @@
             </div>
             @php
                 $classExpenseClaim = 'App\Models\ExpenseClaim';
-                $hasAction = $crud->expenseClaim->status == $classExpenseClaim::NEED_APPROVAL_ONE && $crud->expenseClaim->approval_temp_id == $crud->user->id;
+                $hasAction = $crud->expenseClaim->status == $classExpenseClaim::REQUEST_FOR_APPROVAL && ($crud->expenseClaim->hod_id == $crud->user->id || $crud->expenseClaim->hod_delegation_id == $crud->user->id);
+                $bgColorStatus = App\Models\ExpenseClaim::mapColorStatus($crud->expenseClaim->status);
             @endphp
             <div class="card-body">
                 <div class="row">
@@ -32,7 +33,11 @@
                         <p>Currency : <b>{{$crud->expenseClaim->currency ?? '-'}}</b></p>
                         <p>Fin AP By : <b>{{$crud->expenseClaim->finance->name ?? '-'}}</b></p>
                         <p>Fin AP Date : <b>{{formatDate($crud->expenseClaim->finance_date)}}</b></p>
-                        <p>Status : <span class="rounded p-1 font-weight-bold text-white {{App\Models\ExpenseClaim::mapColorStatus($crud->expenseClaim->status)}}">{{$crud->expenseClaim->status}}</span></p>
+                        <p>Status : 
+                            <span class="rounded p-1 font-weight-bold text-white {{ $bgColorStatus }}">
+                                {{$crud->expenseClaim->status}} 
+                            </span>
+                        </p>
                         @if ($crud->expenseClaim->rejected_id != null)
                             <p>Rejected By : <b>{{$crud->expenseClaim->rejected->name ?? '-'}}</b></p>
                             <p>Rejected Date : <b>{{formatDate($crud->expenseClaim->rejected_date)}}</b></p>

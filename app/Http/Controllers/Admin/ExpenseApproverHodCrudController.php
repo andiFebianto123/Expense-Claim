@@ -41,8 +41,7 @@ class ExpenseApproverHodCrudController extends CrudController
             ExpenseClaim::addGlobalScope('user', function(Builder $builder){
                 $builder->where(function($query){
                     if($this->crud->role === Role::HOD){
-                        $query->where('trans_expense_claims.hod_id', $this->crud->user->id)
-                            ->orWhere('trans_expense_claims.hod_delegation_id', $this->crud->user->id);
+                        $query->where('trans_expense_claims.hod_id', $this->crud->user->id);
                     }
                     else{
                         $query->whereNotNull('trans_expense_claims.hod_id');
@@ -53,7 +52,7 @@ class ExpenseApproverHodCrudController extends CrudController
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
-                $query->where('trans_expense_claims.status', ExpenseClaim::NEED_APPROVAL_ONE);
+                $query->where('trans_expense_claims.status', ExpenseClaim::REQUEST_FOR_APPROVAL);
             });
         });
 

@@ -33,18 +33,19 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
 
-        if($this->crud->role !== Role::SUPER_ADMIN && $this->crud->role !== Role::NATIONAL_SALES){
-           $this->crud->denyAccess('list');
+        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::HOD])) {
+            $this->crud->denyAccess('list');
         }
         else
         {
             ExpenseClaim::addGlobalScope('user', function(Builder $builder){
                 $builder->where(function($query){
                     if($this->crud->role === Role::NATIONAL_SALES){
-                        $query->where('expense_claims.approval_temp_id', $this->crud->user->id);
+                        $query->where('trans_expense_claims.hod_id', $this->crud->user->id)
+                            ->orWhere('trans_expense_claims.hod_delegation_id', $this->crud->user->id);
                     }
                     else{
-                        $query->whereNotNull('expense_claims.approval_temp_id');
+                        $query->whereNotNull('trans_expense_claims.hod_id');
                     }
                 });
             });
@@ -52,15 +53,15 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
-                $query->where('expense_claims.status', '!=', ExpenseClaim::NONE)
-                ->where('expense_claims.status', '!=', ExpenseClaim::NEED_APPROVAL_ONE)
+                $query->where('trans_expense_claims.status', '!=', ExpenseClaim::NONE)
+                ->where('trans_expense_claims.status', '!=', ExpenseClaim::NEED_APPROVAL_ONE)
                 ->where(function($innerQuery){
-                    $innerQuery->whereNotNull('approval_id')
-                    ->orWhere('expense_claims.status', ExpenseClaim::REJECTED_ONE)
+                    $innerQuery->whereNotNull('hod_id')
+                    ->orWhere('trans_expense_claims.status', ExpenseClaim::REJECTED_ONE)
                     ->orWhere(function($deepestQuery){
                         $deepestQuery
-                        ->where('expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
-                        ->whereNull('approval_id');
+                        ->where('trans_expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
+                        ->whereNull('hod_id');
                     });
                 });
             });
@@ -117,8 +118,8 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as r', 'r.id', '=', 'expense_claims.request_id')
-                    ->orderBy('r.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+                    ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -129,8 +130,8 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => Department::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('departments as d', 'd.id', '=', 'expense_claims.department_id')
-                    ->orderBy('d.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
+                    ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -141,8 +142,8 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as a', 'a.id', '=', 'expense_claims.approval_id')
-                    ->orderBy('a.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('users as a', 'a.id', '=', 'trans_expense_claims.approval_id')
+                    ->orderBy('a.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -158,8 +159,8 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as g', 'g.id', '=', 'expense_claims.goa_id')
-                    ->orderBy('g.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('users as g', 'g.id', '=', 'trans_expense_claims.goa_id')
+                    ->orderBy('g.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -175,8 +176,8 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as f', 'f.id', '=', 'expense_claims.goa_id')
-                    ->orderBy('f.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('users as f', 'f.id', '=', 'trans_expense_claims.goa_id')
+                    ->orderBy('f.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [

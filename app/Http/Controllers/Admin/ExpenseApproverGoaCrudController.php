@@ -33,18 +33,18 @@ class ExpenseApproverGoaCrudController extends CrudController
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
 
-        if($this->crud->role !== Role::SUPER_ADMIN && $this->crud->role !== Role::DIRECTOR){
-           $this->crud->denyAccess('list');
+        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::GOA_HOLDER])) {
+            $this->crud->denyAccess('list');
         }
         else
         {
             ExpenseClaim::addGlobalScope('user', function(Builder $builder){
                 $builder->where(function($query){
-                    if($this->crud->role === Role::DIRECTOR){
-                        $query->where('expense_claims.goa_temp_id', $this->crud->user->id);
+                    if($this->crud->role === Role::GOA_HOLDER){
+                        $query->where('trans_expense_claims.goa_temp_id', $this->crud->user->id);
                     }
                     else{
-                        $query->whereNotNull('expense_claims.goa_temp_id');
+                        $query->whereNotNull('trans_expense_claims.goa_temp_id');
                     }
                 });
             });
@@ -52,7 +52,7 @@ class ExpenseApproverGoaCrudController extends CrudController
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
-                $query->where('expense_claims.status', ExpenseClaim::NEED_APPROVAL_TWO);
+                $query->where('trans_expense_claims.status', ExpenseClaim::NEED_APPROVAL_TWO);
             });
         });
 
@@ -107,8 +107,8 @@ class ExpenseApproverGoaCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as r', 'r.id', '=', 'expense_claims.request_id')
-                    ->orderBy('r.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+                    ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -119,8 +119,8 @@ class ExpenseApproverGoaCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => Department::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('departments as d', 'd.id', '=', 'expense_claims.department_id')
-                    ->orderBy('d.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
+                    ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -131,8 +131,8 @@ class ExpenseApproverGoaCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as a', 'a.id', '=', 'expense_claims.approval_id')
-                    ->orderBy('a.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('users as a', 'a.id', '=', 'trans_expense_claims.approval_id')
+                    ->orderBy('a.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -148,8 +148,8 @@ class ExpenseApproverGoaCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as g', 'g.id', '=', 'expense_claims.goa_id')
-                    ->orderBy('g.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('users as g', 'g.id', '=', 'trans_expense_claims.goa_id')
+                    ->orderBy('g.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -165,8 +165,8 @@ class ExpenseApproverGoaCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as f', 'f.id', '=', 'expense_claims.goa_id')
-                    ->orderBy('f.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('users as f', 'f.id', '=', 'trans_expense_claims.goa_id')
+                    ->orderBy('f.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [

@@ -50,6 +50,7 @@ class CreateTransExpenseClaimDetailsTable extends Migration
             $table->double('exchange_value')->nullable();
 
             $table->double('cost');
+            $table->double('converted_cost')->nullable();
             $table->string('remark')->nullable();
             $table->string('document', 500)->nullable();
 

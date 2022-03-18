@@ -143,6 +143,11 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'type' => 'text'
             ],
             [
+                'label' => 'Converted Cost',
+                'name' => 'converted_cost',
+                'type' => 'number'
+            ],
+            [
                 'label' => 'Converted Currency',
                 'name' => 'converted_currency',
                 'type' => 'text'
@@ -440,10 +445,11 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             }
 
             $currency = $expenseType->currency;
-            $convertedCurrency = $exchangeValue = null;
+            $convertedCurrency = $exchangeValue = $convertedCost = null;
             if ($currency == Config::USD) {
                 $usdToIdr = Config::where('key', Config::USD_TO_IDR)->first();
                 $currencyValue = (float) $usdToIdr->value;
+                $convertedCost = $cost;
                 $cost =  $currencyValue * $cost;
                 $currency = Config::IDR;
                 $exchangeValue = $currencyValue;
@@ -471,6 +477,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->currency = $currency;
             $expenseClaimDetail->exchange_value = $exchangeValue;
             $expenseClaimDetail->converted_currency = $convertedCurrency;
+            $expenseClaimDetail->converted_cost = $convertedCost;
             $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->remark = $request->remark;
             $expenseClaimDetail->document = $request->document;
@@ -523,6 +530,14 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->data['title'] = $this->crud->getTitle() ?? trans('backpack::crud.edit') . ' ' . $this->crud->entity_name;
         $this->data['expenseTypes'] = $this->getUserExpenseTypes();
         $this->data['configs']['usd_to_idr'] = Config::where('key', CONFIG::USD_TO_IDR)->first();
+
+        $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)->first();
+
+        if ($expenseClaimDetail->converted_currency != null) {
+            $this->crud->modifyField('cost', [
+                'value' => $expenseClaimDetail->converted_cost
+            ]);
+        }
 
         $this->data['id'] = $id;
 
@@ -646,10 +661,11 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             }
 
             $currency = $expenseType->currency;
-            $convertedCurrency = $exchangeValue = null;
+            $convertedCurrency = $exchangeValue = $convertedCost = null;
             if ($currency == Config::USD) {
                 $usdToIdr = Config::where('key', Config::USD_TO_IDR)->first();
                 $currencyValue = (float) $usdToIdr->value;
+                $convertedCost = $cost;
                 $cost =  $currencyValue * $cost;
                 $currency = Config::IDR;
                 $exchangeValue = $currencyValue;
@@ -677,6 +693,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->exchange_value = $exchangeValue;
             $expenseClaimDetail->converted_currency = $convertedCurrency;
+            $expenseClaimDetail->converted_cost = $convertedCost;
             $expenseClaimDetail->remark = $request->remark;
             $expenseClaimDetail->document = $request->document;
 

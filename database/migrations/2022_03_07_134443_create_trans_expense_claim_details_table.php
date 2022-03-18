@@ -46,7 +46,11 @@ class CreateTransExpenseClaimDetailsTable extends Migration
             $table->string('remark_expense_type')->nullable();
 
             $table->string('currency');
-            $table->unsignedBigInteger('cost');
+            $table->string('converted_currency')->nullable();
+            $table->double('exchange_value')->nullable();
+
+            $table->double('cost');
+            $table->double('converted_cost')->nullable();
             $table->string('remark')->nullable();
             $table->string('document', 500)->nullable();
 

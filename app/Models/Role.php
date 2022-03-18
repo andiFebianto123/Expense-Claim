@@ -21,5 +21,5 @@ class Role extends Model
     public const HOD = 'Hod';
     public const SECRETARY = 'Secretary';
     public const USER = 'User';
-
+    public const FINANCE_AP = 'Finance AP';
 }

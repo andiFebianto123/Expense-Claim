@@ -7,13 +7,11 @@
     $department = $user->department->name ?? null;
     
     $classRole = 'App\Models\Role';
-    $allowMaster = in_array($role, [$classRole::SUPER_ADMIN, $classRole::DIRECTOR]);
-    $allowLevelOne = in_array($role, [$classRole::SUPER_ADMIN, $classRole::NATIONAL_SALES]);
-    $allowLevelTwo = in_array($role, [$classRole::SUPER_ADMIN, $classRole::DIRECTOR]);
-    $allowAll = in_array($role, [$classRole::USER, $classRole::GOA_HOLDER, $classRole::ADMIN, $classRole::HOD, $classRole::SECRETARY]);
-
-    $classDepartment = 'App\Models\Department';
-    $allowFinance = $role === $classRole::SUPER_ADMIN || $department === $classDepartment::FINANCE;
+    $allowMaster = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
+    $allowLevelOne = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::NATIONAL_SALES]);
+    $allowLevelTwo = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
+    $allowAll = in_array($role, [$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY]);
+    $allowFinance = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
 @endphp
 
 

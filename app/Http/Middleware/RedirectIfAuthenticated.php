@@ -6,6 +6,8 @@ use App\Providers\RouteServiceProvider;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
+
 
 class RedirectIfAuthenticated
 {
@@ -20,6 +22,15 @@ class RedirectIfAuthenticated
     public function handle(Request $request, Closure $next, ...$guards)
     {
         $guards = empty($guards) ? [null] : $guards;
+
+        $user = backpack_user();
+
+        if(isset($user->is_active) && $user->is_active == 0){
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            Auth::logout();
+            return redirect()->guest(backpack_url('login'));
+        }
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {

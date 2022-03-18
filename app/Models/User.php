@@ -79,6 +79,12 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class, 'department_id');
     }
 
+    public function head_department()
+    {
+        return $this->hasMany(Department::class, 'user_id');
+    }
+
+
     public function costcenter()
     {
         return $this->belongsTo(CostCenter::class, 'cost_center_id');
@@ -101,7 +107,8 @@ class User extends Authenticatable
     //     return $this->belongsTo(User::class, 'head_department_id');
     // }
 
-    public function goa(){
+    public function goa()
+    {
         return $this->belongsTo(GoaHolder::class, 'goa_holder_id');
     }
 

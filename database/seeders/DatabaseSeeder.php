@@ -36,8 +36,6 @@ class DatabaseSeeder extends Seeder
 
         $this->departmentSeeder();
 
-        $this->userSeeder();
-
         $this->expenseCodeSeeder();
 
         $this->userSeeder();
@@ -45,6 +43,10 @@ class DatabaseSeeder extends Seeder
         $this->expenseSeeder();
 
         $this->goaSeeder();
+
+        $this->addGoaToUser();
+
+        $this->addUserToDepartment();
 
         // APPROVAL CARD SEEDER
         //$this->approvalCardSeeder();
@@ -201,7 +203,7 @@ class DatabaseSeeder extends Seeder
 
             $bpIdPass = empty($bpidExist) || ($bpidExist && ($bpidExist->user_id == $user['UserID']));
 
-            if (!empty($level) && !empty($role) && !empty($costCenter) && $bpIdPass) {
+            if (!empty($level) && !empty($role) && !empty($costCenter)) {
                 User::updateOrCreate([
                     'user_id' => $user['UserID'],
                 ], [
@@ -209,7 +211,7 @@ class DatabaseSeeder extends Seeder
                     'vendor_number' => random_int(100000, 999999),
                     'name' =>  $user['Name'],
                     'email' => $user['Email'],
-                    'bpid' =>  $user['BPID'],
+                    'bpid' =>  $bpIdPass ? $user['BPID'] : null,
                     'level_id' => $level->id,
                     'department_id' => $department->id ?? null,
                     'role_id' => $role->id,
@@ -307,6 +309,39 @@ class DatabaseSeeder extends Seeder
             'value' => '14276.50',
             'type' => 'float',
         ]);
+    }
+
+    public function addGoaToUser()
+    {
+        $filename = Storage::path('data/users.csv');
+
+        $users = $this->csvToArray($filename);
+
+        foreach ($users as $user) {
+            $goaHolder = GoaHolder::where('name', trim($user['GoA']))->first();
+            $user = User::where('user_id', $user['UserID'])->first();
+
+            if (!empty($goaHolder) && !empty($user)) {
+                $user->goa_holder_id = $goaHolder->id;
+                $user->save();
+            }
+        }
+    }
+
+    public function addUserToDepartment()
+    {
+        $filename = Storage::path('data/department.csv');
+
+        $departments = $this->csvToArray($filename);
+
+        foreach ($departments as $department) {
+            $user = User::where('user_id',  $department['NIK'])->first();
+            $department = Department::where('department_id', $department['Department ID'])->first();
+            if (!empty($user) && !empty($department)) {
+                $department->user_id = $user->id;
+                $department->save();
+            }
+        }
     }
 
 

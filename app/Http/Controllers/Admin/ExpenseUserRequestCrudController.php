@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Prologue\Alerts\Facades\Alert;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseUserRequestRequest;
+use App\Models\MstDelegation;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -32,8 +33,8 @@ class ExpenseUserRequestCrudController extends CrudController
         }
 
         ExpenseClaim::addGlobalScope('status', function (Builder $builder) {
-            $builder->where('status', ExpenseClaim::NONE)
-                ->orWhere('status', ExpenseClaim::NEED_REVISION);
+            $builder->where('status', ExpenseClaim::DRAFT)
+                ->orWhere('status', ExpenseClaim::REQUEST_FOR_APPROVAL);
         });
 
         CRUD::setModel(ExpenseClaim::class);
@@ -46,7 +47,7 @@ class ExpenseUserRequestCrudController extends CrudController
         $this->crud->addButtonFromView('top', 'new_request', 'new_request', 'end');
 
         $this->crud->cancelCondition = function ($entry) {
-            return ($this->crud->role === Role::ADMIN && ($entry->status !== ExpenseClaim::REJECTED_ONE && $entry->status !== ExpenseClaim::REJECTED_TWO && $entry->status !== ExpenseClaim::CANCELED)) || $entry->status == ExpenseClaim::NONE;
+            return ($this->crud->role === Role::ADMIN && ($entry->status !== ExpenseClaim::REJECTED_ONE && $entry->status !== ExpenseClaim::REJECTED_TWO && $entry->status !== ExpenseClaim::CANCELED)) || $entry->status == ExpenseClaim::DRAFT;
         };
         $this->crud->addButtonFromModelFunction('line', 'detailRequestButton', 'detailRequestButton');
         $this->crud->addButtonFromView('line', 'cancel', 'cancel', 'end');
@@ -157,7 +158,7 @@ class ExpenseUserRequestCrudController extends CrudController
                 'wrapper' => [
                     'element' => 'small',
                     'class' => function ($crud, $column, $entry, $related_key) {
-                        return 'rounded p-1 font-weight-bold ' . ($column['text'] === ExpenseClaim::NONE ? '' : 'text-white ') . (ExpenseClaim::mapColorStatus($column['text']));
+                        return 'rounded p-1 font-weight-bold ' . ($column['text'] === ExpenseClaim::DRAFT ? '' : 'text-white ') . (ExpenseClaim::mapColorStatus($column['text']));
                     },
                 ],
             ]
@@ -169,11 +170,26 @@ class ExpenseUserRequestCrudController extends CrudController
         $this->crud->hasAccessOrFail('request');
         DB::beginTransaction();
         try {
+            $user = User::where('id', $this->crud->user->id)->first();
+            $department = Department::join('mst_users', 'mst_departments.id', '=', 'mst_users.department_id')
+                ->where('mst_departments.id', $user->department_id)
+                ->select('mst_users.id as user_id', 'mst_departments.*')
+                ->first();
+
+            $hod = $department->user_id;
+
+            $hodDelegation = MstDelegation::where('from_user_id', $hod)
+                ->whereDate('start_date', '>=', date('Y-m-d'))
+                ->whereDate('end_date', '<=', date('Y-m-d'))
+                ->first();
+
             $expenseClaim = new ExpenseClaim;
 
             $expenseClaim->value = 0;
-            $expenseClaim->request_id = $this->crud->user->id;
-            $expenseClaim->status = ExpenseClaim::NONE;
+            $expenseClaim->request_id = $user->id;
+            $expenseClaim->hod_id = $hod;
+            $expenseClaim->hod_delegation_id = empty($hodDelegation) ? null : $hodDelegation->id;
+            $expenseClaim->status = ExpenseClaim::DRAFT;
             $expenseClaim->currency = '';
             $expenseClaim->start_approval_date = Carbon::now();
             $expenseClaim->is_admin_delegation = false;
@@ -199,7 +215,7 @@ class ExpenseUserRequestCrudController extends CrudController
                 DB::rollback();
                 return response()->json(['message' => trans('custom.model_not_found')], 404);
             }
-            if (($this->crud->role !== Role::SUPER_ADMIN && $model->status !== ExpenseClaim::NONE) || ($this->crud->role === Role::SUPER_ADMIN && ($model->status === ExpenseClaim::REJECTED_ONE || $model->status === ExpenseClaim::REJECTED_TWO || $model->status === ExpenseClaim::CANCELED))) {
+            if (($this->crud->role !== Role::ADMIN && $model->status !== ExpenseClaim::DRAFT) || ($this->crud->role === Role::SUPER_ADMIN && ($model->status === ExpenseClaim::REJECTED_ONE || $model->status === ExpenseClaim::REJECTED_TWO || $model->status === ExpenseClaim::CANCELED))) {
                 DB::rollback();
                 return response()->json(['message' => trans('custom.expense_claim_cant_status', ['status' => $model->status, 'action' => trans('custom.canceled')])], 403);
             }

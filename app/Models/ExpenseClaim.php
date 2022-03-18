@@ -28,7 +28,7 @@ class ExpenseClaim extends Model
 
     protected $fillable = [
         'expense_number', 'value', 'currency', 'request_date', 'request_id',
-        'department_id', 'approval_temp_id', 'approval_id', 'approval_date',
+        'hod_id', 'hod_delegation_id', 'department_id', 'approval_temp_id', 'approval_id', 'approval_date',
         'goa_temp_id', 'goa_id', 'goa_date', 'finance_id', 'finance_date', 'status', 'remark',
         'rejected_id', 'rejected_date', 'canceled_id', 'canceled_date'
     ];
@@ -82,7 +82,11 @@ class ExpenseClaim extends Model
             self::PROCEED => 'bg-success',
             self::REJECTED_ONE => 'bg-gray',
             self::REJECTED_TWO => 'bg-dark',
-            self::CANCELED => 'bg-danger'
+            self::CANCELED => 'bg-danger',
+            self::REQUEST_FOR_APPROVAL => 'bg-light-blue',
+            self::APPROVED_BY_HOD => 'bg-blue',
+            self::PARTIAL_APPROVED => 'bg-cyan',
+            self::FULLY_APPROVED => 'bg-success',
         ];
         return $colors[$status] ?? 'bg-info';
     }

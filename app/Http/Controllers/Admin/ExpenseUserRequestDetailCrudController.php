@@ -78,19 +78,29 @@ class ExpenseUserRequestDetailCrudController extends CrudController
      */
     protected function setupListOperation()
     {
+        $expenseClaimDetail = ExpenseClaimDetail::where('expense_claim_id',  $this->crud->headerId)->get();
+        $department = User::join('mst_departments', 'mst_users.department_id', '=', 'mst_departments.id')
+            ->where('mst_users.id',  $this->crud->user->id)
+            ->select(
+                'mst_departments.*',
+            )
+            ->first();
+
+        $this->crud->expenseClaimDetail = $expenseClaimDetail;
+        $this->crud->user->department = $department;
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
         $this->crud->viewBeforeContent = ['expense_claim.request.header'];
 
-        $isNoneOrNeedRevision = $this->crud->expenseClaim->status == ExpenseClaim::NONE || $this->crud->expenseClaim->status == ExpenseClaim::NEED_REVISION;
+        $isDraftOrRequestApproval = $this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL;
 
-        $this->crud->createCondition = function () use ($isNoneOrNeedRevision) {
-            return $isNoneOrNeedRevision && $this->crud->expenseClaim->request_id == $this->crud->user->id;
+        $this->crud->createCondition = function () use ($isDraftOrRequestApproval) {
+            return $isDraftOrRequestApproval && $this->crud->expenseClaim->request_id == $this->crud->user->id;
         };
-        $this->crud->updateCondition = function ($entry) use ($isNoneOrNeedRevision) {
-            return $isNoneOrNeedRevision && $this->crud->expenseClaim->request_id == $this->crud->user->id;
+        $this->crud->updateCondition = function ($entry) use ($isDraftOrRequestApproval) {
+            return $isDraftOrRequestApproval && $this->crud->expenseClaim->request_id == $this->crud->user->id;
         };
-        $this->crud->deleteCondition = function ($entry) use ($isNoneOrNeedRevision) {
-            return $isNoneOrNeedRevision && $this->crud->expenseClaim->request_id == $this->crud->user->id;
+        $this->crud->deleteCondition = function ($entry) use ($isDraftOrRequestApproval) {
+            return $isDraftOrRequestApproval && $this->crud->expenseClaim->request_id == $this->crud->user->id;
         };
 
         CRUD::addColumns([
@@ -713,7 +723,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
     private function checkStatusForDetail($expenseClaim, $action)
     {
-        $isNoneOrNeedRevision = $expenseClaim->status == ExpenseClaim::NONE || $expenseClaim->status == ExpenseClaim::NEED_REVISION;
+        $isNoneOrNeedRevision = $expenseClaim->status == ExpenseClaim::DRAFT || $expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL;
         if ($expenseClaim->request_id != $this->crud->user->id) {
             return trans('custom.error_permission_message');
         }
@@ -729,7 +739,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         DB::beginTransaction();
         try {
             $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
-            if ($expenseClaim->status !== ExpenseClaim::NONE && $expenseClaim->status !== ExpenseClaim::NEED_REVISION) {
+            if ($expenseClaim->status !== ExpenseClaim::DRAFT && $expenseClaim->status !== ExpenseClaim::REQUEST_FOR_APPROVAL) {
                 DB::rollback();
                 return response()->json(['message' => trans('custom.expense_claim_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.submitted')])], 403);
             } else if (!ExpenseClaimDetail::exists()) {
@@ -739,7 +749,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $now = Carbon::now();
             $expenseClaim->request_date = $now;
 
-            if ($expenseClaim->status === ExpenseClaim::NONE) {
+            if ($expenseClaim->status === ExpenseClaim::DRAFT) {
                 $lastExpenseNumber = ExpenseClaim::where('request_date', '=', $now->format('Y-m-d'))->whereNotNull('expense_number')
                     ->orderBy('id', 'desc')->select('expense_number')->first();
                 if ($lastExpenseNumber != null) {

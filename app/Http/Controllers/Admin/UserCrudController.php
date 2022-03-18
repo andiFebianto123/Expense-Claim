@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
+use File;
 use Exception;
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Level;
@@ -10,10 +12,12 @@ use App\Library\GetLog;
 use App\Models\GoaHolder;
 use App\Models\Department;
 use App\Models\CostCenter;
+use App\Imports\UsersImport;
 use App\Library\ReportClaim;
 use App\Traits\RedirectCrud;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\UserRequest;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Requests\UserEditRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
@@ -431,12 +435,60 @@ class UserCrudController extends CrudController
     }
 
     public function printReportExpense(){
-        $n = new GetLog('log_import_user_20220316_112321.txt', 'W');
-        $n->getString(1, 'Success');
-        $n->getString(2, 'Failed');
-        $n->getString(3, 'Failed');
-        $n->close();
+        // $n = new GetLog('log_import_user_20220316_112321.txt', 'w');
+        // $n->getString(1, 'Success');
+        // $n->getString(2, 'Failed');
+        // $n->getString(3, 'Failed');
+        // $n->close();
         // $print = new ReportClaim;
         // return $print->renderPdf();
+        // $path = storage_path().'/app/data';
+        // $files = File::files($path);
+        // dd($files);
+        // $filename = storage_path().'/logs/newfile.txt';
+        // $myfile = fopen($filename, "w");
+        // $txt = "John Doe\n";
+        // fwrite($myfile, $txt);
+        // fclose($myfile);
+        $this->cobaBuatImportUser();
+    }
+    function cobaBuatImportUser(){
+        $path = storage_path().'/app/data';
+        $files = File::files($path);
+        $getFile = null;
+        if(count($files) > 0){
+            foreach($files as $file){
+                $pattern = "/^Y([0-9]+)\-([0-9]+)\-([0-9]+)\.(CSV|csv)$/i";
+                if(preg_match($pattern, $file->getFilename())){
+                    // jika ada 1 file memiliki pola yang benar
+                    $getFile = $file;
+                    break;
+                }
+            }
+        }
+
+        if($getFile){
+            // jika file ditemukan
+            DB::beginTransaction();
+            try {
+                 $import = new UsersImport();
+                 $import->import(storage_path('/app/data/' . $getFile->getFilename()));
+
+                 if(count($import->logMessages) > 0){
+                    $timeNow = Carbon::now();
+                    $logFileName = 'log_import_user_' . $timeNow->format('Ymd') . '_' . $timeNow->format('His') . '.txt';
+                    $log = new GetLog($logFileName, 'w');
+
+                    foreach($import->logMessages as $logMessage){
+                        $log->getString($logMessage['row'], $logMessage['type'], $logMessage['message']);
+                    }
+                    $log->close();
+                }
+                DB::commit();
+            }catch(Exception $e){
+                DB::rollback();
+                throw $e;
+            }
+        }
     }
 }

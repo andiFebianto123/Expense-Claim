@@ -12,28 +12,30 @@ class GetLog {
     private $nameFile;
 
     function __construct($nameFile, $akses = 'W'){
-        // $file = fopen($nameFile, $akses);
-        $this->nameFile = $nameFile;
-        // if(!isset($this->fileTxt)){
-        //     $this->fileTxt = '';
-        // }
-        // $this->fileTxt = $file;
+        $filen = storage_path().'/logs/'.$nameFile;
+        $file = fopen($filen, $akses);
+        if(!isset($this->fileTxt)){
+            $this->fileTxt = '';
+        }
+        $this->fileTxt = $file;
     }
 
-    function getString($line, $type){
+    function getString($time = '', $line, $type, $message = null){
         if($type == self::TYPE_SUCCESS){
-            $this->textString .= trans('custom.messages.log', ['line' => $line, 'message' => trans('custom.messages.success')]);
+            $this->textString .= trans('custom.messages.log', ['time' => $time, 'line' => $line, 'message' => ($message != null) ? $message : trans('custom.messages.success')]);
         }else{
-            $this->textString .= trans('custom.messages.log', ['line' => $line, 'message' => trans('custom.messages.failed')]);
+            $this->textString .= trans('custom.messages.log', ['time' => $time, 'line' => $line, 'message' => ($message != null) ? $message : trans('custom.messages.failed')]);
         }
     }
 
     private function appendLog($text){
-        // fwrite($this->fileText, $text);
+        fwrite($this->fileTxt, $text);
     }
 
     public function close(){
-        Storage::disk('local')->put($this->nameFile, $this->textString);
+        $this->appendLog($this->textString);
+        fclose($this->fileTxt);
+        // Storage::disk('local')->put($this->nameFile, $this->textString);
     }
 }
 

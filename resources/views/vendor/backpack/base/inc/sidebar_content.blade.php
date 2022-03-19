@@ -4,6 +4,8 @@
 @php
     $user = backpack_user();
     $role = $user->role->name ?? null;
+
+    // INVALID CODE
     $department = $user->department->name ?? null;
     
     $classRole = 'App\Models\Role';
@@ -12,18 +14,20 @@
     $allowLevelTwo = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
     $allowAll = in_array($role, [$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY]);
     $allowFinance = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
+    // END INVALID CODE
 @endphp
 
-
-@if ($allowMaster)
-    <li class="nav-title">Master</li>
-    <li class="nav-item"><a class="nav-link" href="{{backpack_url('user-access-control')}}"><i class="la la-users nav-icon"></i> User Access Control</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{backpack_url('approval-card')}}"><i class="la la-cc-mastercard nav-icon"></i> Approval Card</a></li>    
-@endif
-
-<li class="nav-title">Master</li>
+@php
+    $hasFoundMenuMaster = false;
+@endphp
 @foreach ((new App\Helpers\Sidebar())->generate() as $key => $menu)
     @if(in_array($role, $menu['access']))
+        @if (!$hasFoundMenuMaster)
+            @php
+                $hasFoundMenuMaster = true;
+            @endphp
+            <li class="nav-title">Master</li>
+        @endif
     <li class="nav-item @if($menu['childrens']) nav-dropdown @endif">
         <a class="nav-link parent @if($menu['childrens']) nav-dropdown-toggle @endif" href="{{  $menu['url'] }}">
             <i class="nav-icon la {{$menu['icon']}}"></i> {{$menu['label']}}

@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\CostCenter;
+use App\Models\ExpenseType;
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ExpenseTypeRequest extends FormRequest
@@ -25,17 +28,19 @@ class ExpenseTypeRequest extends FormRequest
     public function rules()
     {
         return [
-            'expense_name' => 'required|string',
-            'level_id' => 'required|numeric',
-            'limit' => 'nullable|numeric',
-            'currency' => 'required|string',
-            'expense_code_id' => 'required|numeric',
+            'expense_id' => 'required',
+            'level_id' => 'required',
+            'limit' => 'nullable|integer|min:0',
+            'currency' => ['required', Rule::in(CostCenter::OPTIONS_CURRENCY)],
+            'expense_code_id' => 'required',
             'is_traf' => 'required|boolean',
             'is_bod' => 'required|boolean',
             'is_bp_approval' => 'required|boolean',
-            'bod_level' => 'nullable|string',
-            'limit_business_proposal' => 'nullable|numeric',
-            'department' => 'nullable|string'
+            'is_limit_person' => 'required|boolean',
+            'bod_level' => ['nullable', 'required_if:is_bod,1', Rule::in([ExpenseType::RESPECTIVE_DIRECTOR, ExpenseType::GENERAL_MANAGER])],
+            'limit_business_approval' => 'nullable|integer|min:0',
+            'department_id' => 'nullable|array',
+            'department_id.*' => 'nullable|regex:/^[0-9]+$/' 
         ];
     }
 
@@ -46,9 +51,16 @@ class ExpenseTypeRequest extends FormRequest
      */
     public function attributes()
     {
-        return [
-            //
-        ];
+        $attributes = ['department_id' => trans('validation.attributes.limit_departments')];
+        $request = request();
+        if($request->filled('department_id') && is_array($request->department_id)){
+            $index = 0;
+            foreach($request->department_id as $indexDepartment => $department){
+                $attributes['department_id.' . $indexDepartment] = trans('validation.department') .  ' ' . ($index + 1);
+                $index++;
+            }
+        }
+        return $attributes;
     }
 
     /**

@@ -4,22 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use Exception;
 use App\Models\Role;
-use App\Http\Requests\LevelRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
+use App\Http\Requests\ExpenseCodeRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
 /**
- * Class LevelCrudController
+ * Class ExpenseCodeCrudController
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class LevelCrudController extends CrudController
+class ExpenseCodeCrudController extends CrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
-    // use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
-    // use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
-    // use \Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
+    use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
+    use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
+    use \Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
     // use \Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
 
     /**
@@ -33,9 +34,9 @@ class LevelCrudController extends CrudController
         if(!in_array($roleName, [Role::ADMIN])){
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
         }
-        CRUD::setModel(\App\Models\Level::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/level');
-        CRUD::setEntityNameStrings('Level', 'Levels');
+        CRUD::setModel(\App\Models\ExpenseCode::class);
+        CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-code');
+        CRUD::setEntityNameStrings('Expense Code', 'Expense Codes');
     }
 
     /**
@@ -46,8 +47,8 @@ class LevelCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        CRUD::column('level_id')->label('Level ID')->limit(255);
-        CRUD::column('name')->limit(255);
+        CRUD::column('account_number')->label('Account Number');
+        CRUD::column('description');
 
         /**
          * Columns can be defined using the fluent syntax or array syntax:
@@ -64,10 +65,10 @@ class LevelCrudController extends CrudController
      */
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(LevelRequest::class);
+        CRUD::setValidation(ExpenseCodeRequest::class);
 
-        CRUD::field('level_id')->label('Level ID');
-        CRUD::field('name');
+        CRUD::field('account_number')->label('Account Number')->limit(255);
+        CRUD::field('description')->limit(255);
 
         /**
          * Fields can be defined using the fluent syntax or array syntax:
@@ -86,6 +87,7 @@ class LevelCrudController extends CrudController
     {
         $this->setupCreateOperation();
     }
+
     public function destroy($id)
     {
         $this->crud->hasAccessOrFail('delete');

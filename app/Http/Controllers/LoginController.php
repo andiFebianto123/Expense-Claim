@@ -95,7 +95,7 @@ class LoginController extends BackpackLoginController{
         $request->validate([
             $this->username() => 'required|string',
             'password' => 'required|string',
-        ], [], ['email' => 'Email or User ID']);
+        ], [], ['email' => 'email or user ID']);
     }
 
         /**

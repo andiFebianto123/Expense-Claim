@@ -30,7 +30,8 @@ class UserRequest extends FormRequest
             $id = \Request::segments()[1];
             return [
                 'user_id' => 'required|max:255|unique:mst_users,user_id,' . $id,
-                'vendor_number' => 'required|max:255|unique:mst_users,vendor_number,' . $id,
+                'vendor_number' => 'nullable|max:255',
+                //|unique:mst_users,vendor_number,' . $id,
                 'name' => 'required|max:255',
                 'email' => 'required|max:255|unique:mst_users,email,' . $id,
                 'password' => 'required|min:8|max:255|confirmed',
@@ -47,7 +48,8 @@ class UserRequest extends FormRequest
         }
         return [
             'user_id' => 'required|max:255|unique:mst_users,user_id',
-            'vendor_number' => 'required|max:255|unique:mst_users,vendor_number',
+            'vendor_number' => 'nullable|max:255',
+            // 'vendor_number' => 'required|max:255|unique:mst_users,vendor_number',
             'name' => 'required|max:255',
             'email' => 'required|max:255|unique:mst_users,email',
             'password' => 'required|min:8|max:255|confirmed',
@@ -71,7 +73,8 @@ class UserRequest extends FormRequest
     public function attributes()
     {
         return [
-            //
+            'user_id' => 'user ID',
+            'department_id' => trans('validation.attributes.head_of_department')
         ];
     }
 

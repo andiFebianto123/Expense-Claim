@@ -15,7 +15,8 @@ class AddGoaHolderIdInMstUsers extends Migration
     {
         Schema::table('mst_users', function (Blueprint $table) {
             if(!Schema::hasColumn('mst_users', 'goa_holder_id')){
-                $table->string('goa_holder_id')->nullable()->after('department_id');
+                $table->unsignedBigInteger('goa_holder_id')->nullable()->after('department_id');
+                $table->index('goa_holder_id');
             }
         }); 
     }

@@ -51,7 +51,12 @@
           @include('crud::inc.filters_navbar')
         @endif
 
-        <table id="crudTable" class="bg-white table table-striped table-hover nowrap rounded shadow-xs border-xs mt-2" cellspacing="0">
+        <table
+          id="crudTable"
+          class="bg-white table table-striped table-hover nowrap rounded shadow-xs border-xs mt-2"
+          data-has-details-row="{{ $crud->getOperationSetting('detailsRow') ?? 0 }}"
+          data-has-bulk-actions="{{ $crud->getOperationSetting('bulkActions') ?? 0 }}"
+          cellspacing="0">
             <thead>
               <tr>
                 {{-- Table columns --}}
@@ -59,15 +64,13 @@
                   <th
                     data-orderable="{{ var_export($column['orderable'], true) }}"
                     data-priority="{{ $column['priority'] }}"
-                     {{--
-
-                        data-visible-in-table => if developer forced field in table with 'visibleInTable => true'
-                        data-visible => regular visibility of the field
-                        data-can-be-visible-in-table => prevents the column to be loaded into the table (export-only)
-                        data-visible-in-modal => if column apears on responsive modal
-                        data-visible-in-export => if this field is exportable
-                        data-force-export => force export even if field are hidden
-
+                    {{--
+                    data-visible-in-table => if developer forced field in table with 'visibleInTable => true'
+                    data-visible => regular visibility of the field
+                    data-can-be-visible-in-table => prevents the column to be loaded into the table (export-only)
+                    data-visible-in-modal => if column apears on responsive modal
+                    data-visible-in-export => if this field is exportable
+                    data-force-export => force export even if field are hidden
                     --}}
 
                     {{-- If it is an export field only, we are done. --}}
@@ -97,6 +100,10 @@
                        @endif
                     @endif
                   >
+                    {{-- Bulk checkbox --}}
+                    @if($loop->first && $crud->getOperationSetting('bulkActions'))
+                      {!! View::make('crud::columns.inc.bulk_actions_checkbox')->render() !!}
+                    @endif
                     {!! $column['label'] !!}
                   </th>
                 @endforeach
@@ -115,7 +122,13 @@
               <tr>
                 {{-- Table columns --}}
                 @foreach ($crud->columns() as $column)
-                  <th>{!! $column['label'] !!}</th>
+                  <th>
+                    {{-- Bulk checkbox --}}
+                    @if($loop->first && $crud->getOperationSetting('bulkActions'))
+                      {!! View::make('crud::columns.inc.bulk_actions_checkbox')->render() !!}
+                    @endif
+                    {!! $column['label'] !!}
+                  </th>
                 @endforeach
 
                 @if ( $crud->buttons()->where('stack', 'line')->count() )
@@ -133,10 +146,10 @@
           </div>
           @endif
           @if (isset($crud->viewAfterContent) && is_array($crud->viewAfterContent))
-          @foreach ($crud->viewAfterContent as $name)
-              @include($name)
-          @endforeach
-        @endif
+              @foreach ($crud->viewAfterContent as $name)
+                  @include($name)
+              @endforeach
+          @endif
     </div>
 
   </div>

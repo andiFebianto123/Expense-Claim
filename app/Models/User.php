@@ -64,6 +64,8 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    const USER_ID_SUPER_ADMIN = '00000000';
+
     public function level()
     {
         return $this->belongsTo(Level::class, 'level_id');

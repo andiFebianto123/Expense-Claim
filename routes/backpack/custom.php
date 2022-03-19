@@ -35,8 +35,7 @@ Route::group([
     'prefix'     => config('backpack.base.route_prefix', 'admin'),
     'middleware' => array_merge(
         (array) config('backpack.base.web_middleware', 'web'),
-        (array) config('backpack.base.middleware_key', 'admin'),
-        ['guest'],
+        (array) config('backpack.base.middleware_key', 'admin')
     ),
     'namespace'  => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
@@ -104,4 +103,5 @@ Route::group([
     Route::crud('cost-center', 'CostCenterCrudController');
     Route::crud('delegation', 'DelegationCrudController');
     Route::crud('expense', 'ExpenseCrudController');
+    Route::crud('expense-code', 'ExpenseCodeCrudController');
 }); // this should be the absolute last line of this file

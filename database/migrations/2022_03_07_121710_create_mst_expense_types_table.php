@@ -25,10 +25,9 @@ class CreateMstExpenseTypesTable extends Migration
             $table->boolean('is_limit_person');
             $table->string('currency');
             $table->string('bod_level', 255)->nullable();
-            $table->unsignedBigInteger('limit_business_proposal')->nullable();
+            $table->unsignedBigInteger('limit_business_approval')->nullable();
             $table->string('remark')->nullable();
             $table->timestamps();
-            $table->softDeletes();
 
             $table->foreign('expense_id')
                 ->references('id')

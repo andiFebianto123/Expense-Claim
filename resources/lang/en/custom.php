@@ -52,7 +52,7 @@ return [
     'reject_confirmation_not_title' => 'NOT rejected',
     'reject_confirmation_not_message' => "There's been an error. Your item might not have been rejected.",
     'expense_claim_reject_success' => 'Successfully reject the expense claim.',
-    'model_has_relation' => 'The selected data has already had relation with other data',
+    'model_has_relation' => 'The selected data has already had relation with other data.',
 
     // Message for log input user cron job
     'messages' => [
@@ -60,5 +60,8 @@ return [
         'success' => "SUCCESS to input or update data",
         'failed' => "FAILED to input or update data",
     ],
+
+    'business_purposes_restrict_level' => 'The business purposes approval can only be used for level :level.',
+    'cant_change_expense_and_level' => 'The expense type or level cannot be changed because has already been used in User Request.'
 
 ];

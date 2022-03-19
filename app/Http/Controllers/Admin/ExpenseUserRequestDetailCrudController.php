@@ -372,7 +372,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     'mst_expense_types.is_bp_approval as is_bp_approval',
                     'mst_expense_types.limit as limit',
                     'mst_expense_types.currency as currency',
-                    'mst_expense_types.limit_business_proposal as limit_business_proposal',
+                    'mst_expense_types.limit_business_approval as limit_business_approval',
                     'mst_expense_codes.id as expense_code_id',
                     'mst_expense_codes.account_number as account_number',
                     'mst_expense_codes.description as description'
@@ -427,14 +427,14 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 )];
             }
 
-            if ($expenseType->is_bp_approval && $cost > $expenseType->limit_business_proposal && !$isBpApproval) {
+            if ($expenseType->is_bp_approval && $cost > $expenseType->limit_business_approval && !$isBpApproval) {
                 $errors['cost'] = [
                     trans(
                         'validation.limit_bp',
                         [
                             'attr1' => trans('validation.attributes.cost'),
                             'attr2' => trans('validation.attributes.limit'),
-                            'value' => number_format($expenseType->limit_business_proposal, 0, ','),
+                            'value' => number_format($expenseType->limit_business_approval, 0, ','),
                         ]
                     )
                 ];
@@ -584,7 +584,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     'mst_expense_types.is_bp_approval as is_bp_approval',
                     'mst_expense_types.limit as limit',
                     'mst_expense_types.currency as currency',
-                    'mst_expense_types.limit_business_proposal as limit_business_proposal',
+                    'mst_expense_types.limit_business_approval as limit_business_approval',
                     'mst_expense_codes.id as expense_code_id',
                     'mst_expense_codes.account_number as account_number',
                     'mst_expense_codes.description as description'
@@ -643,14 +643,14 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 )];
             }
 
-            if ($expenseType->is_bp_approval && $cost > $expenseType->limit_business_proposal && !$isBpApproval) {
+            if ($expenseType->is_bp_approval && $cost > $expenseType->limit_business_approval && !$isBpApproval) {
                 $errors['cost'] = [
                     trans(
                         'validation.limit_bp',
                         [
                             'attr1' => trans('validation.attributes.cost'),
                             'attr2' => trans('validation.attributes.limit'),
-                            'value' => number_format($expenseType->limit_business_proposal, 0, ','),
+                            'value' => number_format($expenseType->limit_business_approval, 0, ','),
                         ]
                     )
                 ];

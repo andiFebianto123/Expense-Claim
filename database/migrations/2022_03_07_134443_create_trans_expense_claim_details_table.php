@@ -42,7 +42,7 @@ class CreateTransExpenseClaimDetailsTable extends Migration
             $table->boolean('is_bp_approval');
             $table->boolean('is_limit_person');
             $table->unsignedInteger('total_person')->nullable();
-            $table->unsignedBigInteger('limit_business_proposal')->nullable();
+            $table->unsignedBigInteger('limit_business_approval')->nullable();
             $table->string('remark_expense_type')->nullable();
 
             $table->string('currency');

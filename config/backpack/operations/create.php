@@ -47,6 +47,6 @@ return [
     //     return $request->except('_token', '_method', '_http_referrer', '_current_tab', '_save_action');
     // }),
     'strippedRequest' => (function ($request) {
-        return $request->except('_token', '_method', '_http_referrer', '_current_tab', '_save_action');
+        return CRUD::getRequest()->except('_token', '_method', '_http_referrer', '_current_tab', '_save_action');
     }),
 ];

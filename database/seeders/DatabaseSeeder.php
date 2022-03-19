@@ -184,6 +184,21 @@ class DatabaseSeeder extends Seeder
 
     public function userSeeder()
     {
+        User::updateOrCreate([
+            'user_id' => User::USER_ID_SUPER_ADMIN
+        ], [
+            'vendor_number' => null,
+            'name' =>  'Kevin D',
+            'email' => 'kevin@rectmedia.com',
+            'bpid' =>  User::USER_ID_SUPER_ADMIN,
+            'level_id' => Level::where('level_id', 'D7')->first()->id,
+            'department_id' => Department::where('department_id', 'NONE')->first()->id,
+            'role_id' => Role::where('name', Role::ADMIN)->first()->id,
+            'is_active' => true,
+            'password' => bcrypt('qwerty'),
+            'cost_center_id' => CostCenter::first()->id
+        ]);
+        
         $filename = Storage::path('data/users.csv');
 
         $users = $this->csvToArray($filename);
@@ -257,10 +272,11 @@ class DatabaseSeeder extends Seeder
                 $expenseType->expense_code_id = $expenseCode->id;
                 $expenseType->is_traf = trim($item['TRAFApproval']) == 'Yes' ? true : false;
                 $expenseType->is_bod = trim($item['BoDApproval']) == 'Yes' ? true : false;
+                $expenseType->bod_level = $expenseType->is_bod ? trim($item['Remark']) : null;
                 $expenseType->is_bp_approval = $isBpApproval;
                 $expenseType->is_limit_person = trim($item['Remark']) == 'Limit per person' ? true : false;
                 $expenseType->currency = trim($item['Currency']);
-                $expenseType->limit_business_proposal = $isBpApproval ? 720000 : null;
+                $expenseType->limit_business_approval = $isBpApproval ? 720000 : null;
                 $expenseType->remark = trim($item['Remark']);
 
                 $expenseType->save();
@@ -316,6 +332,13 @@ class DatabaseSeeder extends Seeder
         $filename = Storage::path('data/users.csv');
 
         $users = $this->csvToArray($filename);
+
+        $goaHolder = GoaHolder::where('name', 'General Manager')->first();
+        $user = User::where('user_id', User::USER_ID_SUPER_ADMIN)->first();
+        if (!empty($goaHolder) && !empty($user)) {
+            $user->goa_holder_id = $goaHolder->id;
+            $user->save();
+        }
 
         foreach ($users as $user) {
             $goaHolder = GoaHolder::where('name', trim($user['GoA']))->first();

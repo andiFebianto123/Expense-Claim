@@ -29,7 +29,30 @@ class CostCenterCrudController extends CrudController
         }
         CRUD::setModel(\App\Models\CostCenter::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/cost-center');
-        CRUD::setEntityNameStrings('cost center', 'cost centers');
+        CRUD::setEntityNameStrings('Cost Center', 'Cost Centers');
+    }
+
+    protected function setupShowOperation(){
+        CRUD::addColumn([
+            'name'     => 'cost_center_id',
+            'label'    => 'Cost Center',
+            'type'     => 'text',
+            'limit' => 255,
+        ]);
+
+        CRUD::addColumn([
+            'name'     => 'currency',
+            'label'    => 'Currency',
+            'type'     => 'text',
+            'limit' => 255,
+        ]);
+
+        CRUD::addColumn([
+            'name'     => 'description',
+            'label'    => 'Description',
+            'type'     => 'text',
+            'limit' => 255,
+        ]);
     }
 
     protected function setupListOperation()
@@ -66,7 +89,10 @@ class CostCenterCrudController extends CrudController
         CRUD::addField([
             'name'     => 'currency',
             'label'    => 'Currency',
-            'type'     => 'text',
+            'type'     => 'select2_from_array',
+            'options' => collect(CostCenter::OPTIONS_CURRENCY)->mapWithKeys(function($currency){
+                return [$currency => $currency];
+            })
         ]);
 
         CRUD::addField([
@@ -80,18 +106,6 @@ class CostCenterCrudController extends CrudController
     {
         $this->setupCreateOperation();
     }
-
-    public function create()
-    {
-        $this->crud->hasAccessOrFail('create');
-
-        $this->data['crud'] = $this->crud;
-        $this->data['saveAction'] = $this->crud->getSaveAction();
-        $this->data['title'] = $this->crud->getTitle() ?? trans('backpack::crud.add') . ' ' . $this->crud->entity_name;
-
-        return view($this->crud->getCreateView(), $this->data);
-    }
-
 
     public function store()
     {
@@ -116,34 +130,17 @@ class CostCenterCrudController extends CrudController
             $item = $this->crud->create($this->crud->getStrippedSaveRequest($request));
             $this->data['entry'] = $this->crud->entry = $item;
 
+            DB::commit();
+
             \Alert::success(trans('backpack::crud.insert_success'))->flash();
 
             $this->crud->setSaveAction();
 
-            DB::commit();
             return $this->crud->performSaveAction($item->getKey());
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
         }
-    }
-
-
-    public function edit($id)
-    {
-        $this->crud->hasAccessOrFail('update');
-
-        $id = $this->crud->getCurrentEntryId() ?? $id;
-        $this->crud->setOperationSetting('fields', $this->crud->getUpdateFields());
-
-        $this->data['entry'] = $this->crud->getEntry($id);
-        $this->data['crud'] = $this->crud;
-        $this->data['saveAction'] = $this->crud->getSaveAction();
-        $this->data['title'] = $this->crud->getTitle() ?? trans('backpack::crud.edit') . ' ' . $this->crud->entity_name;
-
-        $this->data['id'] = $id;
-
-        return view($this->crud->getEditView(), $this->data);
     }
 
 
@@ -173,11 +170,12 @@ class CostCenterCrudController extends CrudController
             );
             $this->data['entry'] = $this->crud->entry = $item;
 
+            DB::commit();
+
             \Alert::success(trans('backpack::crud.update_success'))->flash();
 
             $this->crud->setSaveAction();
 
-            DB::commit();
             return $this->crud->performSaveAction($item->getKey());
         } catch (Exception $e) {
             DB::rollBack();

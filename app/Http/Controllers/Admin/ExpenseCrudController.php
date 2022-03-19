@@ -17,7 +17,7 @@ class ExpenseCrudController extends CrudController
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
-    use \Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
+    // use \Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
     use RedirectCrud;
 
     public function setup()
@@ -28,7 +28,7 @@ class ExpenseCrudController extends CrudController
         }
         CRUD::setModel(\App\Models\MstExpense::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense');
-        CRUD::setEntityNameStrings('expense', 'expenses');
+        CRUD::setEntityNameStrings('Expense', 'Expenses');
     }
 
     protected function setupListOperation()
@@ -37,6 +37,7 @@ class ExpenseCrudController extends CrudController
             'label'     => "Name",
             'type'      => 'text',
             'name'      => 'name',
+            'limit' => 255
         ]);
     }
 

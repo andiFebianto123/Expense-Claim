@@ -154,19 +154,38 @@ return [
     */
 
     'attributes' => [
-        'user_id' => 'User',
-        'head_of_department' => 'Head Of Department',
+        'user_id' => 'user',
+        'head_department_id' => 'head of department',
+        'head_of_department' => 'head of department',
+        'department_id' => 'department ID',
+        'department' => 'department',
         'approval_card_id' => 'expense type',
         'cost_center' => 'cost center',
         'expense_code' => 'expense code',
-        'expense_id' => 'expense id',
+        'expense_id' => 'expense ID',
         'expense_name' => 'expense name',
         'expense_type' => 'expense type',
         'cost' => 'Cost',
         'limit' => 'Limit',
         'date' => 'Date',
         'document' => 'Document',
-        "expense_claim" => 'Expense Claim'
+        "expense_claim" => 'Expense Claim',
+        'bpid' => 'BPID',
+        'bpcscode' => 'BPCSCODE',
+        'is_active' => 'active',
+        'level_id' => 'level',
+        'role_id' => 'role',
+        'cost_center_id' => 'cost center',
+        'goa_holder_id' => 'goA holder',
+
+        'expense_id' => 'expense type',
+        'expense_code_id' => 'expense code',
+        'is_traf' => 'TRAF approval',
+        'is_limit_person' => 'limit person',
+        'is_bod' => 'boD approval',
+        'is_bp_approval' => 'business purpose approval',
+        'bod_level' => 'boD level',
+        'limit_departments' => 'limit departments'
     ],
 
     // CUSTOM
@@ -174,6 +193,6 @@ return [
     'data_join_same' => ":name can't join for yourself",
     'not_changed_data' => ':name does not need to be changed',
     'limit' => ":attr1 exceeding :attr2 of :value",
-    'not_active' => "Your account is not active",
+    'not_active' => "Your account is not active.",
     'limit_bp' => ":attr1 exceeding :attr2 of :value, need to check Business Approval",
 ];

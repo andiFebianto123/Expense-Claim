@@ -24,7 +24,7 @@ class CreateTransExpenseClaimsTable extends Migration
 
             $table->unsignedBigInteger('hod_id')->nullable();
             $table->unsignedBigInteger('hod_delegation_id')->nullable();
-            $table->date('start_approval_date');
+            $table->date('start_approval_date')->nullable();
             $table->boolean('is_admin_delegation');
             $table->date('hod_date')->nullable();
 

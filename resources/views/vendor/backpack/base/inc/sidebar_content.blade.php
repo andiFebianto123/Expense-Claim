@@ -4,15 +4,14 @@
 @php
     $user = backpack_user();
     $role = $user->role->name ?? null;
-
-    // INVALID CODE
-    $department = $user->department->name ?? null;
     
     $classRole = 'App\Models\Role';
+    $allowAll = in_array($role, [$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY]);
+
+    // INVALID CODE
     $allowMaster = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
     $allowLevelOne = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::NATIONAL_SALES]);
     $allowLevelTwo = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
-    $allowAll = in_array($role, [$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY]);
     $allowFinance = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
     // END INVALID CODE
 @endphp

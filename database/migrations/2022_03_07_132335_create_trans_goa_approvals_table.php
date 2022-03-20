@@ -19,7 +19,7 @@ class CreateTransGoaApprovalsTable extends Migration
             $table->unsignedBigInteger('goa_id');
             $table->unsignedBigInteger('goa_delegation_id')->nullable();
             $table->boolean('is_admin_delegation');
-            $table->date('start_approval_date');
+            $table->date('start_approval_date')->nullable();
             $table->date('goa_date')->nullable();
             $table->string('status');
             $table->unsignedBigInteger('order');

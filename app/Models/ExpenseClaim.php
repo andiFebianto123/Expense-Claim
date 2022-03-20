@@ -11,20 +11,23 @@ class ExpenseClaim extends Model
 {
     use HasFactory, CrudTrait;
 
-    public const NONE = '-';
     public const DRAFT = 'Draft';
-    public const REQUEST_FOR_APPROVAL = 'Request for Approval';
-    public const APPROVED_BY_HOD = 'Approved by HoD';
+    public const REQUEST_FOR_APPROVAL = 'Request for Approval (HoD)';
+    public const REQUEST_FOR_APPROVAL_TWO = 'Request for Approval (GoA)';
     public const PARTIAL_APPROVED = 'Partial Approved';
     public const FULLY_APPROVED = 'Fully Approved';
-    public const NEED_APPROVAL_ONE = 'Need Approval (Level 1)';
-    public const NEED_APPROVAL_TWO = 'Need Approval (Level 2)';
     public const NEED_REVISION = 'Need Revision';
     public const NEED_PROCESSING = 'Need Processing';
-    public const PROCEED = 'Proceed By AP';
-    public const REJECTED_ONE = 'Rejected (Level 1)';
-    public const REJECTED_TWO = 'Rejected (Level 2)';
+    public const PROCEED = 'AP Proceed';
+    public const REJECTED_ONE = 'Rejected (HoD)';
+    public const REJECTED_TWO = 'Rejected (GoA)';
     public const CANCELED = 'Canceled';
+
+    // INVALID STATUS
+    public const NONE = '-';
+    public const APPROVED_BY_HOD = 'Approved by HoD';
+    public const NEED_APPROVAL_ONE = 'Need Approval (Level 1)';
+    public const NEED_APPROVAL_TWO = 'Need Approval (Level 2)';
 
     protected $fillable = [
         'expense_number', 'value', 'currency', 'request_date', 'request_id',

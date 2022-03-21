@@ -176,7 +176,7 @@ class ExpenseUserRequestCrudController extends CrudController
                 'wrapper' => [
                     'element' => 'small',
                     'class' => function ($crud, $column, $entry, $related_key) {
-                        return 'rounded p-1 font-weight-bold ' . ($column['text'] === ExpenseClaim::DRAFT ? '' : 'text-white ') . (ExpenseClaim::mapColorStatus($column['text']));
+                        return 'rounded p-1 font-weight-bold ' . ' text-white ' . (ExpenseClaim::mapColorStatus($column['text']));
                     },
                 ],
             ]

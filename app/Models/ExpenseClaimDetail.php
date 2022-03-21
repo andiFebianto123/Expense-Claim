@@ -16,7 +16,7 @@ class ExpenseClaimDetail extends Model
         'expense_claim_id', 'date',
         'cost_center_id', 'expense_type_id', 'total_person', 
         'is_bp_approval',
-        'cost', 'currency', 'converted_currency', 'exchange_value', 'covnerted_cost',
+        'cost', 'currency', 'converted_currency', 'exchange_value', 'converted_cost',
         'document', 'remark'
     ];
     protected $table = 'trans_expense_claim_details';

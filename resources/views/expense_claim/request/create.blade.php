@@ -31,7 +31,28 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
     <div class="row">
         <div class="{{ $crud->getCreateContentClass() }}">
             <div class="card">
-                <div id="createInfo" class="card-body"></div>
+                <div id="createInfo" class="card-body row">
+                    <div class="form-group col-md-12">
+                        <label>USD to IDR</label>
+                        <input class="form-control" value="{{formatNumber($configs['usd_to_idr'] ?? null)}}" readonly>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>Start Exchange Date</label>
+                        <input class="form-control" value="{{formatDate($configs['start_exchange_date'] ?? null)}}" readonly>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>End Exchange Date</label>
+                        <input class="form-control" value="{{formatDate($configs['end_exchange_date'] ?? null)}}" readonly>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>Currency</label>
+                        <input class="form-control" id="currencyId" readonly>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>Limit</label>
+                        <input class="form-control" id="limitId" readonly>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -65,60 +86,11 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
 
 @push('after_scripts')
     <script>
+       $(document).ready(function(){
         var expenseTypes = @json($expenseTypes);
-        var configs = @json($configs);
-
-        var usdToIdr = parseFloat(configs.usd_to_idr.value);
-        var isLimit = false;
         var selectedExpenseTypeId = parseInt($('#expenseTypeId').val());
-
-        $('#totalPersonId').parent().hide();
-
-        $('#createInfo')
-            .append(
-                $('<div/>')
-                .addClass("form-group col-sm-12 p-0")
-                .append(
-                    $('<label/>')
-                    .text("USD to IDR")
-                ).append(
-                    $("<input/>")
-                    .attr("id", "usdToIdr")
-                    .attr("name", "usdToIdr")
-                    .attr("readonly", "readonly")
-                    .attr("disabled", "disabled")
-                    .addClass("form-control")
-                    .val(usdToIdr.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,'))
-                )
-            ).append(
-                $('<div/>')
-                .addClass("form-group col-sm-12 p-0")
-                .append(
-                    $('<label/>')
-                    .text("Currency")
-                ).append(
-                    $("<input/>")
-                    .attr("id", "currencyId")
-                    .attr("name", "currency")
-                    .attr("readonly", "readonly")
-                    .attr("disabled", "disabled")
-                    .addClass("form-control")
-                )
-            ).append(
-                $('<div/>')
-                .addClass("form-group col-sm-12 p-0")
-                .append(
-                    $('<label/>')
-                    .text("Limit")
-                ).append(
-                    $("<input/>")
-                    .attr("id", "limitId")
-                    .attr("name", "limit")
-                    .attr("readonly", "readonly")
-                    .attr("disabled", "disabled")
-                    .addClass("form-control")
-                )
-            );
+        var currentItem = null;
+        console.log(selectedExpenseTypeId);
 
         selectExpenseType(selectedExpenseTypeId)
 
@@ -129,103 +101,69 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
         function numberWithCommas(number) {
             return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
-
         function selectExpenseType(selectedId) {
-            var item = expenseTypes.filter(item => item.expense_type_id === selectedId)[0];
-            if (item.expense_type_id === selectedId) {
-                $('#currencyId').val(item.currency);
-                $('#limitId').val(numberWithCommas(item.limit));
-            }
-
-            if (item.bp_approval && item.level === 'D7') {
-                addBusinessApproval();
-            } else {
-                $('#businessApprovalId').parent().parent().remove();
-            }
-
-            if (item.limit_person) {
-                addLimitPerson();
-            } else {
-                $('#limitPersonId').parent().parent().remove();
-            }
-        }
-
-        function addBusinessApproval() {
-            $('select[name=expense_type_id]')
-                .parent()
-                .parent()
-                .append(
-                    $('<div/>')
-                    .addClass("form-group col-sm-12 required")
-                    .append(
-                        $('<div/>')
-                        .addClass('checkbox').append(
-                            $("<input/>")
-                            .attr("id", "businessApprovalId")
-                            .attr("name", "is_bp_approval")
-                            .attr("type", "checkbox")
-                        ).append(
-                            $('<label/>')
-                            .addClass("form-check-label font-weight-normal ml-1")
-                            .text("Business Approval")
-                        )
-                    )
-
-                )
-        }
-
-        function addLimitPerson() {
-            $('select[name=expense_type_id]')
-                .parent()
-                .parent()
-                .append(
-                    $('<div/>')
-                    .addClass("form-group col-sm-12 required")
-                    .append(
-                        $('<div/>')
-                        .addClass('checkbox').append(
-                            $("<input/>")
-                            .attr("id", "limitPersonId")
-                            .attr("name", "is_limit_person")
-                            .attr("type", "checkbox")
-                        ).append(
-                            $('<label/>')
-                            .addClass("form-check-label font-weight-normal ml-1")
-                            .text("Limit Person")
-                        )
-                    )
-                );
-
-            $("#limitPersonId").on('change', function() {
-                isLimit = !isLimit;
-                if (isLimit) {
-                    $('select[name=expense_type_id]')
-                        .parent()
-                        .parent()
-                        .append(
-                            $('<div/>')
-                            .addClass("form-group col-sm-12 required")
-                            .attr("id", "totalPersonId")
-                            .append(
-                                $('<div/>')
-                                .addClass("form-group col-sm-12 p-0")
-                                .append(
-                                    $('<label/>')
-                                    .text("Total Person")
-                                ).append(
-                                    $("<input/>")
-                                    .attr("name", "total_person")
-                                    .attr("type", "number")
-                                    .addClass("form-control")
-                                )
-                            )
-                        )
-                } else if (!isLimit) {
-                    $('#totalPersonId').remove();
+            currentItem = null;
+            var index = expenseTypes.findIndex(item => item.expense_type_id.toString() === selectedId.toString());
+            if(index !== -1){
+                currentItem = expenseTypes[index];
+                console.log(currentItem);
+                item = currentItem;
+                if(item.traf){
+                    $('#documentFile').parents('div.form-group').addClass('required');
+                }
+                else{
+                    $('#documentFile').parents('div.form-group').removeClass('required');
+                }
+                if (item.expense_type_id === selectedId) {
+                    $('#currencyId').val(item.currency);
+                    var multiply = 1;
+                    if(item.limit_person){
+                        if(cleaveElmtCache['total_person'] !== null && cleaveElmtCache['total_person'] !== undefined){
+                            multiply = cleaveElmtCache['total_person'].getRawValue();
+                            
+                        }
+                        else{
+                            multiply = $('input[name="total_person"]').val();
+                        }
+                        if(multiply === null || multiply === undefined){
+                            multiply = 0;
+                        }
+                    }
+                    if(item.limit === null || item.limit === undefined){
+                        $('#limitId').val('∞');
+                    }
+                    else{
+                        $('#limitId').val(numberWithCommas(item.limit * (multiply)));
+                    }
                 }
 
-                $(this).val(isLimit);
-            })
+                if (item.bp_approval && item.level === 'D7') {
+                    $('input[name="is_bp_approval"]').parents('div.form-group').removeClass('d-none');
+                } else {
+                    $('input[name="is_bp_approval"]').parents('div.form-group').addClass('d-none');
+                }
+
+                if (item.limit_person) {
+                    $('#totalPerson').parents('div.form-group').removeClass('d-none');
+                } else {
+                    if(cleaveElmtCache['total_person'] !== null && cleaveElmtCache['total_person'] !== undefined){
+                        cleaveElmtCache['total_person'].setRawValue('');
+                    }
+                    $('#totalPerson').parents('div.form-group').addClass('d-none');
+                }
+            }
         }
+
+        $('#totalPerson').parents('.form-group').find('input[type="hidden"]').on('change', function(){
+            if(currentItem != null && currentItem.limit_person){
+                if(currentItem.limit === null || currentItem.limit === undefined){
+                    $('#limitId').val('∞');
+                }
+                else{
+                    $('#limitId').val(numberWithCommas(currentItem.limit * (this.value.length == 0 ? 0 : this.value)));
+                }
+            }
+        });
+       });
     </script>
 @endpush

@@ -30,9 +30,9 @@
                     </div>
                     <div class="col-md-6">
                         <p>Total Value : <b
-                                id="total-value">{{ formatNumber($crud->expenseClaimDetail->sum('cost')) }}</b>
+                                id="total-value">{{ formatNumber($crud->expenseClaim->value) }}</b>
                         </p>
-                        <p>Currency : <b>{{ App\Models\Config::IDR }}</b></p>
+                        <p>Currency : <b>{{ $crud->expenseClaim->currency }}</b></p>
                         <p>Status : <span
                                 class="rounded p-1 font-weight-bold text-white {{ App\Models\ExpenseClaim::mapColorStatus($crud->expenseClaim->status) }}">{{ $crud->expenseClaim->status }}</span>
                         </p>

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseUserRequestDetailRequest;
+use App\Models\ExpenseClaimType;
 use App\Models\GoaHolder;
 use App\Models\TransGoaApproval;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -509,21 +510,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->date = $request->date;
             $expenseClaimDetail->cost_center_id = $user->cost_center_id;
             $expenseClaimDetail->expense_type_id = $expenseType->expense_type_id;
-            $expenseClaimDetail->expense_name = $expenseType->expense_name;
-            $expenseClaimDetail->level_id = $user->level_id;
-            $expenseClaimDetail->detail_level_id = $user->level_code;
-            $expenseClaimDetail->level_name = $user->level_name;
-            $expenseClaimDetail->limit = $expenseType->limit;
-            $expenseClaimDetail->expense_code_id = $expenseType->expense_code_id;
-            $expenseClaimDetail->account_number = $expenseType->account_number;
-            $expenseClaimDetail->description = $expenseType->description;
-            $expenseClaimDetail->is_traf = $expenseType->is_traf;
-            $expenseClaimDetail->is_bod = $expenseType->is_bod;
             $expenseClaimDetail->is_bp_approval = $expenseType->is_bp_approval;
-            $expenseClaimDetail->is_limit_person = $isLimitPerson;
-            $expenseClaimDetail->total_person = $request->total_person ?? null;
             $expenseClaimDetail->currency = $currency;
             $expenseClaimDetail->exchange_value = $exchangeValue;
+            $expenseClaimDetail->total_person = $request->total_person ?? null;
             $expenseClaimDetail->converted_currency = $convertedCurrency;
             $expenseClaimDetail->converted_cost = $convertedCost;
             $expenseClaimDetail->cost = $cost;
@@ -531,6 +521,28 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->document = $request->document;
 
             $expenseClaimDetail->save();
+
+            $expenseClaimType = new ExpenseClaimType;
+
+            $expenseClaimType->expense_claim_id = $this->crud->headerId;
+            $expenseClaimType->expense_type_id = $expenseType->expense_type_id;
+            $expenseClaimType->expense_name = $expenseType->expense_name;
+            $expenseClaimType->level_id = $user->level_id;
+            $expenseClaimType->detail_level_id = $user->level_code;
+            $expenseClaimType->level_name = $user->level_name;
+            $expenseClaimType->limit = $expenseType->limit;
+            $expenseClaimType->expense_code_id = $expenseType->expense_code_id;
+            $expenseClaimType->account_number = $expenseType->account_number;
+            $expenseClaimType->description = $expenseType->description;
+            $expenseClaimType->is_traf = $expenseType->is_traf;
+            $expenseClaimType->is_bod = $expenseType->is_bod;
+            $expenseClaimType->is_limit_person = $isLimitPerson;
+            $expenseClaimType->is_bp_approval = $expenseType->is_bp_approval;
+            $expenseClaimType->currency = $currency;
+            $expenseClaimType->limit_business_approval = $expenseType->limit_business_approval;
+            $expenseClaimType->remark_expense_type = $expenseType->remark;
+
+            $expenseClaimType->save();
 
             \Alert::success(trans('backpack::crud.insert_success'))->flash();
 
@@ -602,6 +614,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         DB::beginTransaction();
         try {
             $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)->first();
+            $expenseClaimType = ExpenseClaimType::where('expense_claim_id', $header_id)
+                ->where('expense_type_id', $expenseClaimDetail->expense_type_id)
+                ->first();
+
             $cost = $request->cost;
 
             $isLimitPerson = (bool) $request->is_limit_person ?? false;
@@ -643,6 +659,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
             if ($expenseClaimDetail == null) {
                 $errors[] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_claim')])];
+            }
+
+            if ($expenseClaimType == null) {
+                $errors[] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_claim_type')])];
             }
 
             if ($expenseType == null) {
@@ -724,28 +744,37 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->date = $request->date;
             $expenseClaimDetail->cost_center_id = $user->cost_center_id;
             $expenseClaimDetail->expense_type_id = $expenseType->expense_type_id;
-            $expenseClaimDetail->expense_name = $expenseType->expense_name;
-            $expenseClaimDetail->level_id = $user->level_id;
-            $expenseClaimDetail->detail_level_id = $user->level_code;
-            $expenseClaimDetail->level_name = $user->level_name;
-            $expenseClaimDetail->limit = $expenseType->limit;
-            $expenseClaimDetail->expense_code_id = $expenseType->expense_code_id;
-            $expenseClaimDetail->account_number = $expenseType->account_number;
-            $expenseClaimDetail->description = $expenseType->description;
-            $expenseClaimDetail->is_traf = $expenseType->is_traf;
-            $expenseClaimDetail->is_bod = $expenseType->is_bod;
             $expenseClaimDetail->is_bp_approval = $expenseType->is_bp_approval;
-            $expenseClaimDetail->is_limit_person = $isLimitPerson;
-            $expenseClaimDetail->total_person = $request->total_person ?? null;
             $expenseClaimDetail->currency = $currency;
-            $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->exchange_value = $exchangeValue;
+            $expenseClaimDetail->total_person = $request->total_person ?? null;
             $expenseClaimDetail->converted_currency = $convertedCurrency;
             $expenseClaimDetail->converted_cost = $convertedCost;
+            $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->remark = $request->remark;
             $expenseClaimDetail->document = $request->document;
 
             $expenseClaimDetail->save();
+
+            $expenseClaimType->expense_claim_id = $this->crud->headerId;
+            $expenseClaimType->expense_type_id = $expenseType->expense_type_id;
+            $expenseClaimType->expense_name = $expenseType->expense_name;
+            $expenseClaimType->level_id = $user->level_id;
+            $expenseClaimType->detail_level_id = $user->level_code;
+            $expenseClaimType->level_name = $user->level_name;
+            $expenseClaimType->limit = $expenseType->limit;
+            $expenseClaimType->expense_code_id = $expenseType->expense_code_id;
+            $expenseClaimType->account_number = $expenseType->account_number;
+            $expenseClaimType->description = $expenseType->description;
+            $expenseClaimType->is_traf = $expenseType->is_traf;
+            $expenseClaimType->is_bod = $expenseType->is_bod;
+            $expenseClaimType->is_limit_person = $isLimitPerson;
+            $expenseClaimType->is_bp_approval = $expenseType->is_bp_approval;
+            $expenseClaimType->currency = $currency;
+            $expenseClaimType->limit_business_approval = $expenseType->limit_business_approval;
+            $expenseClaimType->remark_expense_type = $expenseType->remark;
+
+            $expenseClaimType->save();
 
             \Alert::success(trans('backpack::crud.update_success'))->flash();
 

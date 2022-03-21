@@ -17,7 +17,6 @@ class ExpenseClaim extends Model
     public const PARTIAL_APPROVED = 'Partial Approved';
     public const FULLY_APPROVED = 'Fully Approved';
     public const NEED_REVISION = 'Need Revision';
-    public const NEED_PROCESSING = 'Need Processing';
     public const PROCEED = 'AP Proceed';
     public const REJECTED_ONE = 'Rejected (HoD)';
     public const REJECTED_TWO = 'Rejected (GoA)';
@@ -28,6 +27,7 @@ class ExpenseClaim extends Model
     public const APPROVED_BY_HOD = 'Approved by HoD';
     public const NEED_APPROVAL_ONE = 'Need Approval (Level 1)';
     public const NEED_APPROVAL_TWO = 'Need Approval (Level 2)';
+    public const NEED_PROCESSING = 'Need Processing';
 
     protected $fillable = [
         'expense_number', 'value', 'currency', 'request_date', 'request_id',
@@ -78,19 +78,29 @@ class ExpenseClaim extends Model
     public static function mapColorStatus($status)
     {
         $colors = [
-            self::NONE => '',
-            self::NEED_APPROVAL_ONE => 'bg-light-blue',
-            self::NEED_APPROVAL_TWO => 'bg-blue',
+            // self::NONE => '',
+            // self::NEED_APPROVAL_ONE => 'bg-light-blue',
+            // self::NEED_APPROVAL_TWO => 'bg-blue',
+            // self::NEED_REVISION => 'bg-warning',
+            // self::NEED_PROCESSING => 'bg-cyan',
+            // self::PROCEED => 'bg-success',
+            // self::REJECTED_ONE => 'bg-gray',
+            // self::REJECTED_TWO => 'bg-dark',
+            // self::CANCELED => 'bg-danger',
+            // self::REQUEST_FOR_APPROVAL => 'bg-light-blue',
+            // self::APPROVED_BY_HOD => 'bg-blue',
+            // self::PARTIAL_APPROVED => 'bg-cyan',
+            // self::FULLY_APPROVED => 'bg-success',
+
+            self::REQUEST_FOR_APPROVAL => 'bg-primary',
+            self::REQUEST_FOR_APPROVAL_TWO => 'bg-light-blue',
+            self::PARTIAL_APPROVED => 'bg-teal',
+            self::FULLY_APPROVED => 'bg-cyan',
             self::NEED_REVISION => 'bg-warning',
-            self::NEED_PROCESSING => 'bg-cyan',
             self::PROCEED => 'bg-success',
             self::REJECTED_ONE => 'bg-gray',
             self::REJECTED_TWO => 'bg-dark',
             self::CANCELED => 'bg-danger',
-            self::REQUEST_FOR_APPROVAL => 'bg-light-blue',
-            self::APPROVED_BY_HOD => 'bg-blue',
-            self::PARTIAL_APPROVED => 'bg-cyan',
-            self::FULLY_APPROVED => 'bg-success',
         ];
         return $colors[$status] ?? 'bg-info';
     }

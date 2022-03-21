@@ -325,6 +325,22 @@ class DatabaseSeeder extends Seeder
             'value' => '14276.50',
             'type' => 'float',
         ]);
+
+        Config::updateOrCreate([
+            'key' => 'Start Exchange Date',
+        ], [
+            'key' => 'Start Exchange Date',
+            'value' => '2022-03-01',
+            'type' => 'date',
+        ]);
+
+        Config::updateOrCreate([
+            'key' => 'End Exchange Date',
+        ], [
+            'key' => 'End Exchange Date',
+            'value' => '2022-04-01',
+            'type' => 'date',
+        ]);
     }
 
     public function addGoaToUser()

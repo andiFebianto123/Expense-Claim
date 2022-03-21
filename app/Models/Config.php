@@ -14,4 +14,6 @@ class Config extends Model
     public const USD = 'USD';
     public const IDR = 'IDR';
     public const USD_TO_IDR = 'USD to IDR';
+    public const START_EXCHANGE_DATE = 'Start Exchange Date';
+    public const END_EXCHANGE_DATE = 'End Exchange Date';
 }

@@ -44,6 +44,7 @@ Route::group([
         // EXPENSE USER REQUEST
         Route::crud('expense-user-request', 'ExpenseUserRequestCrudController');
         Route::post('expense-user-request/new-request', [ExpenseUserRequestCrudController::class, 'newRequest']);
+        Route::post('expense-user-request/new-request-goa', [ExpenseUserRequestCrudController::class, 'newRequestGoa']);
         Route::delete('expense-user-request/{id}/cancel', [ExpenseUserRequestCrudController::class, 'cancel']);
         Route::prefix('expense-user-request/{header_id}')->group(function () {
             Route::crud('detail', 'ExpenseUserRequestDetailCrudController');

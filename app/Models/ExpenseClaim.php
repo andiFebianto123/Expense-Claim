@@ -78,19 +78,29 @@ class ExpenseClaim extends Model
     public static function mapColorStatus($status)
     {
         $colors = [
-            self::NONE => '',
-            self::NEED_APPROVAL_ONE => 'bg-light-blue',
-            self::NEED_APPROVAL_TWO => 'bg-blue',
+            // self::NONE => '',
+            // self::NEED_APPROVAL_ONE => 'bg-light-blue',
+            // self::NEED_APPROVAL_TWO => 'bg-blue',
+            // self::NEED_REVISION => 'bg-warning',
+            // self::NEED_PROCESSING => 'bg-cyan',
+            // self::PROCEED => 'bg-success',
+            // self::REJECTED_ONE => 'bg-gray',
+            // self::REJECTED_TWO => 'bg-dark',
+            // self::CANCELED => 'bg-danger',
+            // self::REQUEST_FOR_APPROVAL => 'bg-light-blue',
+            // self::APPROVED_BY_HOD => 'bg-blue',
+            // self::PARTIAL_APPROVED => 'bg-cyan',
+            // self::FULLY_APPROVED => 'bg-success',
+
+            self::REQUEST_FOR_APPROVAL => 'bg-primary',
+            self::REQUEST_FOR_APPROVAL_TWO => 'bg-light-blue',
+            self::PARTIAL_APPROVED => 'bg-teal',
+            self::FULLY_APPROVED => 'bg-cyan',
             self::NEED_REVISION => 'bg-warning',
-            self::NEED_PROCESSING => 'bg-cyan',
             self::PROCEED => 'bg-success',
             self::REJECTED_ONE => 'bg-gray',
             self::REJECTED_TWO => 'bg-dark',
             self::CANCELED => 'bg-danger',
-            self::REQUEST_FOR_APPROVAL => 'bg-light-blue',
-            self::APPROVED_BY_HOD => 'bg-blue',
-            self::PARTIAL_APPROVED => 'bg-cyan',
-            self::FULLY_APPROVED => 'bg-success',
         ];
         return $colors[$status] ?? 'bg-info';
     }

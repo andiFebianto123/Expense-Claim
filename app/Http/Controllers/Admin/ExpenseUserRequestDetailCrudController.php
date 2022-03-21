@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseUserRequestDetailRequest;
 use App\Models\GoaHolder;
+use App\Models\TransGoaApproval;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -54,32 +55,6 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-user-request/' . ($this->crud->headerId ?? '-') . '/detail');
         CRUD::setEntityNameStrings('Expense User Request - Detail', 'Expense User Request - Detail');
 
-        $this->crud->setCreateView('expense_claim.request.create');
-        $this->crud->setUpdateView('expense_claim.request.edit');
-    }
-
-    public function getExpenseClaim($id)
-    {
-        $expenseClaim = ExpenseClaim::where('id', $id);
-        if ($this->crud->role != Role::ADMIN) {
-            $expenseClaim->where('request_id', $this->crud->user->id);
-        }
-        $expenseClaim =  $expenseClaim->first();
-        if ($expenseClaim == null) {
-            DB::rollback();
-            abort(404, trans('custom.model_not_found'));
-        }
-        return $expenseClaim;
-    }
-
-    /**
-     * Define what happens when the List operation is loaded.
-     * 
-     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
-     * @return void
-     */
-    protected function setupListOperation()
-    {
         $expenseClaimDetail = ExpenseClaimDetail::where('expense_claim_id',  $this->crud->headerId)->get();
 
         $department = User::join('mst_departments', 'mst_users.department_id', '=', 'mst_departments.id')
@@ -113,6 +88,33 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->crud->user->department = $department;
         $this->crud->hod = $hod;
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+
+        $this->crud->setCreateView('expense_claim.request.create');
+        $this->crud->setUpdateView('expense_claim.request.edit');
+    }
+
+    public function getExpenseClaim($id)
+    {
+        $expenseClaim = ExpenseClaim::where('id', $id);
+        if ($this->crud->role != Role::ADMIN) {
+            $expenseClaim->where('request_id', $this->crud->user->id);
+        }
+        $expenseClaim =  $expenseClaim->first();
+        if ($expenseClaim == null) {
+            DB::rollback();
+            abort(404, trans('custom.model_not_found'));
+        }
+        return $expenseClaim;
+    }
+
+    /**
+     * Define what happens when the List operation is loaded.
+     * 
+     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
+     * @return void
+     */
+    protected function setupListOperation()
+    {
         $this->crud->viewBeforeContent = ['expense_claim.request.header'];
 
         $isDraftOrRequestApproval = $this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL;
@@ -765,7 +767,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         DB::beginTransaction();
         try {
             $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
-            if ($expenseClaim->status !== ExpenseClaim::DRAFT && $expenseClaim->status !== ExpenseClaim::REQUEST_FOR_APPROVAL) {
+            $expenseClaimDetail = ExpenseClaimDetail::where('expense_claim_id',  $this->crud->headerId)->get();
+
+            if ($expenseClaim->status != ExpenseClaim::DRAFT && $expenseClaim->status != ExpenseClaim::REQUEST_FOR_APPROVAL) {
                 DB::rollback();
                 return response()->json(['message' => trans('custom.expense_claim_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.submitted')])], 403);
             } else if (!ExpenseClaimDetail::exists()) {
@@ -775,7 +779,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $now = Carbon::now();
             $expenseClaim->request_date = $now;
 
-            if ($expenseClaim->status === ExpenseClaim::DRAFT) {
+            if ($expenseClaim->status == ExpenseClaim::DRAFT || $expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL) {
                 $lastExpenseNumber = ExpenseClaim::where('request_date', '=', $now->format('Y-m-d'))->whereNotNull('expense_number')
                     ->orderBy('id', 'desc')->select('expense_number')->first();
                 if ($lastExpenseNumber != null) {
@@ -785,33 +789,24 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 } else {
                     $expenseClaim->expense_number = 'ER' . $now->format('Ymd') . '001';
                 }
-                // dd($expenseClaim->expense_number);
-                $goaTempId = $this->crud->user->goa_id;
-                if ($goaTempId == null) {
-                    $goaTempId = User::whereRelation('role', 'name', Role::DIRECTOR)->select('id')->first()->id ?? null;
-                    if ($goaTempId == null) {
-                        DB::rollback();
-                        return response()->json(['message' => trans('custom.goa_user_not_found')], 404);
-                    }
+                $expenseClaim->value = $expenseClaimDetail->sum('cost');
+                $expenseClaim->currency = Config::IDR;
+                $expenseClaim->status = ExpenseClaim::REQUEST_FOR_APPROVAL;
+
+                TransGoaApproval::where('expense_claim_id', $expenseClaim->id)->delete();
+
+                $goaList = $this->crud->goaList;
+
+                foreach ($goaList as $index => $goa) {
+                    $transGoaApproval = new TransGoaApproval;
+                    $transGoaApproval->expense_claim_id = $expenseClaim->id;
+                    $transGoaApproval->goa_id = $goa->id;
+                    $transGoaApproval->start_approval_date = $now;
+                    $transGoaApproval->is_admin_delegation = 0;
+                    $transGoaApproval->status = ExpenseClaim::REQUEST_FOR_APPROVAL;
+                    $transGoaApproval->order = $index + 1;
+                    $transGoaApproval->save();
                 }
-                $expenseClaim->fill([
-                    'department_id' => $this->crud->user->department_id,
-                    'approval_temp_id' =>  $this->crud->user->head_department_id,
-                    'goa_temp_id' => $goaTempId,
-                ]);
-            }
-
-            $expenseClaim->fill([
-                'approval_id' => null,
-                'approval_date' => null,
-                'goa_id' => null,
-                'goa_date' => null,
-            ]);
-
-            if ($expenseClaim->approval_temp_id == null) {
-                $expenseClaim->status = ExpenseClaim::NEED_APPROVAL_TWO;
-            } else {
-                $expenseClaim->status = ExpenseClaim::NEED_APPROVAL_ONE;
             }
 
             $expenseClaim->save();

@@ -40,12 +40,6 @@ Route::group([
     'namespace'  => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
 
-    // USER ACCESS CONTROL
-    Route::crud('user-access-control', 'UserAccessControlCrudController');
-
-    // APPROVAL CARD
-    Route::crud('approval-card', 'ApprovalCardCrudController');
-
     Route::middleware('access.expense')->group(function () {
         // EXPENSE USER REQUEST
         Route::crud('expense-user-request', 'ExpenseUserRequestCrudController');

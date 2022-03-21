@@ -31,9 +31,10 @@ class ExpenseClaim extends Model
 
     protected $fillable = [
         'expense_number', 'value', 'currency', 'request_date', 'request_id',
-        'hod_id', 'hod_delegation_id', 'department_id', 'approval_temp_id', 'approval_id', 'approval_date',
-        'goa_temp_id', 'goa_id', 'goa_date', 'finance_id', 'finance_date', 'status', 'remark',
-        'rejected_id', 'rejected_date', 'canceled_id', 'canceled_date'
+        'hod_id', 'hod_delegation_id', 'start_approval_date', 'is_admin_delegation', 'ho_date',
+        'finance_id', 'finance_date', 'status', 'remark',
+        'rejected_id', 'rejected_date', 'canceled_id', 'canceled_date', 
+        'secretary_id', 'current_trans_goa_id', 'upper_limit', 'bottom_limit'
     ];
 
     protected $table = 'trans_expense_claims';

@@ -19,8 +19,15 @@ class CreateTransExpenseClaimsTable extends Migration
             $table->unsignedBigInteger('value');
             $table->string('currency');
 
+            $table->unsignedBigInteger('upper_limit')->nullable();
+            $table->unsignedBigInteger('bottom_limit')->nullable();
+
             $table->unsignedBigInteger('request_id');
             $table->date('request_date')->nullable();
+
+            $table->unsignedBigInteger('secretary_id')->nullable();
+
+            $table->unsignedBigInteger('current_trans_goa_id')->nullable();
 
             $table->unsignedBigInteger('hod_id')->nullable();
             $table->unsignedBigInteger('hod_delegation_id')->nullable();
@@ -42,10 +49,18 @@ class CreateTransExpenseClaimsTable extends Migration
 
             $table->timestamps();
 
+            $table->index('current_trans_goa_id');
+
             $table->foreign('request_id')
             ->references('id')
             ->on('mst_users')
             ->onUpdate('cascade');
+
+            $table->foreign('secretary_id')
+            ->references('id')
+            ->on('mst_users')
+            ->onUpdate('cascade');
+
 
             $table->foreign('hod_id')
             ->references('id')

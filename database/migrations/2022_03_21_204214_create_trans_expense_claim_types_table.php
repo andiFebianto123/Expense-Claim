@@ -68,6 +68,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('expense_claim_types');
+        Schema::dropIfExists('trans_expense_claim_types');
     }
 };

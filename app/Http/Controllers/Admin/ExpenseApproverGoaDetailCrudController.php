@@ -39,7 +39,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
 
-        if($this->crud->role !== Role::SUPER_ADMIN && $this->crud->role !== Role::DIRECTOR){
+        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::GOA_HOLDER])) {
             $this->crud->denyAccess(['list', 'update']);
         }
 
@@ -56,26 +56,27 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
         
         $expenseClaim = ExpenseClaim::where('id', $id)
         ->where(function($query){
-            $query->where('expense_claims.status', ExpenseClaim::NEED_APPROVAL_TWO)
-            ->orWhere(function($innerQuery){
-                $innerQuery->where('expense_claims.status', '!=', ExpenseClaim::NONE)
-                ->where('expense_claims.status', '!=', ExpenseClaim::NEED_APPROVAL_TWO)
-                ->where(function($innerQuery){
-                    $innerQuery->whereNotNull('goa_id')
-                    ->orWhere('expense_claims.status', ExpenseClaim::REJECTED_TWO)
-                    ->orWhere(function($deepestQuery){
-                        $deepestQuery
-                        ->where('expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
-                        ->whereNotNull('approval_id');
-                    });
-                });
-            });
+           
+            // $query->where('trans_expense_claims.status', ExpenseClaim::NEED_APPROVAL_TWO)
+            // ->orWhere(function($innerQuery){
+            //     $innerQuery->where('trans_expense_claims.status', '!=', ExpenseClaim::NONE)
+            //     ->where('trans_expense_claims.status', '!=', ExpenseClaim::NEED_APPROVAL_TWO)
+            //     ->where(function($innerQuery){
+            //         $innerQuery->whereNotNull('goa_id')
+            //         ->orWhere('trans_expense_claims.status', ExpenseClaim::REJECTED_TWO)
+            //         ->orWhere(function($deepestQuery){
+            //             $deepestQuery
+            //             ->where('trans_expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
+            //             ->whereNotNull('approval_id');
+            //         });
+            //     });
+            // });
         });
-        if($this->crud->role === Role::DIRECTOR){
-            $expenseClaim->where('expense_claims.goa_temp_id', $this->crud->user->id);
+        if($this->crud->role === Role::GOA_HOLDER){
+            $expenseClaim->where('trans_expense_claims.goa_temp_id', $this->crud->user->id);
         }
         else{
-            $expenseClaim->whereNotNull('expense_claims.goa_temp_id');
+            $expenseClaim->whereNotNull('trans_expense_claims.goa_temp_id');
         }
 
         $expenseClaim =  $expenseClaim->first();

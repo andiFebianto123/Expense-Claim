@@ -79,6 +79,8 @@ class ApJournalExport implements FromView, WithEvents
         $filters = [];
         
         $data['headers'] = $this->headers;
+        $data['bodies'] = $this->headers;
+        
 
         return view('exports.excel.ap_journal', $data);
     }

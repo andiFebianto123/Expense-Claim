@@ -170,6 +170,7 @@ return [
         'date' => 'date',
         'document' => 'document',
         "expense_claim" => 'expense claim',
+        'expense_claim_type' => 'expense claim type',
         'bpid' => 'BPID',
         'bpcscode' => 'BPCSCODE',
         'is_active' => 'active',

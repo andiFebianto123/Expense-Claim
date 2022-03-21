@@ -14,7 +14,7 @@ class ExpenseClaimDetail extends Model
 
     protected $fillable = [
         'expense_claim_id', 'date',
-        'cost_center_id', 'expense_type_id', 'total_person', 
+        'cost_center_id', 'expense_type_id', 'total_person',
         'is_bp_approval',
         'cost', 'currency', 'converted_currency', 'exchange_value', 'converted_cost',
         'document', 'remark'
@@ -25,6 +25,10 @@ class ExpenseClaimDetail extends Model
 
     public static $expenseCode = ['35202' => '35202', '31601' => '31601'];
 
+    public function expense_claim()
+    {
+        return $this->belongsTo(ExpenseClaim::class, 'expense_claim_id');
+    }
 
     public function expense_code()
     {

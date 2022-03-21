@@ -10,8 +10,19 @@
                         <p>Request Date : <b>{{ formatDate($crud->expenseClaim->request_date) }}</b></p>
                         <p>Requestor : <b>{{ $crud->user->name ?? '-' }}</b></p>
                         <p>Department : <b>{{ $crud->user->department->name ?? '-' }}</b></p>
-                        <p>Hod By : <b>{{ $crud->hod->name ?? '-' }}</b></p>
-                        <p>Hod Date : <b>{{ formatDate($crud->expenseClaim->approval_date) }}</b></p>
+                        @if (empty($crud->hod))
+                            <p>Hod By : <b>-</b></p>
+                        @else
+                            <div class="mb-2">
+                                <p class="mb-0">Hod By :</p>
+                                <ul class="mb-1 ml-3">
+                                    <li>
+                                        Name : <b>{{ $crud->hod->name ?? '-' }}</b>
+                                        <p>Hod Date : <b>{{ formatDate($crud->expenseClaim->approval_date) }}</b></p>
+                                    </li>
+                                </ul>
+                            </div>
+                        @endif
                         <div class="mb-2">
                             <p class="mb-0">GoA By : </p>
                             <ul class="mb-1 ml-3">

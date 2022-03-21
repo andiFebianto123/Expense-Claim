@@ -57,6 +57,36 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
         $expenseClaimDetail = ExpenseClaimDetail::where('expense_claim_id',  $this->crud->headerId)->get();
 
+        $this->crud->expenseClaimDetail = $expenseClaimDetail;
+        $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+
+        if (session('submit')) {
+            $this->getHodAndGoa();
+            session()->forget('submit');
+        }
+
+        $this->crud->setCreateView('expense_claim.request.create');
+        $this->crud->setUpdateView('expense_claim.request.edit');
+    }
+
+    public function getExpenseClaim($id)
+    {
+        $expenseClaim = ExpenseClaim::where('id', $id);
+        if ($this->crud->role != Role::ADMIN) {
+            $expenseClaim->where('request_id', $this->crud->user->id);
+        }
+        $expenseClaim =  $expenseClaim->first();
+        if ($expenseClaim == null) {
+            DB::rollback();
+            abort(404, trans('custom.model_not_found'));
+        }
+        return $expenseClaim;
+    }
+
+    public function getHodAndGoa()
+    {
+
+        $expenseClaimDetail = $this->crud->expenseClaimDetail;
         $department = User::join('mst_departments', 'mst_users.department_id', '=', 'mst_departments.id')
             ->where('mst_users.id',  $this->crud->user->id)
             ->select(
@@ -81,30 +111,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
 
         $totalCost = $expenseClaimDetail->sum('cost');
-
         $this->recursiveCheckValue($totalCost, $goa);
 
-        $this->crud->expenseClaimDetail = $expenseClaimDetail;
         $this->crud->user->department = $department;
         $this->crud->hod = $hod;
-        $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
-
-        $this->crud->setCreateView('expense_claim.request.create');
-        $this->crud->setUpdateView('expense_claim.request.edit');
-    }
-
-    public function getExpenseClaim($id)
-    {
-        $expenseClaim = ExpenseClaim::where('id', $id);
-        if ($this->crud->role != Role::ADMIN) {
-            $expenseClaim->where('request_id', $this->crud->user->id);
-        }
-        $expenseClaim =  $expenseClaim->first();
-        if ($expenseClaim == null) {
-            DB::rollback();
-            abort(404, trans('custom.model_not_found'));
-        }
-        return $expenseClaim;
     }
 
     /**
@@ -780,18 +790,35 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaim->request_date = $now;
 
             if ($expenseClaim->status == ExpenseClaim::DRAFT || $expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL) {
-                $lastExpenseNumber = ExpenseClaim::where('request_date', '=', $now->format('Y-m-d'))->whereNotNull('expense_number')
-                    ->orderBy('id', 'desc')->select('expense_number')->first();
-                if ($lastExpenseNumber != null) {
-                    $number = (int) str_replace('ER' . $now->format('Ymd'), '', $lastExpenseNumber->expense_number);
-                    $number++;
-                    $expenseClaim->expense_number = 'ER' . $now->format('Ymd') . str_repeat('0', (strlen($number) > 2 ? 0 : (3 - strlen($number)))) . $number;
-                } else {
-                    $expenseClaim->expense_number = 'ER' . $now->format('Ymd') . '001';
+                $expenseNumber = $expenseClaim->expense_number;
+
+                if (empty($expenseNumber)) {
+                    $lastExpenseNumber = ExpenseClaim::whereDate('request_date', '=', $now->format('Y-m-d'))
+                        ->where('expense_number', 'LIKE', 'TPI' . '%')
+                        ->select('expense_number')
+                        ->get();
+
+                    $greaterNumber = 0;
+
+                    if (count($lastExpenseNumber) <= 0) {
+                        $expenseNumber = 'TPI' . $now->format('dmY') . 1;
+                    } else {
+                        foreach ($lastExpenseNumber as $item) {
+                            $expenseNumberArr = explode($now->format('dmY'), $item->expense_number);
+                            $number = (int) $expenseNumberArr[count($expenseNumberArr) - 1];
+                            if ($number > $greaterNumber) {
+                                $greaterNumber = $number;
+                            }
+                        }
+                        $greaterNumber++;
+                        $expenseNumber = 'TPI' . $now->format('dmY') . $greaterNumber;
+                    }
                 }
+
+                $expenseClaim->expense_number = $expenseNumber;
                 $expenseClaim->value = $expenseClaimDetail->sum('cost');
                 $expenseClaim->currency = Config::IDR;
-                $expenseClaim->status = ExpenseClaim::REQUEST_FOR_APPROVAL;
+                $expenseClaim->status = $expenseClaim->hod_id ? ExpenseClaim::REQUEST_FOR_APPROVAL : ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
 
                 TransGoaApproval::where('expense_claim_id', $expenseClaim->id)->delete();
 
@@ -803,13 +830,16 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     $transGoaApproval->goa_id = $goa->id;
                     $transGoaApproval->start_approval_date = $now;
                     $transGoaApproval->is_admin_delegation = 0;
-                    $transGoaApproval->status = ExpenseClaim::REQUEST_FOR_APPROVAL;
+                    $transGoaApproval->status =  $expenseClaim->hod_id ? ExpenseClaim::REQUEST_FOR_APPROVAL : ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
                     $transGoaApproval->order = $index + 1;
                     $transGoaApproval->save();
                 }
             }
 
             $expenseClaim->save();
+
+            session(['submit' => true]);
+
             DB::commit();
             \Alert::success(trans('custom.expense_claim_submit_success'))->flash();
             return response()->json(['redirect_url' => backpack_url('expense-user-request/' . $expenseClaim->id .  '/detail')]);

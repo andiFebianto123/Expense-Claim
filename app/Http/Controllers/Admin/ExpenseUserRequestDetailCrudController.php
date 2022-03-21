@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseUserRequestDetailRequest;
+use App\Models\GoaHolder;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -41,6 +42,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
     {
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
+        $this->crud->goaList = [];
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
 
@@ -79,6 +81,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
     protected function setupListOperation()
     {
         $expenseClaimDetail = ExpenseClaimDetail::where('expense_claim_id',  $this->crud->headerId)->get();
+
         $department = User::join('mst_departments', 'mst_users.department_id', '=', 'mst_departments.id')
             ->where('mst_users.id',  $this->crud->user->id)
             ->select(
@@ -86,8 +89,29 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             )
             ->first();
 
+        $hod = User::where('mst_users.id', $department->user_id)->first();
+
+        $goaHolderId = null;
+
+        if (empty($hod)) {
+            $goaHolderId = $this->crud->user->goa_holder_id;
+        } else {
+            $goaHolderId = $hod->goa_holder_id;
+        }
+
+        $goa = GoaHolder::join('mst_users', 'goa_holders.user_id', '=', 'mst_users.id')
+            ->where('goa_holders.id', $goaHolderId)
+            ->select('goa_holders.*', 'mst_users.name as user_name')
+            ->first();
+
+
+        $totalCost = $expenseClaimDetail->sum('cost');
+
+        $this->recursiveCheckValue($totalCost, $goa);
+
         $this->crud->expenseClaimDetail = $expenseClaimDetail;
         $this->crud->user->department = $department;
+        $this->crud->hod = $hod;
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
         $this->crud->viewBeforeContent = ['expense_claim.request.header'];
 
@@ -102,6 +126,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->crud->deleteCondition = function ($entry) use ($isDraftOrRequestApproval) {
             return $isDraftOrRequestApproval && $this->crud->expenseClaim->request_id == $this->crud->user->id;
         };
+
+        $this->crud->addButton('line', 'delete', 'view', 'expense_claim.request.delete');
 
         CRUD::addColumns([
             [
@@ -809,5 +835,21 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'Cache-Control' => 'no-cache, must-revalidate'
             ]);
         }
+    }
+
+    private function recursiveCheckValue($totalCost, $goa)
+    {
+        $this->crud->goaList[] = $goa;
+
+        if (empty($goa) || $totalCost <= $goa->limit) {
+            return;
+        }
+
+        $goa = GoaHolder::join('mst_users', 'goa_holders.user_id', '=', 'mst_users.id')
+            ->where('goa_holders.id', $goa->head_department_id)
+            ->select('goa_holders.*', 'mst_users.name as user_name')
+            ->first();
+
+        $this->recursiveCheckValue($totalCost, $goa);
     }
 }

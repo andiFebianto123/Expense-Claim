@@ -10,10 +10,22 @@
                         <p>Request Date : <b>{{ formatDate($crud->expenseClaim->request_date) }}</b></p>
                         <p>Requestor : <b>{{ $crud->user->name ?? '-' }}</b></p>
                         <p>Department : <b>{{ $crud->user->department->name ?? '-' }}</b></p>
-                        <p>Hod By : <b>{{ $crud->expenseClaim->approval->name ?? '-' }}</b></p>
+                        <p>Hod By : <b>{{ $crud->hod->name ?? '-' }}</b></p>
                         <p>Hod Date : <b>{{ formatDate($crud->expenseClaim->approval_date) }}</b></p>
-                        <p>GoA By : <b>{{ $crud->expenseClaim->goa->name ?? '-' }}</b></p>
-                        <p>GoA Date : <b>{{ formatDate($crud->expenseClaim->goa_date) }}</b></p>
+                        <div class="mb-2">
+                            <p class="mb-0">GoA By : </p>
+                            <ul class="mb-1 ml-3">
+                                @foreach ($crud->goaList as $item)
+                                    <li>
+                                        Name : <b>{{ $item->user_name }}</b>
+                                        <br>
+                                        Limit : <b>Rp {{ formatNumber($item->limit) }}</b>
+                                        <br>
+                                        GoA Date : <b>{{ formatDate($crud->expenseClaim->goa_date) }}</b>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
                         <p>Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
                     </div>
                     <div class="col-md-6">

@@ -176,7 +176,14 @@ class ExpenseUserRequestCrudController extends CrudController
                 ->select('mst_users.id as user_id', 'mst_departments.*')
                 ->first();
 
-            $hod = $department->user_id;
+            $hod = User::join('goa_holders', 'mst_users.goa_holder_id', '=', 'goa_holders.id')
+                ->where('mst_users.id', $department->user_id)
+                ->select(
+                    'goa_holders.limit as goa_limit',
+                    'mst_users.id as user_id',
+                    'goa_holders.name as goa_name',
+                )
+                ->first();
 
             $hodDelegation = MstDelegation::where('from_user_id', $hod)
                 ->whereDate('start_date', '>=', date('Y-m-d'))
@@ -187,7 +194,7 @@ class ExpenseUserRequestCrudController extends CrudController
 
             $expenseClaim->value = 0;
             $expenseClaim->request_id = $user->id;
-            $expenseClaim->hod_id = $hod;
+            $expenseClaim->hod_id = $hod->user_id ?? null;
             $expenseClaim->hod_delegation_id = empty($hodDelegation) ? null : $hodDelegation->id;
             $expenseClaim->status = ExpenseClaim::DRAFT;
             $expenseClaim->currency = '';

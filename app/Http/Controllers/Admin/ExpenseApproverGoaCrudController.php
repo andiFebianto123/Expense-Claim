@@ -11,6 +11,7 @@ use App\Models\ExpenseClaim;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseApproverGoaRequest;
+use App\Models\TransGoaApproval;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -41,10 +42,10 @@ class ExpenseApproverGoaCrudController extends CrudController
             ExpenseClaim::addGlobalScope('user', function(Builder $builder){
                 $builder->where(function($query){
                     if($this->crud->role === Role::GOA_HOLDER){
-                        $query->where('trans_expense_claims.goa_temp_id', $this->crud->user->id);
+                        $query->where('trans_expense_claims.current_trans_goa_id', $this->crud->user->id);
                     }
                     else{
-                        $query->whereNotNull('trans_expense_claims.goa_temp_id');
+                        $query->whereNotNull('trans_expense_claims.current_trans_goa_id');
                     }
                 });
             });
@@ -52,15 +53,13 @@ class ExpenseApproverGoaCrudController extends CrudController
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
-                $query->where('trans_expense_claims.status', ExpenseClaim::NEED_APPROVAL_TWO);
+                $query->where('trans_expense_claims.status', ExpenseClaim::REQUEST_FOR_APPROVAL_TWO);
             });
         });
 
         CRUD::setModel(ExpenseClaim::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-approver-goa');
-        CRUD::setEntityNameStrings('Expense Approver GoA - Ongoing', 'Expense Approver GoA - Ongoing');
-
-        
+        CRUD::setEntityNameStrings('Expense Approver GoA - Ongoing', 'Expense Approver GoA - Ongoing');   
     }
 
     /**

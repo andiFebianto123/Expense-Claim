@@ -1253,18 +1253,36 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     $currentLevelGoa = 1;
                     $bottomLimit = 0;
                     $upperLimit = $goa->limit;
+
+                    $findLimit = false;
+                    if($goa->limit == null || $totalCost <= $goa->limit){
+                        $findLimit = true;
+                    }
+
+                    if(!$findLimit){
+                        DB::rollback();
+                        return response()->json(['message' => trans('custom.goa_user_limit_not_found', ['value' => formatNumber($totalCost)])], 403);
+                    }
+
                 }
                 else{
                     $maxLevel = count($allGoa);
                     $beforeMaxLevel = $maxLevel - 1;
+                    $findLimit = false;
                     foreach($allGoa as $currentGoa){
                         $currentLevelGoa++;
                         $selectedGoa[] = $currentGoa;
-                        if($totalCost <= $currentGoa->limit){
+                        if($currentGoa->limit == null || $totalCost <= $currentGoa->limit){
                             $bottomLimit = $selectedGoa[$currentLevelGoa - 2]->limit ?? 0;
                             $upperLimit = $currentGoa->limit;
+                            $findLimit = true;
                             break;
                         }
+                    }
+
+                    if(!$findLimit){
+                        DB::rollback();
+                        return response()->json(['message' => trans('custom.goa_user_limit_not_found', ['value' => formatNumber($totalCost)])], 403);
                     }
 
                     $expenseClaim->bottom_limit = $bottomLimit;

@@ -39,7 +39,7 @@ return [
     'expense_claim_detail_same_current' => 'The item in expense claim must have same currency with the others (:currency).',
     'cant_add_other_bod_level' => 'Cannot add new expense type with boD Approval = Yes and boD level = :level.',
     'cant_delete_other_bod_level' => 'Cannot delete expense type with boD Approval = Yes and boD level = :level.',
-    'goa_user_limit_not_found' => 'The GoA with limit greater than or equal to :value is not found.',
+    'goa_user_limit_not_found' => 'The GoA with limit greater than :value is not found.',
 
 
     // APPROVER HOD & GOA

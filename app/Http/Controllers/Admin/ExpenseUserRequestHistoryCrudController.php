@@ -31,17 +31,22 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
     {
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
-        $this->crud->allowAccess(['cancel']);
 
-        if($this->crud->role !== Role::SUPER_ADMIN){
-            ExpenseClaim::addGlobalScope('user', function(Builder $builder){
-                $builder->where('expense_claims.request_id', $this->crud->user->id);
+        if ($this->crud->role != Role::ADMIN) {
+            ExpenseClaim::addGlobalScope('request_id', function (Builder $builder) {
+                $builder->where('request_id', $this->crud->user->id);
+                if($this->crud->role == Role::SECRETARY){
+                    $builder->orWhere('secretary_id', $this->crud->user->id);
+                }
             });
         }
 
-        ExpenseClaim::addGlobalScope('status', function(Builder $builder){
-            $builder->where('expense_claims.status', '!=', ExpenseClaim::DRAFT)
-            ->where('expense_claims.status', '!=', ExpenseClaim::REQUEST_FOR_APPROVAL);
+        ExpenseClaim::addGlobalScope('status', function (Builder $builder) {
+            $builder->where('status', ExpenseClaim::FULLY_APPROVED)
+                ->orWhere('status', ExpenseClaim::PROCEED)
+                ->orWhere('status', ExpenseClaim::REJECTED_ONE)
+                ->orWhere('status', ExpenseClaim::REJECTED_TWO)
+                ->orWhere('status', ExpenseClaim::CANCELED);
         });
 
         CRUD::setModel(ExpenseClaim::class);
@@ -60,12 +65,7 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
     protected function setupListOperation()
     {
 
-        $this->crud->cancelCondition = function ($entry) {
-            return ($this->crud->role === Role::SUPER_ADMIN && ($entry->status !== ExpenseClaim::REJECTED_ONE && $entry->status !== ExpenseClaim::REJECTED_TWO && $entry->status !== ExpenseClaim::CANCELED)) || $entry->status == ExpenseClaim::DRAFT;
-        };
-
         $this->crud->addButtonFromModelFunction('line', 'detailRequestButton', 'detailRequestButton');
-        $this->crud->addButtonFromView('line', 'cancel', 'cancel', 'end');
 
         CRUD::addColumns([
             [
@@ -100,56 +100,56 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as r', 'r.id', '=', 'expense_claims.request_id')
-                    ->orderBy('r.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
-            [
-                'label' => 'Department',
-                'name' => 'department_id',
-                'type'      => 'select',
-                'entity'    => 'department',
-                'attribute' => 'name',
-                'model'     => Department::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('departments as d', 'd.id', '=', 'expense_claims.department_id')
-                    ->orderBy('d.name', $columnDirection)->select('expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'Approved By',
-                'name' => 'approval_id',
-                'type'      => 'select',
-                'entity'    => 'approval',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as a', 'a.id', '=', 'expense_claims.approval_id')
-                    ->orderBy('a.name', $columnDirection)->select('expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'Approved Date',
-                'name' => 'approval_date',
-                'type'  => 'date',
-            ],
-            [
-                'label' => 'GoA By',
-                'name' => 'goa_id',
-                'type'      => 'select',
-                'entity'    => 'goa',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as g', 'g.id', '=', 'expense_claims.goa_id')
-                    ->orderBy('g.name', $columnDirection)->select('expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'GoA Date',
-                'name' => 'goa_date',
-                'type'  => 'date',
-            ],
+            // [
+            //     'label' => 'Department',
+            //     'name' => 'department_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'department',
+            //     'attribute' => 'name',
+            //     'model'     => Department::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('departments as d', 'd.id', '=', 'expense_claims.department_id')
+            //         ->orderBy('d.name', $columnDirection)->select('expense_claims.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'Approved By',
+            //     'name' => 'approval_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'approval',
+            //     'attribute' => 'name',
+            //     'model'     => User::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('users as a', 'a.id', '=', 'expense_claims.approval_id')
+            //         ->orderBy('a.name', $columnDirection)->select('expense_claims.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'Approved Date',
+            //     'name' => 'approval_date',
+            //     'type'  => 'date',
+            // ],
+            // [
+            //     'label' => 'GoA By',
+            //     'name' => 'goa_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'goa',
+            //     'attribute' => 'name',
+            //     'model'     => User::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('users as g', 'g.id', '=', 'expense_claims.goa_id')
+            //         ->orderBy('g.name', $columnDirection)->select('expense_claims.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'GoA Date',
+            //     'name' => 'goa_date',
+            //     'type'  => 'date',
+            // ],
             [
                 'label' => 'Fin AP By',
                 'name' => 'finance_id',
@@ -158,8 +158,8 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as f', 'f.id', '=', 'expense_claims.goa_id')
-                    ->orderBy('f.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('mst_users as f', 'f.id', '=', 'trans_expense_claims.goa_id')
+                        ->orderBy('f.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -173,36 +173,10 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
                 'wrapper' => [
                     'element' => 'small',
                     'class' => function ($crud, $column, $entry, $related_key) {
-                        return 'rounded p-1 font-weight-bold text-white ' . (ExpenseClaim::mapColorStatus($column['text']));
+                        return 'rounded p-1 font-weight-bold ' . ' text-white ' . (ExpenseClaim::mapColorStatus($column['text']));
                     },
                 ],
             ]
         ]);
-    }
-
-    public function cancel($id){
-        $this->crud->hasAccessOrFail('cancel');
-        DB::beginTransaction();
-        try{
-            $model = ExpenseClaim::find($id);
-            if($model == null){
-                DB::rollback();
-                return response()->json(['message' => trans('custom.model_not_found')], 404);
-            }
-            if(($this->crud->role !== Role::SUPER_ADMIN && $model->status !== ExpenseClaim::DRAFT) || ($this->crud->role === Role::SUPER_ADMIN && ($model->status === ExpenseClaim::REJECTED_ONE || $model->status === ExpenseClaim::REJECTED_TWO || $model->status === ExpenseClaim::CANCELED))){
-                DB::rollback();
-                return response()->json(['message' => trans('custom.expense_claim_cant_status', ['status' => $model->status, 'action' => trans('custom.canceled')])], 403);
-            }
-            $model->canceled_id = $this->crud->user->id;
-            $model->status = ExpenseClaim::CANCELED;
-            $model->canceled_date = Carbon::now();
-            $model->save();
-            DB::commit();
-            return 1;
-        }
-        catch(Exception $e){
-            DB::rollback();
-            throw $e;
-        }
     }
 }

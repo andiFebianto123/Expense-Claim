@@ -666,9 +666,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
                 $upperLimit = $this->crud->expenseClaim->upper_limit;
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
-                if ($upperLimit != null && $bottomLimit != null) {
+                if ($bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value + $cost;
-                    if ($newCost < $bottomLimit || $newCost > $upperLimit) {
+                    if ($newCost < $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
                         $errors['message'] = array_merge($errors['message'] ?? [], [trans(
                             'custom.expense_claim_limit',
                             ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)]
@@ -1041,9 +1041,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
                 $upperLimit = $this->crud->expenseClaim->upper_limit;
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
-                if ($upperLimit != null && $bottomLimit != null) {
+                if ($bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value + ($cost - $prevCost);
-                    if ($newCost < $bottomLimit || $newCost > $upperLimit) {
+                    if ($newCost < $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
                         $errors['message'] = array_merge($errors['message'] ?? [], [trans(
                             'custom.expense_claim_limit',
                             ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)]
@@ -1111,9 +1111,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
                 $upperLimit = $this->crud->expenseClaim->upper_limit;
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
-                if ($upperLimit != null && $bottomLimit != null) {
+                if ($bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value - $cost;
-                    if ($newCost < $bottomLimit || $newCost > $upperLimit) {
+                    if ($newCost < $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
                         DB::rollback();
                         return response()->json(['message' => trans(
                             'custom.expense_claim_limit',

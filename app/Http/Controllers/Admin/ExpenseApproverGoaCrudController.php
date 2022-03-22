@@ -41,11 +41,13 @@ class ExpenseApproverGoaCrudController extends CrudController
         {
             ExpenseClaim::addGlobalScope('user', function(Builder $builder){
                 $builder->where(function($query){
-                    if($this->crud->role === Role::GOA_HOLDER){
-                        $query->where('trans_expense_claims.current_trans_goa_id', $this->crud->user->id);
+                    if(in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN])){
+                        $query->whereNotNull('trans_expense_claims.current_trans_goa_id');
                     }
                     else{
-                        $query->whereNotNull('trans_expense_claims.current_trans_goa_id');
+                        $query->join('trans_goa_approvals','trans_goa_approvals.id' , '=' ,'trans_expense_claims.current_trans_goa_id')
+                        ->where('trans_expense_claims.current_trans_goa_id', $this->crud->user->id)
+                        ->orWhere('trans_goa_approvals.goa_delegation_id',$this->crud->user->id);
                     }
                 });
             });

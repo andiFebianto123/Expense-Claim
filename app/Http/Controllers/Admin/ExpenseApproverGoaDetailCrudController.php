@@ -120,10 +120,9 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
         $this->crud->viewBeforeContent = ['expense_claim.goa.header'];
         $allowActions = $this->crud->hasAction;
 
-        $this->crud->createCondition =  function () use ($allowActions) {
+        $this->crud->createCondition = function () use ($allowActions) {
             return $allowActions;
         };
-
         $this->crud->updateCondition = function () use ($allowActions) {
             return $allowActions;
         };

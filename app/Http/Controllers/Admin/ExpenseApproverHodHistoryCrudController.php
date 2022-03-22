@@ -40,12 +40,12 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
         {
             ExpenseClaim::addGlobalScope('user', function(Builder $builder){
                 $builder->where(function($query){
-                    if($this->crud->role === Role::HOD){
-                        $query->where('trans_expense_claims.hod_id', $this->crud->user->id)
-                            ->orWhere('trans_expense_claims.hod_delegation_id', $this->crud->user->id);
+                    if(in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN])){
+                        $query->whereNotNull('trans_expense_claims.hod_id');
                     }
                     else{
-                        $query->whereNotNull('trans_expense_claims.hod_id');
+                        $query->where('trans_expense_claims.hod_id', $this->crud->user->id)
+                            ->orWhere('trans_expense_claims.hod_delegation_id', $this->crud->user->id);
                     }
                 });
             });
@@ -53,16 +53,22 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
-                $query->where('trans_expense_claims.status', '!=', ExpenseClaim::NONE)
-                ->where('trans_expense_claims.status', '!=', ExpenseClaim::REQUEST_FOR_APPROVAL)
-                ->where(function($innerQuery){
+                $query->where('trans_expense_claims.status', '=', ExpenseClaim::FULLY_APPROVED)
+                ->orWhere(function($innerQuery){
                     $innerQuery->whereNotNull('hod_id')
-                    ->orWhere('trans_expense_claims.status', ExpenseClaim::REJECTED_ONE)
-                    ->orWhere(function($deepestQuery){
-                        $deepestQuery
-                        ->where('trans_expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
-                        ->whereNull('hod_id');
-                    });
+                    ->where('trans_expense_claims.status', ExpenseClaim::REJECTED_ONE);
+                })
+                ->orWhere(function($innerQuery){
+                    $innerQuery->whereNotNull('hod_id')
+                    ->where('trans_expense_claims.status', ExpenseClaim::REJECTED_TWO);
+                })
+                ->orWhere(function($innerQuery){
+                    $innerQuery->whereNotNull('hod_id')
+                    ->where('trans_expense_claims.status', ExpenseClaim::PROCEED);
+                })
+                ->orWhere(function($innerQuery){
+                    $innerQuery->whereNotNull('hod_id')
+                    ->where('trans_expense_claims.status', ExpenseClaim::CANCELED);
                 });
             });
         });
@@ -70,7 +76,6 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
         CRUD::setModel(ExpenseClaim::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-approver-hod-history');
         CRUD::setEntityNameStrings('Expense Approver HoD - History', 'Expense Approver HoD - History');
-
     }
 
     /**
@@ -81,7 +86,6 @@ class ExpenseApproverHodHistoryCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-
         $this->crud->addButtonFromModelFunction('line', 'detailApproverHodButton', 'detailApproverHodButton');
 
         CRUD::addColumns([

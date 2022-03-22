@@ -394,8 +394,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'mst_expenses.name as expense_name',
             )
             ->get()->mapWithKeys(function ($item) {
-                return [$item->expense_type_id => $item];
-            })->toArray();
+                return ['key-' . $item->expense_type_id => $item];
+            });
 
         $userExpenseTypesHistory = ExpenseClaimType::where('expense_claim_id', $this->crud->expenseClaim->id)
             ->select(
@@ -408,11 +408,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'detail_level_id as level',
                 'expense_name'
             )->get()->mapWithKeys(function ($item) {
-                return [$item->expense_type_id => $item];
+                return ['key-' . $item->expense_type_id => $item];
             });
 
-
-        return collect($userExpenseTypes)->merge($userExpenseTypesHistory->toArray());
+        return collect(array_merge($userExpenseTypes->toArray(), $userExpenseTypesHistory->toArray()))->values();
     }
 
     protected function setupCreateOperation()

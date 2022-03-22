@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\ExpenseClaimType;
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -33,6 +34,11 @@ class ExpenseClaimDetail extends Model
     public function expense_code()
     {
         return $this->belongsTo(ExpenseCode::class, 'expense_code_id');
+    }
+
+    public function expense_claim_type()
+    {
+        return $this->belongsTo(ExpenseClaimType::class, 'expense_claim_type_id');
     }
 
     public function expense_type()

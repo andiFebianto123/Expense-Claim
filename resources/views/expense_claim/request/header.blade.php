@@ -112,6 +112,9 @@
             $('#crudTable').on('xhr.dt', function(e, settings, json, xhr) {
                 if (xhr.status == 200) {
                     var result = json;
+                    var value = result.value;
+                    value = value === null || value === undefined ? 0 : value;
+                    $('#total-value').text(value);
                 }
             });
         });

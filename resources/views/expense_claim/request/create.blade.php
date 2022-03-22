@@ -130,7 +130,7 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
                         }
                     }
                     if(item.limit === null || item.limit === undefined){
-                        $('#limitId').val('∞');
+                        $('#limitId').val('-');
                     }
                     else{
                         $('#limitId').val(numberWithCommas(item.limit * (multiply)));
@@ -157,7 +157,7 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
         $('#totalPerson').parents('.form-group').find('input[type="hidden"]').on('change', function(){
             if(currentItem != null && currentItem.limit_person){
                 if(currentItem.limit === null || currentItem.limit === undefined){
-                    $('#limitId').val('∞');
+                    $('#limitId').val('-');
                 }
                 else{
                     $('#limitId').val(numberWithCommas(currentItem.limit * (this.value.length == 0 ? 0 : this.value)));

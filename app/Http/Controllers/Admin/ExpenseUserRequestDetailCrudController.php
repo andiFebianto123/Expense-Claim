@@ -1346,6 +1346,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         $transGoaApproval->status = 'Approved';
                         $transGoaApproval->save();
                         $skippedGoa++;
+                        $expenseClaim->current_trans_goa_id = $transGoaApproval->id;
                     }
                     else{
                         if(!$transGoaApproval->is_admin_delegation){

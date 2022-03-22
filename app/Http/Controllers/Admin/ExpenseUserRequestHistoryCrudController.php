@@ -40,6 +40,7 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
                 }
             });
         }
+        
 
         ExpenseClaim::addGlobalScope('status', function (Builder $builder) {
             $builder->where('status', ExpenseClaim::FULLY_APPROVED)

@@ -668,7 +668,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
                 if ($bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value + $cost;
-                    if ($newCost < $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
+                    if ($newCost <= $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
                         $errors['message'] = array_merge($errors['message'] ?? [], [trans(
                             'custom.expense_claim_limit',
                             ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)]
@@ -1043,7 +1043,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
                 if ($bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value + ($cost - $prevCost);
-                    if ($newCost < $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
+                    if ($newCost <= $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
                         $errors['message'] = array_merge($errors['message'] ?? [], [trans(
                             'custom.expense_claim_limit',
                             ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)]
@@ -1113,7 +1113,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
                 if ($bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value - $cost;
-                    if ($newCost < $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
+                    if ($newCost <= $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
                         DB::rollback();
                         return response()->json(['message' => trans(
                             'custom.expense_claim_limit',

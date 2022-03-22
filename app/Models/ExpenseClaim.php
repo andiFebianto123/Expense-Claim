@@ -11,6 +11,8 @@ class ExpenseClaim extends Model
 {
     use HasFactory, CrudTrait;
 
+    protected $table = 'trans_expense_claims';
+
     public const DRAFT = 'Draft';
     public const REQUEST_FOR_APPROVAL = 'Request for Approval (HoD)';
     public const REQUEST_FOR_APPROVAL_TWO = 'Request for Approval (GoA)';
@@ -35,9 +37,6 @@ class ExpenseClaim extends Model
         'goa_temp_id', 'goa_id', 'goa_date', 'finance_id', 'finance_date', 'status', 'remark',
         'rejected_id', 'rejected_date', 'canceled_id', 'canceled_date'
     ];
-
-    protected $table = 'trans_expense_claims';
-
 
     public function request()
     {

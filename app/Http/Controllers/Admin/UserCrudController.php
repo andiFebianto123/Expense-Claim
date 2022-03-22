@@ -384,7 +384,6 @@ class UserCrudController extends CrudController
             $id = $request->id;
 
             $errors = [];
-
             
             if($request->filled('level_id')){
                 $level = Level::where('id', $request->level_id)->first();

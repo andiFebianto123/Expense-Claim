@@ -42,12 +42,13 @@ class UsersImport implements OnEachRow, WithHeadingRow
                 // jika tidak ada data
                 $user = new User;
                 $user->bpid = $dataRow['vendor'];
-                $user->is_active = 0;
                 $user->password = bcrypt('taisho');
+                $user->user_id = $dataRow['vendor'];
             }
             $user->name = $dataRow['name'];
             $user->bpcscode = $dataRow['bpcscode'];
             $user->last_imported_at = Carbon::now();
+            $user->is_active = ($dataRow['block'] == 'N') ? 1 : 0;
             $user->save();
             $this->logMessages[] = [
                 'row' => $rowIndex, 
@@ -71,6 +72,7 @@ class UsersImport implements OnEachRow, WithHeadingRow
             'vendor' => 'required|max:255',
             'name' => 'required|string|max:255',
             'bpcscode' => 'nullable|max:255',
+            'block' => 'nullable',
         ];
     }
 

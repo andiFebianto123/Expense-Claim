@@ -1,6 +1,8 @@
 <?php
 namespace App\Exports;
 
+use App\Models\ExpenseClaim;
+use App\Models\ExpenseClaimDetail;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -8,8 +10,9 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ApJournalExport implements FromView, WithEvents
 {
-    public function __construct()
+    public function __construct($entries = [])
     {
+        $this->entries = $entries;
         $this->headers = ['CoCd', 'Doc Type', 'Doc No', 'Posting Date', 'Document Date', 'Reference', 'Header Text', 
         'Business Place', 'Value Date', 'Curr 1 (DC)', 'Cur 2 (LC)', 'Ex Rate 1 (DC)', 'Ex Rate 2 (PC)', 'Posting Key', 
         'Special GL', 'Account', 'GL Account', 'Tax Code', 'Doc Curr 1 (DC)', 'Doc Curr 2 (PC)', 'Local Curr', 'Tax Base', 
@@ -18,7 +21,6 @@ class ApJournalExport implements FromView, WithEvents
         'Customer Number', 'Material (CO-PA)', 'Billing', 'Sales Doc', 'Sales Item', 'Plant', 'sales organization', 
         'Ditribution channel', 'Division', 'Customer group', 'Sales Office', 'Quantity (COPA)', 'UoM', 'Witholding Tax Type', 
         'Witholding Tax Code', 'Witholding Tax Base in DC', 'Witholding Tax DC', 'Witholding Tax Base in LC', 'Witholding Tax LC'];
-    
     }
 
 
@@ -73,6 +75,14 @@ class ApJournalExport implements FromView, WithEvents
         ];
     }
 
+    private function mergeText($arr, $delimiter){
+        return implode($delimiter, $arr);
+    }
+
+    private function replaceString($find, $replace, $string){
+        return str_replace($find, $replace, $string);
+    }
+
 
     public function view(): View
     {
@@ -80,6 +90,166 @@ class ApJournalExport implements FromView, WithEvents
         
         $data['headers'] = $this->headers;
 
-        return view('exports.excel.ap_journal', $data);
+        $dataRow = [];
+        // tiap2 column ada 57
+
+        $no = 1;
+        $expenseName = [];
+        $date = '';
+        $reference = '';
+        $currency = '';
+        $total_doc_curr_1_dc = 0;
+
+        $dataExpenses = ExpenseClaim::whereIn('id', $this->entries)->get();
+
+        if(count($dataExpenses) > 0){
+            foreach($dataExpenses as $dataExpense){
+                if($dataExpense->status == ExpenseClaim::PROCEED){
+                    continue;
+                }
+                $dataExpenseDetails = ExpenseClaimDetail::where('expense_claim_id', $dataExpense->id)->get();
+                if(count($dataExpenseDetails) > 0){
+                    foreach($dataExpenseDetails as $dataExpenseDetail){
+                        $expenseName[] = $dataExpenseDetail->expense_name;
+                        $date = $dataExpenseDetail->date;
+                        $reference = $dataExpenseDetail->expense_number;
+                        $currency = $dataExpenseDetail->currency;
+                        $total_doc_curr_1_dc += $dataExpenseDetail->cost;
+                        $row = [
+                            'cocd' => '0100',
+                            'doc_type' => 'KR',
+                            'doc_no' => $no,
+                            'posting_date' => $this->replaceString('-', '', $dataExpenseDetail->date),
+                            'document_date' => $this->replaceString('-', '', $dataExpenseDetail->date),
+                            'reference' => $dataExpense->expense_number,
+                            'header_text' => null,
+                            'bussines_place' => null,
+                            'value_date' => null,
+                            'curr_1_dc' => $dataExpenseDetail->currency,
+                            'curr_2_lc' => null,
+                            'ex_rate_1_dc' => null,
+                            'ex_rate_2_pc' => null,
+                            'posting_key' => 40,
+                            'spesial_gl' => null,
+                            'account' => null,
+                            'gl_account' => $dataExpenseDetail->account_number,
+                            'tax_code' => null,
+                            'doc_curr_1_dc' => $dataExpenseDetail->cost,
+                            'doc_curr_2_pc' => null,
+                            'local_curr' => null,
+                            'tax_base' => null,
+                            'local_base_currency' => null,
+                            'tax_ammount' => null,
+                            'top' => null,
+                            'day' => null,
+                            'baseline_date' => null,
+                            'material' => null,
+                            'quantity' => null,
+                            'uom' => null,
+                            'assignment' => 'Expense Claim',
+                            'line_item_text' => $dataExpenseDetail->expense_name,
+                            'reference_key_1' => null,
+                            'reference_key_2' => null,
+                            'partner_bank' => null,
+                            'cost_center' => $dataExpenseDetail->cost_center->cost_center_id,
+                            'profit_center' => null,
+                            'customer_number' => null,
+                            'material_co_pa' => null,
+                            'billing' => null,
+                            'sales_doc' => null,
+                            'sales_item' => null,
+                            'plant' => null,
+                            'sales_organization' => null,
+                            'distributor_channel' => null,
+                            'division' => null,
+                            'customer_group' => null,
+                            'sales_office' => null,
+                            'quantity_copa' => null,
+                            'uom_2' => null,
+                            'witholding_tax_type' => null,
+                            'witholding_tax_code' => null,
+                            'witholding_tax_base_in_dc' => null,
+                            'witholding_tax_dc' => null,
+                            'witholding_tax_base_in_lc' => null,
+                            'witholding_tax_lc' => null
+                        ];
+                        array_push($dataRow, $row);
+                    } // end foreach for exclaim_details
+
+                    // yang 31 dibawah ini
+                    $row = [
+                        'cocd' => '0100',
+                        'doc_type' => 'KR',
+                        'doc_no' => $no,
+                        'posting_date' => $this->replaceString('-', '', $date),
+                        'document_date' => $this->replaceString('-', '', $date),
+                        'reference' => $reference,
+                        'header_text' => null,
+                        'bussines_place' => null,
+                        'value_date' => null,
+                        'curr_1_dc' => $currency,
+                        'curr_2_lc' => null,
+                        'ex_rate_1_dc' => null,
+                        'ex_rate_2_pc' => null,
+                        'posting_key' => 31,
+                        'spesial_gl' => null,
+                        'account' => $dataExpense->request->bpid,
+                        'gl_account' => null,
+                        'tax_code' => null,
+                        'doc_curr_1_dc' => $total_doc_curr_1_dc,
+                        'doc_curr_2_pc' => null,
+                        'local_curr' => null,
+                        'tax_base' => null,
+                        'local_base_currency' => null,
+                        'tax_ammount' => null,
+                        'top' => 'Y001',
+                        'day' => null,
+                        'baseline_date' => $this->replaceString('-', '', $date),
+                        'material' => null,
+                        'quantity' => null,
+                        'uom' => null,
+                        'assignment' => 'Expense Claim',
+                        'line_item_text' => $this->mergeText($expenseName, ', '),
+                        'reference_key_1' => null,
+                        'reference_key_2' => null,
+                        'partner_bank' => null,
+                        'cost_center' => null,
+                        'profit_center' => null,
+                        'customer_number' => null,
+                        'material_co_pa' => null,
+                        'billing' => null,
+                        'sales_doc' => null,
+                        'sales_item' => null,
+                        'plant' => null,
+                        'sales_organization' => null,
+                        'distributor_channel' => null,
+                        'division' => null,
+                        'customer_group' => null,
+                        'sales_office' => null,
+                        'quantity_copa' => null,
+                        'uom_2' => null,
+                        'witholding_tax_type' => null,
+                        'witholding_tax_code' => null,
+                        'witholding_tax_base_in_dc' => null,
+                        'witholding_tax_dc' => null,
+                        'witholding_tax_base_in_lc' => null,
+                        'witholding_tax_lc' => null
+                    ];
+                    $expenseName = [];
+                    $date = '';
+                    $reference = '';
+                    $currency = '';
+                    $total_doc_curr_1_dc = 0;
+                    $no++;
+                    array_push($dataRow, $row);
+                    $dataExpense->status = ExpenseClaim::PROCEED;
+                    $dataExpense->save();
+                }
+            }
+        }
+
+        $data['rows'] = $dataRow;
+
+        return view('exports.excel.ap_journal', $data); 
     }
 }

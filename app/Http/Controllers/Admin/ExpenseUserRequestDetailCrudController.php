@@ -48,6 +48,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
         $this->crud->goaList = [];
+        $this->crud->goaApprovals = [];
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
 
@@ -59,10 +60,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-user-request/' . ($this->crud->headerId ?? '-') . '/detail');
         CRUD::setEntityNameStrings('Expense User Request - Detail', 'Expense User Request - Detail');
 
-        $expenseClaimDetail = ExpenseClaimDetail::where('expense_claim_id',  $this->crud->headerId)->get();
-
-        $this->crud->expenseClaimDetail = $expenseClaimDetail;
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+        $this->getApprovalList();
 
         $this->crud->setCreateView('expense_claim.request.create');
         $this->crud->setUpdateView('expense_claim.request.edit');
@@ -70,7 +69,6 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $isDraftOrRevision = $this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::NEED_REVISION;
 
         if (!$isDraftOrRevision) {
-            $this->getHodAndGoa();
             $this->crud->denyAccess(['create', 'edit', 'delete']);
         }
     }
@@ -82,7 +80,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaim->where(function ($query) {
                 $query->where('request_id', $this->crud->user->id);
                 if ($this->crud->role == Role::SECRETARY) {
-                    $query->orWhere('secretrary_id', $this->crud->user->id);
+                    $query->orWhere('secretary_id', $this->crud->user->id);
                 }
             });
         }
@@ -94,10 +92,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         return $expenseClaim;
     }
 
-    public function getHodAndGoa()
+    public function getApprovalList()
     {
-
-        $expenseClaimDetail = $this->crud->expenseClaimDetail;
         $department = User::join('mst_departments', 'mst_users.department_id', '=', 'mst_departments.id')
             ->where('mst_users.id',  $this->crud->user->id)
             ->select(
@@ -107,12 +103,34 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
         $hod = User::where('mst_users.id', $department->user_id)->first();
 
+        $goaApprovals = TransGoaApproval::join('goa_holders', 'trans_goa_approvals.goa_id', '=', 'goa_holders.id')
+            ->join('mst_users', 'goa_holders.user_id', '=', 'mst_users.id')
+            ->where('trans_goa_approvals.expense_claim_id', $this->crud->expenseClaim->id)
+            ->select(
+                'mst_users.name as user_name',
+                'goa_holders.limit as limit',
+                'trans_goa_approvals.goa_date as goa_date'
+            )
+            ->get();
+
+        $this->crud->hod = $hod;
+        $this->crud->goaApprovals = $goaApprovals;
+        $this->crud->user->department = $department;
+    }
+
+    public function getGoa()
+    {
+        $expenseClaimDetail = ExpenseClaimDetail::where('expense_claim_id',  $this->crud->headerId)->get();
+        $isGoa = GoaHolder::where('user_id', $this->crud->user->id)->first();
+
         $goaHolderId = null;
 
-        if (empty($hod)) {
+        if (!empty($isGoa)) {
+            $goaHolderId = $isGoa->id;
+        } else if (empty($this->crud->hod)) {
             $goaHolderId = $this->crud->user->goa_holder_id;
         } else {
-            $goaHolderId = $hod->goa_holder_id;
+            $goaHolderId = $this->crud->hod->goa_holder_id;
         }
 
         $goa = GoaHolder::join('mst_users', 'goa_holders.user_id', '=', 'mst_users.id')
@@ -123,9 +141,6 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
         $totalCost = $expenseClaimDetail->sum('cost');
         $this->recursiveCheckValue($totalCost, $goa);
-
-        $this->crud->user->department = $department;
-        $this->crud->hod = $hod;
     }
 
 
@@ -1192,6 +1207,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaim->request_date = $now;
 
             if ($expenseClaim->status == ExpenseClaim::DRAFT || $expenseClaim->status == ExpenseClaim::NEED_REVISION) {
+                $this->getGoa();
                 $expenseNumber = $expenseClaim->expense_number;
 
                 if (empty($expenseNumber)) {
@@ -1222,11 +1238,18 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $expenseClaim->currency = Config::IDR;
                 $expenseClaim->status = $expenseClaim->hod_id ? ExpenseClaim::REQUEST_FOR_APPROVAL : ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
 
+                if (!empty($this->crud->hod) && ($this->crud->hod->id == $this->crud->user->id)) {
+                    $expenseClaim->hod_id = $this->crud->user->id;
+                    $expenseClaim->hod_date = $now;
+                    $expenseClaim->status = ExpenseClaim::PARTIAL_APPROVED;
+                }
+
                 TransGoaApproval::where('expense_claim_id', $expenseClaim->id)->delete();
 
                 $goaList = $this->crud->goaList;
 
                 foreach ($goaList as $index => $goa) {
+
                     $transGoaApproval = new TransGoaApproval;
                     $transGoaApproval->expense_claim_id = $expenseClaim->id;
                     $transGoaApproval->goa_id = $goa->id;
@@ -1235,6 +1258,39 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     $transGoaApproval->status =  $expenseClaim->hod_id ? ExpenseClaim::REQUEST_FOR_APPROVAL : ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
                     $transGoaApproval->order = $index + 1;
                     $transGoaApproval->save();
+                }
+
+                $isGoa = TransGoaApproval::join('goa_holders', 'trans_goa_approvals.goa_id', '=', 'goa_holders.id')
+                    ->join('mst_users', 'goa_holders.user_id', '=', 'mst_users.id')
+                    ->where('expense_claim_id', $this->crud->expenseClaim->id)
+                    ->where('mst_users.id', $this->crud->user->id)
+                    ->select(
+                        'mst_users.id as user_id',
+                        'trans_goa_approvals.id as trans_goa_id',
+                        'trans_goa_approvals.goa_date as goa_date',
+                        'trans_goa_approvals.status as status',
+                        'trans_goa_approvals.order as order'
+                    )
+                    ->first();
+
+                $goaDate = $goaStatus = null;
+                if (!empty($isGoa)) {
+                    $totalApprovals = TransGoaApproval::where('expense_claim_id', $this->crud->expenseClaim->id)->get();
+                    $goaDate = $now;
+
+                    if ($isGoa->order == count($totalApprovals)) {
+                        $goaStatus = ExpenseClaim::FULLY_APPROVED;
+                    } else {
+                        $goaStatus = ExpenseClaim::PARTIAL_APPROVED;
+                    }
+
+                    TransGoaApproval::where('id',  $isGoa->trans_goa_id)
+                        ->update([
+                            'status' => $goaStatus,
+                            'goa_date' => $goaDate
+                        ]);
+
+                    $expenseClaim->status = $goaStatus;
                 }
             }
 

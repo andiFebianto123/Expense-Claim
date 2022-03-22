@@ -1,4 +1,7 @@
 <div class="row">
+    @php
+        $classExpenseClaim = 'App\Models\ExpenseClaim';
+    @endphp
     <div class="col-md-8">
         <div class="card">
             <div class="card-header font-weight-bold">
@@ -10,15 +13,19 @@
                         <p>Request Date : <b>{{ formatDate($crud->expenseClaim->request_date) }}</b></p>
                         <p>Requestor : <b>{{ $crud->user->name ?? '-' }}</b></p>
                         <p>Department : <b>{{ $crud->user->department->name ?? '-' }}</b></p>
-                        @if (empty($crud->hod))
+                        @if (empty($crud->hod) || $crud->expenseClaim->status == $classExpenseClaim::DRAFT)
                             <p>Hod By : <b>-</b></p>
                         @else
                             <div class="mb-2">
                                 <p class="mb-0">Hod By :</p>
                                 <ul class="mb-1 ml-3">
-                                    <li>
+                                    <li class="position-relative">
                                         Name : <b>{{ $crud->hod->name ?? '-' }}</b>
-                                        <p>Hod Date : <b>{{ formatDate($crud->expenseClaim->approval_date) }}</b></p>
+                                        @if ($crud->expenseClaim->hod_date != null && $crud->expenseClaim->status == $classExpenseClaim::PARTIAL_APPROVED)
+                                            <i class="position-absolute las la-check-circle text-success ml-2"
+                                                style="font-size: 24px"></i>
+                                        @endif
+                                        <p>Hod Date : <b>{{ formatDate($crud->expenseClaim->hod_date) }}</b></p>
                                     </li>
                                 </ul>
                             </div>
@@ -26,13 +33,17 @@
                         <div class="mb-2">
                             <p class="mb-0">GoA By : </p>
                             <ul class="mb-1 ml-3">
-                                @foreach ($crud->goaList as $item)
-                                    <li>
+                                @foreach ($crud->goaApprovals as $item)
+                                    <li class="position-relative">
                                         Name : <b>{{ $item->user_name }}</b>
+                                        @if ($item->goa_date != null && ($crud->expenseClaim->status == $classExpenseClaim::PARTIAL_APPROVED || $crud->expenseClaim->status == $classExpenseClaim::FULLY_APPROVED))
+                                            <i class="position-absolute las la-check-circle text-success ml-2"
+                                                style="font-size: 24px"></i>
+                                        @endif
                                         <br>
                                         Limit : <b>Rp {{ formatNumber($item->limit) }}</b>
                                         <br>
-                                        GoA Date : <b>{{ formatDate($crud->expenseClaim->goa_date) }}</b>
+                                        GoA Date : <b>{{ formatDate($item->goa_date) }}</b>
                                     </li>
                                 @endforeach
                             </ul>
@@ -40,8 +51,7 @@
                         <p>Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p>Total Value : <b
-                                id="total-value">{{ formatNumber($crud->expenseClaim->value) }}</b>
+                        <p>Total Value : <b id="total-value">{{ formatNumber($crud->expenseClaim->value) }}</b>
                         </p>
                         <p>Currency : <b>{{ $crud->expenseClaim->currency }}</b></p>
                         <p>Status : <span
@@ -58,9 +68,6 @@
                     </div>
                 </div>
             </div>
-            @php
-                $classExpenseClaim = 'App\Models\ExpenseClaim';
-            @endphp
             @if (($crud->expenseClaim->status == $classExpenseClaim::DRAFT || $crud->expenseClaim->status == $classExpenseClaim::NEED_REVISION) && $crud->expenseClaim->request_id == $crud->user->id)
                 <div class="card-footer">
                     <button class="btn btn-success" id="submit-button"><i

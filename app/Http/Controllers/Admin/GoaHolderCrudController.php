@@ -40,17 +40,12 @@ class GoaHolderCrudController extends CrudController
         }
         CRUD::setModel(\App\Models\GoaHolder::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/goa-holder');
-        CRUD::setEntityNameStrings('goa holder', 'goa holders');
+        CRUD::setEntityNameStrings('GoA Holder', 'GoA Holders');
     }
 
-    /**
-     * Define what happens when the List operation is loaded.
-     * 
-     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
-     * @return void
-     */
-    protected function setupListOperation()
-    {
+
+    public function getColumns($forList = true){
+        $limit = $forList ? 40 : 255;
         CRUD::addColumn([
             'label'     => "BPID",
             'type'      => 'select',
@@ -58,22 +53,25 @@ class GoaHolderCrudController extends CrudController
             'entity'    => 'user',
             'attribute' => 'bpid',
             'key' => 'bpid',
+            'limit' => $limit,
             'orderable'  => true,
             'orderLogic' => function ($query, $column, $columnDirection) {
                 return $query->leftJoin('mst_users', 'mst_users.id', '=', 'goa_holders.user_id')
                     ->orderBy('mst_users.bpid', $columnDirection)->select('goa_holders.*');
             }
         ]);
-        CRUD::column('user_id')->label('Name')
+        CRUD::column('user_id')->label('Name')->limit($limit)
         ->searchLogic(function($query, $column, $searchTerm){
             $query->orWhereHas('user', function ($q) use ($column, $searchTerm) {
                 $q->where('name', 'like', '%'.$searchTerm.'%');
             });
+        })->orderLogic(function ($query, $column, $columnDirection) {
+            return $query->leftJoin('mst_users', 'mst_users.id', '=', 'goa_holders.user_id')
+            ->orderBy('mst_users.name', $columnDirection)->select('goa_holders.*');
         });
-        CRUD::column('name')->label('GoA Holder');
-        CRUD::column('limit')->label('Limit')->type('number');
-        // CRUD::column('head_department_id')->label('Head Of Department'); 
-        CRUD::column('head_department_id')->label('Head Of Department')->type('closure')
+        CRUD::column('name')->label('GoA Holder')->limit($limit);
+        CRUD::column('limit')->label('Limit')->type('number')->limit($limit);
+        CRUD::column('head_department_id')->label('Head of Department')->type('closure')->limit($limit)
         ->function(function($entry){
             if($entry->headdepartment){
                 return $entry->headdepartment->name;
@@ -89,6 +87,22 @@ class GoaHolderCrudController extends CrudController
                 $q->where('name', 'like', '%'.$searchTerm.'%');
             });
         });
+    }
+
+
+    protected function setupShowOperation(){
+        $this->getColumns(false);
+    }
+
+    /**
+     * Define what happens when the List operation is loaded.
+     * 
+     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
+     * @return void
+     */
+    protected function setupListOperation()
+    {
+        $this->getColumns();
         /**
          * Columns can be defined using the fluent syntax or array syntax:
          * - CRUD::column('price')->type('number');
@@ -109,7 +123,7 @@ class GoaHolderCrudController extends CrudController
         CRUD::field('user_id');
         CRUD::field('name');
         CRUD::field('limit')->type('number');
-        CRUD::field('head_department_id')->label('Head Of Department')->type('select2_from_array')
+        CRUD::field('head_department_id')->label('Head of Department')->type('select2_from_array')
         ->options(GoaHolder::select('id', 'name')->get()->pluck('name', 'id'));
         /**
          * Fields can be defined using the fluent syntax or array syntax:
@@ -133,19 +147,9 @@ class GoaHolderCrudController extends CrudController
                 $errors['user_id'] = trans('validation.in', ['attribute' => trans('validation.attributes.user_id')]);
             }
 
-            if($head_of_department != null){
-                $user = User::whereExists(function($query) use($head_of_department){
-                    $query->select('*')
-                     ->from('goa_holders')
-                     ->whereRaw('goa_holders.user_id = mst_users.id')
-                     ->whereRaw("goa_holders.id = $head_of_department");
-                })->first();
-                if($user != null){
-                    if($request->user_id == $user->id){
-                        $errors['head_department_id'] = trans('validation.data_join_same', ['name' => trans('validation.attributes.head_of_department')]);
-                    }
-                }else{
-                    // jika datanya kosong
+            if($request->filled('head_department_id')){
+                $otherGoa = GoaHolder::where('id', $head_of_department)->first();
+                if($otherGoa == null){
                     $errors['head_department_id'] = trans('validation.in', ['attribute' => trans('validation.attributes.head_of_department')]);
                 }
             }
@@ -157,9 +161,10 @@ class GoaHolderCrudController extends CrudController
             $item = $this->crud->create($this->crud->getStrippedSaveRequest($request));
             $this->data['entry'] = $this->crud->entry = $item;
 
+            DB::commit();
+
             // show a success message
             \Alert::success(trans('backpack::crud.insert_success'))->flash();
-            DB::commit();
 
             // save the redirect choice for next time
             $this->crud->setSaveAction();
@@ -181,7 +186,7 @@ class GoaHolderCrudController extends CrudController
     {
         $this->setupCreateOperation(); 
     }
-    public function update()
+    public function update($id)
     {
         $this->crud->hasAccessOrFail('update');
 
@@ -191,8 +196,7 @@ class GoaHolderCrudController extends CrudController
             $request = $this->crud->validateRequest();
 
             $errors = [];
-            $id = $request->id;
-
+    
             $head_of_department = $request->head_department_id;
 
             $user = User::where('id', $request->user_id)->first();
@@ -200,22 +204,13 @@ class GoaHolderCrudController extends CrudController
                 $errors['user_id'] = trans('validation.in', ['attribute' => trans('validation.attributes.user_id')]);
             }
 
-            if($head_of_department != null){
-                $user = User::whereExists(function($query) use($head_of_department){
-                    $query->select('*')
-                     ->from('goa_holders')
-                     ->whereRaw('goa_holders.user_id = mst_users.id')
-                     ->whereRaw("goa_holders.id = $head_of_department");
-                })->first();
-                if($user != null){
-                    if($request->user_id == $user->id){
-                        $errors['head_department_id'] = trans('validation.in', ['attribute' => trans('validation.attributes.head_of_department')]);
-                    }
-                }else{
-                    // jika datanya kosong
+            if($request->filled('head_department_id')){
+                $otherGoa = GoaHolder::where('id', $head_of_department)->first();
+                if($otherGoa == null || $otherGoa->id == $id){
                     $errors['head_department_id'] = trans('validation.in', ['attribute' => trans('validation.attributes.head_of_department')]);
                 }
             }
+
             if (count($errors) != 0) {
                 DB::rollback();
                 return $this->redirectUpdateCrud($id, $errors);
@@ -226,9 +221,10 @@ class GoaHolderCrudController extends CrudController
                                 $this->crud->getStrippedSaveRequest($request));
             $this->data['entry'] = $this->crud->entry = $item;
 
+            DB::commit();
+
             // show a success message
             \Alert::success(trans('backpack::crud.update_success'))->flash();
-            DB::commit();
             // save the redirect choice for next time
             $this->crud->setSaveAction();
 
@@ -245,6 +241,10 @@ class GoaHolderCrudController extends CrudController
         DB::beginTransaction();
         try {
             $id = $this->crud->getCurrentEntryId() ?? $id;
+            if(User::where('goa_holder_id', $id)->exists() || GoaHolder::where('head_department_id', $id)->exists()){
+                DB::rollback();
+                return response()->json(['message' => trans('custom.model_has_relation')], 403);
+            }
 
             $response = $this->crud->delete($id);
             DB::commit();

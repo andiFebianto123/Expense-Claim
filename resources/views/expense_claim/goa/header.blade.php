@@ -6,7 +6,7 @@
             </div>
             @php
                 $classExpenseClaim = 'App\Models\ExpenseClaim';
-                $hasAction = $crud->expenseClaim->status == $classExpenseClaim::NEED_APPROVAL_TWO && $crud->expenseClaim->goa_temp_id == $crud->user->id;
+                $hasAction = $crud->expenseClaim->status == $classExpenseClaim::REQUEST_FOR_APPROVAL_TWO && $crud->expenseClaim->current_trans_goa_id == $crud->user->id;
             @endphp
             <div class="card-body">
                 <div class="row">

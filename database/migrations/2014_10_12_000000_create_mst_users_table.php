@@ -20,7 +20,7 @@ class CreateMstUsersTable extends Migration
             $table->string('vendor_number');
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('bpid')->unique();
+            $table->string('bpid')->nullable()->unique();
             $table->unsignedBigInteger('level_id');
             $table->boolean('is_active');
             $table->string('password');

@@ -30,7 +30,8 @@ class UserEditRequest extends FormRequest
             $id = \Request::segments()[1];
             return [
                 'user_id' => 'required|max:255|unique:mst_users,user_id,' . $id,
-                'vendor_number' => 'required|max:255|unique:mst_users,vendor_number,' . $id,
+                'vendor_number' => 'nullable|max:255',
+                // 'vendor_number' => 'required|max:255|unique:mst_users,vendor_number,' . $id,
                 'name' => 'required|max:255',
                 'email' => 'required|max:255|unique:mst_users,email,' . $id,
                 'password' => 'nullable|min:8|max:255|confirmed',
@@ -39,15 +40,16 @@ class UserEditRequest extends FormRequest
                 'level_id' => 'required',
                 'role_id' => 'required',
                 'cost_center_id' => 'required',
-                'department_id' => 'nullable',
-                'goa_holder_id' => 'nullable',
+                'department_id' => 'required',
+                'goa_holder_id' => 'required',
                 'is_active' => 'required|boolean',
                 'remark' => 'nullable|max:255',
             ];
         }
         return [
             'user_id' => 'required|max:255|unique:mst_users,user_id',
-            'vendor_number' => 'required|max:255|unique:mst_users,vendor_number',
+            'vendor_number' => 'nullable|max:255',
+            // 'vendor_number' => 'required|max:255|unique:mst_users,vendor_number',
             'name' => 'required|max:255',
             'email' => 'required|max:255|unique:mst_users,email',
             'password' => 'nullable|min:8|max:255|confirmed',
@@ -56,8 +58,8 @@ class UserEditRequest extends FormRequest
             'level_id' => 'required',
             'role_id' => 'required',
             'cost_center_id' => 'required',
-            'department_id' => 'nullable',
-            'goa_holder_id' => 'nullable',
+            'department_id' => 'required',
+            'goa_holder_id' => 'required',
             'is_active' => 'required|boolean',
             'remark' => 'nullable|max:255',
         ];
@@ -71,7 +73,8 @@ class UserEditRequest extends FormRequest
     public function attributes()
     {
         return [
-            //
+            'user_id' => 'user ID',
+            'department_id' => trans('validation.attributes.head_of_department')
         ];
     }
 

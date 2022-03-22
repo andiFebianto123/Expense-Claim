@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MstExpense extends Model
 {
-    use HasFactory, CrudTrait, SoftDeletes;
+    use HasFactory, CrudTrait;
 
     protected $fillable = ['name'];
 

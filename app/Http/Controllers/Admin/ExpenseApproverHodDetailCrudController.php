@@ -56,10 +56,10 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         
         $expenseClaim = ExpenseClaim::where('id', $id)
         ->where(function($query){
-            $query->where('trans_expense_claims.status', ExpenseClaim::NEED_APPROVAL_ONE)
+            $query->where('trans_expense_claims.status', ExpenseClaim::REQUEST_FOR_APPROVAL)
             ->orWhere(function($innerQuery){
                 $innerQuery->where('trans_expense_claims.status', '!=', ExpenseClaim::NONE)
-                ->where('trans_expense_claims.status', '!=', ExpenseClaim::NEED_APPROVAL_ONE)
+                ->where('trans_expense_claims.status', '!=', ExpenseClaim::REQUEST_FOR_APPROVAL)
                 ->where(function($innerQuery){
                     $innerQuery->whereNotNull('hod_id')
                     ->orWhere('trans_expense_claims.status', ExpenseClaim::REJECTED_ONE)
@@ -113,28 +113,28 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 'name' => 'date',
                 'type'  => 'date',
             ],
-            [
-                'label' => 'Expense Type',
-                'name' => 'approval_card_id',
-                'type'      => 'select',
-                'entity'    => 'approvalCard',
-                'attribute' => 'name',
-                'model'     => ApprovalCard::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('approval_cards as a', 'a.id', '=', 'expense_claim_details.approval_card_id')
-                    ->orderBy('a.name', $columnDirection)->select('expense_claim_details.*');
-                },
-            ],
-            [
-                'label' => 'Level',
-                'name' => 'level_id',
-                'type' => 'closure',
-                'orderable' => false,
-                'searchLogic' => false,
-                'function' => function($entry) {
-                    return $entry->level->name;
-                }
-            ],
+            // [
+            //     'label' => 'Expense Type',
+            //     'name' => 'approval_card_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'approvalCard',
+            //     'attribute' => 'name',
+            //     'model'     => ApprovalCard::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('approval_cards as a', 'a.id', '=', 'expense_claim_details.approval_card_id')
+            //         ->orderBy('a.name', $columnDirection)->select('expense_claim_details.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'Level',
+            //     'name' => 'level_id',
+            //     'type' => 'closure',
+            //     'orderable' => false,
+            //     'searchLogic' => false,
+            //     'function' => function($entry) {
+            //         return $entry->level->name;
+            //     }
+            // ],
             [
                 'label' => 'Cost Center',
                 'name' => 'cost_center',
@@ -424,7 +424,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         if($expenseClaim->approval_temp_id != $this->crud->user->id){
             return trans('custom.error_permission_message');
         }
-        if($expenseClaim->status !== ExpenseClaim::NEED_APPROVAL_ONE) {
+        if($expenseClaim->status !== ExpenseClaim::REQUEST_FOR_APPROVAL) {
             return trans('custom.expense_claim_detail_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.' . $action)]);
         }
         return true;
@@ -455,7 +455,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             $now = Carbon::now();
             $expenseClaim->hod_id = $this->crud->user->id;
             $expenseClaim->hod_date = $now;
-            $expenseClaim->status = ExpenseClaim::APPROVED_BY_HOD;
+            $expenseClaim->status = ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();
 

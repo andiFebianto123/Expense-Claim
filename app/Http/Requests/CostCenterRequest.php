@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\CostCenter;
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CostCenterRequest extends FormRequest
@@ -25,9 +27,9 @@ class CostCenterRequest extends FormRequest
     public function rules()
     {
         return [
-            'cost_center_id' => 'required',
-            'currency' => 'required',
-            'description' => 'required',
+            'cost_center_id' => 'required|max:255',
+            'currency' => ['required', Rule::in(CostCenter::OPTIONS_CURRENCY)],
+            'description' => 'required|max:255',
         ];
     }
 

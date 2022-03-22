@@ -36,8 +36,6 @@ class DatabaseSeeder extends Seeder
 
         $this->departmentSeeder();
 
-        $this->userSeeder();
-
         $this->expenseCodeSeeder();
 
         $this->userSeeder();
@@ -45,6 +43,10 @@ class DatabaseSeeder extends Seeder
         $this->expenseSeeder();
 
         $this->goaSeeder();
+
+        $this->addGoaToUser();
+
+        $this->addUserToDepartment();
 
         // APPROVAL CARD SEEDER
         //$this->approvalCardSeeder();
@@ -182,6 +184,21 @@ class DatabaseSeeder extends Seeder
 
     public function userSeeder()
     {
+        User::updateOrCreate([
+            'user_id' => User::USER_ID_SUPER_ADMIN
+        ], [
+            'vendor_number' => null,
+            'name' =>  'Kevin D',
+            'email' => 'kevin@rectmedia.com',
+            'bpid' =>  User::USER_ID_SUPER_ADMIN,
+            'level_id' => Level::where('level_id', 'D7')->first()->id,
+            'department_id' => Department::where('department_id', 'NONE')->first()->id,
+            'role_id' => Role::where('name', Role::ADMIN)->first()->id,
+            'is_active' => true,
+            'password' => bcrypt('qwerty'),
+            'cost_center_id' => CostCenter::first()->id
+        ]);
+        
         $filename = Storage::path('data/users.csv');
 
         $users = $this->csvToArray($filename);
@@ -201,7 +218,7 @@ class DatabaseSeeder extends Seeder
 
             $bpIdPass = empty($bpidExist) || ($bpidExist && ($bpidExist->user_id == $user['UserID']));
 
-            if (!empty($level) && !empty($role) && !empty($costCenter) && $bpIdPass) {
+            if (!empty($level) && !empty($role) && !empty($costCenter)) {
                 User::updateOrCreate([
                     'user_id' => $user['UserID'],
                 ], [
@@ -209,7 +226,7 @@ class DatabaseSeeder extends Seeder
                     'vendor_number' => random_int(100000, 999999),
                     'name' =>  $user['Name'],
                     'email' => $user['Email'],
-                    'bpid' =>  $user['BPID'],
+                    'bpid' =>  $bpIdPass ? $user['BPID'] : null,
                     'level_id' => $level->id,
                     'department_id' => $department->id ?? null,
                     'role_id' => $role->id,
@@ -255,10 +272,11 @@ class DatabaseSeeder extends Seeder
                 $expenseType->expense_code_id = $expenseCode->id;
                 $expenseType->is_traf = trim($item['TRAFApproval']) == 'Yes' ? true : false;
                 $expenseType->is_bod = trim($item['BoDApproval']) == 'Yes' ? true : false;
+                $expenseType->bod_level = $expenseType->is_bod ? trim($item['Remark']) : null;
                 $expenseType->is_bp_approval = $isBpApproval;
                 $expenseType->is_limit_person = trim($item['Remark']) == 'Limit per person' ? true : false;
                 $expenseType->currency = trim($item['Currency']);
-                $expenseType->limit_business_proposal = $isBpApproval ? 720000 : null;
+                $expenseType->limit_business_approval = $isBpApproval ? 720000 : null;
                 $expenseType->remark = trim($item['Remark']);
 
                 $expenseType->save();
@@ -307,6 +325,62 @@ class DatabaseSeeder extends Seeder
             'value' => '14276.50',
             'type' => 'float',
         ]);
+
+        Config::updateOrCreate([
+            'key' => 'Start Exchange Date',
+        ], [
+            'key' => 'Start Exchange Date',
+            'value' => '2022-03-01',
+            'type' => 'date',
+        ]);
+
+        Config::updateOrCreate([
+            'key' => 'End Exchange Date',
+        ], [
+            'key' => 'End Exchange Date',
+            'value' => '2022-04-01',
+            'type' => 'date',
+        ]);
+    }
+
+    public function addGoaToUser()
+    {
+        $filename = Storage::path('data/users.csv');
+
+        $users = $this->csvToArray($filename);
+
+        $goaHolder = GoaHolder::where('name', 'General Manager')->first();
+        $user = User::where('user_id', User::USER_ID_SUPER_ADMIN)->first();
+        if (!empty($goaHolder) && !empty($user)) {
+            $user->goa_holder_id = $goaHolder->id;
+            $user->save();
+        }
+
+        foreach ($users as $user) {
+            $goaHolder = GoaHolder::where('name', trim($user['GoA']))->first();
+            $user = User::where('user_id', $user['UserID'])->first();
+
+            if (!empty($goaHolder) && !empty($user)) {
+                $user->goa_holder_id = $goaHolder->id;
+                $user->save();
+            }
+        }
+    }
+
+    public function addUserToDepartment()
+    {
+        $filename = Storage::path('data/department.csv');
+
+        $departments = $this->csvToArray($filename);
+
+        foreach ($departments as $department) {
+            $user = User::where('user_id',  $department['NIK'])->first();
+            $department = Department::where('department_id', $department['Department ID'])->first();
+            if (!empty($user) && !empty($department)) {
+                $department->user_id = $user->id;
+                $department->save();
+            }
+        }
     }
 
 

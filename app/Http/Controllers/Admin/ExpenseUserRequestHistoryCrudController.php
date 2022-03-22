@@ -40,8 +40,8 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
         }
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
-            $builder->where('expense_claims.status', '!=', ExpenseClaim::NONE)
-            ->where('expense_claims.status', '!=', ExpenseClaim::NEED_REVISION);
+            $builder->where('expense_claims.status', '!=', ExpenseClaim::DRAFT)
+            ->where('expense_claims.status', '!=', ExpenseClaim::REQUEST_FOR_APPROVAL);
         });
 
         CRUD::setModel(ExpenseClaim::class);
@@ -61,7 +61,7 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
     {
 
         $this->crud->cancelCondition = function ($entry) {
-            return ($this->crud->role === Role::SUPER_ADMIN && ($entry->status !== ExpenseClaim::REJECTED_ONE && $entry->status !== ExpenseClaim::REJECTED_TWO && $entry->status !== ExpenseClaim::CANCELED)) || $entry->status == ExpenseClaim::NONE;
+            return ($this->crud->role === Role::SUPER_ADMIN && ($entry->status !== ExpenseClaim::REJECTED_ONE && $entry->status !== ExpenseClaim::REJECTED_TWO && $entry->status !== ExpenseClaim::CANCELED)) || $entry->status == ExpenseClaim::DRAFT;
         };
 
         $this->crud->addButtonFromModelFunction('line', 'detailRequestButton', 'detailRequestButton');
@@ -189,7 +189,7 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
                 DB::rollback();
                 return response()->json(['message' => trans('custom.model_not_found')], 404);
             }
-            if(($this->crud->role !== Role::SUPER_ADMIN && $model->status !== ExpenseClaim::NONE) || ($this->crud->role === Role::SUPER_ADMIN && ($model->status === ExpenseClaim::REJECTED_ONE || $model->status === ExpenseClaim::REJECTED_TWO || $model->status === ExpenseClaim::CANCELED))){
+            if(($this->crud->role !== Role::SUPER_ADMIN && $model->status !== ExpenseClaim::DRAFT) || ($this->crud->role === Role::SUPER_ADMIN && ($model->status === ExpenseClaim::REJECTED_ONE || $model->status === ExpenseClaim::REJECTED_TWO || $model->status === ExpenseClaim::CANCELED))){
                 DB::rollback();
                 return response()->json(['message' => trans('custom.expense_claim_cant_status', ['status' => $model->status, 'action' => trans('custom.canceled')])], 403);
             }

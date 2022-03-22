@@ -64,6 +64,8 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    const USER_ID_SUPER_ADMIN = '00000000';
+
     public function level()
     {
         return $this->belongsTo(Level::class, 'level_id');
@@ -78,6 +80,12 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
+
+    public function head_department()
+    {
+        return $this->hasMany(Department::class, 'user_id');
+    }
+
 
     public function costcenter()
     {
@@ -101,7 +109,8 @@ class User extends Authenticatable
     //     return $this->belongsTo(User::class, 'head_department_id');
     // }
 
-    public function goa(){
+    public function goa()
+    {
         return $this->belongsTo(GoaHolder::class, 'goa_holder_id');
     }
 

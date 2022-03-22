@@ -13,8 +13,11 @@ class ExpenseClaimDetail extends Model
     use HasFactory, SoftDeletes, CrudTrait;
 
     protected $fillable = [
-        'expense_claim_id', 'approval_card_id', 'level_id', 'level_type', 'date',
-        'cost_center', 'expense_code', 'cost', 'currency', 'document', 'remark'
+        'expense_claim_id', 'date',
+        'cost_center_id', 'expense_type_id', 'total_person',
+        'is_bp_approval',
+        'cost', 'currency', 'converted_currency', 'exchange_value', 'converted_cost',
+        'document', 'remark'
     ];
     protected $table = 'trans_expense_claim_details';
 
@@ -22,14 +25,9 @@ class ExpenseClaimDetail extends Model
 
     public static $expenseCode = ['35202' => '35202', '31601' => '31601'];
 
-    public function approvalCard()
+    public function expense_claim()
     {
-        return $this->belongsTo(ApprovalCard::class, 'approval_card_id');
-    }
-
-    public function level()
-    {
-        return $this->morphTo(__FUNCTION__, 'level_type', 'level_id');
+        return $this->belongsTo(ExpenseClaim::class, 'expense_claim_id');
     }
 
     public function expense_code()

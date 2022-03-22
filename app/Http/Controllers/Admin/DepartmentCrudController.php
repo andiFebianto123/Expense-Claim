@@ -43,23 +43,26 @@ class DepartmentCrudController extends CrudController
         }
         CRUD::setModel(\App\Models\Department::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/department');
-        CRUD::setEntityNameStrings('department', 'departments');
+        CRUD::setEntityNameStrings('Department', 'Departments');
+
+        $this->crud->deleteCondition = function ($entry) {
+            return !$entry->is_none;
+        };
+
+        $this->crud->updateCondition = function ($entry) {
+            return !$entry->is_none;
+        };
     }
 
-    /**
-     * Define what happens when the List operation is loaded.
-     * 
-     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
-     * @return void
-     */
-    protected function setupListOperation()
-    {
-        CRUD::column('department_id')->label('Department ID');
-        CRUD::column('name');
+    public function getColumns($forList = true){
+        $limit = $forList ? 40 : 255;
+        CRUD::column('department_id')->label('Department ID')->limit($limit);
+        CRUD::column('name')->limit($limit);
         CRUD::addColumn([
             'label'     => "NIK",
             'type'      => 'closure',
             'name'      => 'nik',
+            'limit' => $limit,
             'function' => function($entry){
                 if($entry->user){
                     return $entry->user->user_id;
@@ -78,9 +81,10 @@ class DepartmentCrudController extends CrudController
             }
         ]);
         CRUD::addColumn([
-            'label'     => "Head Of Department",
+            'label'     => "Head of Department",
             'type'      => 'closure',
             'name'      => 'hod',
+            'limit' => $limit,
             'function' => function($entry){
                 if($entry->user){
                     return $entry->user->name;
@@ -102,6 +106,7 @@ class DepartmentCrudController extends CrudController
             'label'     => "GoA Holder",
             'type'      => 'closure',
             'name'      => 'goa_holder',
+            'limit' => $limit,
             'function' => function($entry){
                 if($entry->user){
                     if($entry->user->goa){
@@ -127,6 +132,7 @@ class DepartmentCrudController extends CrudController
             'label'     => "Cost Center",
             'type'      => 'closure',
             'name'      => 'cost_center',
+            'limit' => $limit,
             'function' => function($entry){
                 if($entry->user){
                     if($entry->user->costcenter){
@@ -151,6 +157,7 @@ class DepartmentCrudController extends CrudController
             'label'     => "Cost Center Name",
             'type'      => 'closure',
             'name'      => 'cost_center_name',
+            'limit' => $limit,
             'function' => function($entry){
                 if($entry->user){
                     if($entry->user->costcenter){
@@ -176,14 +183,29 @@ class DepartmentCrudController extends CrudController
             'label' => 'CheckLimitGOA',
             'type' => 'closure',
             'name' => 'check_limit_goa',
+            'limit' => $limit,
             'function' => function($entry){
-                if($entry->name == 'NONE'){
+                if($entry->is_none){
                     return 'No';
                 }
                 return 'Yes';
             }
         ]);
+    }
 
+    protected function setupShowOperation(){
+        $this->getColumns(false);
+    }
+
+    /**
+     * Define what happens when the List operation is loaded.
+     * 
+     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
+     * @return void
+     */
+    protected function setupListOperation()
+    {
+        $this->getColumns();
     }
 
     function user()
@@ -206,25 +228,6 @@ class DepartmentCrudController extends CrudController
 
         CRUD::field('name');
 
-        // CRUD::addField([
-        //     'name' => 'user_head_department_id',
-        //     'label' => "Head Of Department",
-        //     'type' => 'select2_from_array',
-        //     'allows_null' => true,
-        //     'options' => $this->user(),
-        // ]);
-
-        CRUD::addField([
-            'name'        => 'is_none', // the name of the db column
-            'label'       => 'Is None', // the input label
-            'type'        => 'radio',
-            'default'     => 0,
-            'options'     => [
-                // the key will be stored in the db, the value will be shown as label;
-                0 => "No",
-                1 => "Yes"
-            ],
-        ]);
         /*
          * Fields can be defined using the fluent syntax or array syntax:
          * - CRUD::field('price')->type('number');
@@ -240,32 +243,11 @@ class DepartmentCrudController extends CrudController
         $request = $this->crud->validateRequest();
         DB::beginTransaction();
         try{
-
-            $errors = [];
+            
+            $this->crud->addField(['name' => 'is_none', 'type' => 'hidden']);
+            $this->crud->getRequest()->merge(['is_none' => 0]);
 
             $saveRequest = $this->crud->getStrippedSaveRequest($request);
-
-
-            // // cek user
-            // $user = User::where('id', $user_head_department)->first();
-            // if($user == null){
-            //     // cek apakah user datanya ada atau tidak
-            //     $errors['user_head_department_id'] = trans('validation.data_not_exists', ['name' => 'User']);
-                
-            // }
-
-            if($request->is_none == 1){
-                $cek_is_none = Department::where('is_none', 1)->first();
-                if($cek_is_none != null){
-                    $errors['is_none'] = trans('validation.exists', ['attribute' => 'Is None']);
-                }
-            }
-
-
-            if(count($errors) != 0){
-                DB::rollBack();
-                return $this->redirectStoreCrud($errors);
-            }
 
             // insert item in the db
             $item = $this->crud->create($saveRequest);
@@ -303,23 +285,12 @@ class DepartmentCrudController extends CrudController
 
         CRUD::addField([
             'name' => 'user_id',
-            'label' => "Head Of Department",
+            'label' => "Head of Department",
             'type' => 'select2_from_array',
             'allows_null' => true,
             'options' => $this->user(),
         ]);
 
-        CRUD::addField([
-            'name'        => 'is_none', // the name of the db column
-            'label'       => 'Is None', // the input label
-            'type'        => 'radio',
-            'default'     => 0,
-            'options'     => [
-                // the key will be stored in the db, the value will be shown as label;
-                0 => "No",
-                1 => "Yes"
-            ],
-        ]);
     }
     public function edit($id)
     {
@@ -335,11 +306,15 @@ class DepartmentCrudController extends CrudController
 
         $this->data['id'] = $id;
 
+        if($this->data['entry']->is_none){
+            abort(403, trans('custom.error_permission_message'));
+        }
+
         // load the view from /resources/views/vendor/backpack/crud/ if it exists, otherwise load the one in the package
         return view($this->crud->getEditView(), $this->data);
     }
 
-    public function update()
+    public function update($id)
     {
         $this->crud->hasAccessOrFail('update');
 
@@ -352,31 +327,24 @@ class DepartmentCrudController extends CrudController
 
             $errors = [];
 
-            $id = $request->id;
-
             $saveRequest = $this->crud->getStrippedSaveRequest($request);
-
-            $cek_is_none = Department::where('is_none', 1)->first();
 
             $user = User::where('id', $request->user_id)->first();
             if($request->user_id != null){  
                 if($user == null){
-                    $errors['user_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.user_id')]);
+                    $errors['user_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.head_of_department')]);
                 }    
-            }
-
-            if($cek_is_none != null){
-                if(($cek_is_none->id != $id) && ($request->is_none == 1)){
-                    $errors['is_none'] = trans('validation.exists', ['attribute' => 'Is None']);;
-                }else if(($cek_is_none->id == $id) && ($request->is_none == 0)){
-                    // jika data department yang is_none yes ternyata adalah datanya sendiri dan dia milih no
-                    $errors['is_none'] = trans('validation.exists', ['attribute' => 'Is None']);
-                }
             }
 
             if(count($errors) != 0){
                 DB::rollBack();
                 return $this->redirectUpdateCrud($id, $errors);
+            }
+
+            $department = Department::where('id', $id)->firstOrFail();
+            if($department->is_none){
+                DB::rollback();
+                abort(403, trans('custom.error_permission_message'));
             }
 
             $item = $this->crud->update($request->get($this->crud->model->getKeyName()),
@@ -407,6 +375,12 @@ class DepartmentCrudController extends CrudController
         DB::beginTransaction();
         try {
             $id = $this->crud->getCurrentEntryId() ?? $id;
+
+            $department = Department::where('id', $id)->firstOrFail();
+            if($department->is_none){
+                DB::rollback();
+                return response()->json(['message' => trans('custom.error_permission_message')], 403);
+            }
 
             $response = $this->crud->delete($id);
             DB::commit();

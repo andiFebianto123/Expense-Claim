@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Level;
+use App\Models\MstExpense;
+use App\Models\ExpenseCode;
 use Illuminate\Database\Eloquent\Model;
-use \Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use \Backpack\CRUD\app\Models\Traits\CrudTrait;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ExpenseType extends Model
 {
-    use HasFactory, CrudTrait, SoftDeletes;
+    use HasFactory, CrudTrait;
     protected $table = 'mst_expense_types';
-    protected $fillable = ['expense_id', 'level_id', 'limit', 'expense_code_id', 'is_bod', 'is_traf', 'is_bp_approval', 'bod_level', 'limit_business_proposal', 'currency', 'remark'];
+    protected $fillable = ['expense_id', 'level_id', 'limit', 'expense_code_id', 'is_bod', 'is_traf', 'is_bp_approval', 'bod_level', 'limit_business_approval', 'currency', 'remark'];
 
     public const RESPECTIVE_DIRECTOR = "Respective Director";
     public const GENERAL_MANAGER = "General Manager";

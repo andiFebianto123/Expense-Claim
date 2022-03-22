@@ -2,10 +2,9 @@
 
 namespace App\Http\Requests;
 
-use App\Http\Requests\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
-class DepartmentRequest extends FormRequest
+class ExpenseCodeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -29,15 +28,13 @@ class DepartmentRequest extends FormRequest
             // jika melakukan edit
             $id = \Request::segments()[1];
             return [
-                // 'name' => 'required|min:5|max:255'
-                'department_id' => 'required|max:255|unique:mst_departments,department_id,' . $id,
-                'name' => 'required|max:255|unique:mst_departments,name,' . $id,
+                'account_number' => 'required|min:5|max:255|unique:mst_expense_codes,account_number,' . $id,
+                'description' => 'required|max:255',
             ];
         }
         return [
-            // 'name' => 'required|min:5|max:255'
-            'department_id' => 'required|max:255|unique:mst_departments,department_id',
-            'name' => 'required|max:255|unique:mst_departments,name'
+            'account_number' => 'required|min:5|max:255|unique:mst_expense_codes,account_number',
+            'description' => 'required|max:255',
         ];
     }
 

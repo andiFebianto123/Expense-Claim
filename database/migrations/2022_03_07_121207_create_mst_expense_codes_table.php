@@ -15,7 +15,7 @@ class CreateMstExpenseCodesTable extends Migration
     {
         Schema::create('mst_expense_codes', function (Blueprint $table) {
             $table->id();
-            $table->string('account_number');
+            $table->string('account_number')->unique();
             $table->string('description');
             $table->timestamps();
         });

@@ -16,6 +16,7 @@ class CreateTransExpenseClaimDetailsTable extends Migration
         Schema::create('trans_expense_claim_details', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('expense_claim_id');
+            $table->unsignedBigInteger('expense_claim_type_id');
             $table->date('date');
        
             $table->unsignedBigInteger('cost_center_id');
@@ -39,6 +40,11 @@ class CreateTransExpenseClaimDetailsTable extends Migration
                 ->references('id')
                 ->on('trans_expense_claims')
                 ->onUpdate('cascade');
+
+            $table->foreign('expense_claim_type_id')
+            ->references('id')
+            ->on('trans_expense_claim_types')
+            ->onUpdate('cascade');
 
             $table->foreign('expense_type_id')
                 ->references('id')

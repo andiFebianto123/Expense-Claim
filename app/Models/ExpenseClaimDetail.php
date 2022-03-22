@@ -13,7 +13,7 @@ class ExpenseClaimDetail extends Model
     use HasFactory, SoftDeletes, CrudTrait;
 
     protected $fillable = [
-        'expense_claim_id', 'date',
+        'expense_claim_id', 'expense_claim_type_id', 'date',
         'cost_center_id', 'expense_type_id', 'total_person',
         'is_bp_approval',
         'cost', 'currency', 'converted_currency', 'exchange_value', 'converted_cost',

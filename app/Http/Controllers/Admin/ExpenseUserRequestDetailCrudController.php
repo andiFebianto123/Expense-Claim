@@ -510,6 +510,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $historyExpenseType = ExpenseClaimType::where('expense_type_id', $request->expense_type_id)
             ->where('expense_claim_id', $this->crud->expenseClaim->id)
             ->select(
+                'id',
                 'expense_name',
                 'expense_type_id',
                 'is_traf as is_traf',
@@ -702,30 +703,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 return $this->redirectStoreCrud($errors);
             }
 
-            
-            $expenseClaimDetail = new ExpenseClaimDetail;
-
-            $expenseClaimDetail->expense_claim_id = $this->crud->expenseClaim->id;
-            $expenseClaimDetail->date = $request->date;
-            $expenseClaimDetail->cost_center_id = $costCenter->id;
-            $expenseClaimDetail->expense_type_id = $expenseType->expense_type_id;
-            $expenseClaimDetail->total_person = $isLimitPerson ? $totalPerson : null;
-            $expenseClaimDetail->is_bp_approval = $isBpApproval;
-            $expenseClaimDetail->currency = $currency;
-            $expenseClaimDetail->exchange_value = $exchangeValue;
-            $expenseClaimDetail->converted_currency = $convertedCurrency;
-            $expenseClaimDetail->converted_cost = $convertedCost;
-            $expenseClaimDetail->cost = $cost;
-            $expenseClaimDetail->remark = $request->remark;
-            $expenseClaimDetail->document = $request->document;
-
-            $expenseClaimDetail->save();
-
-            $this->crud->expenseClaim->value += $cost;
-            $this->crud->expenseClaim->save();
-
             if($historyExpenseType == null){
-                ExpenseClaimType::create([
+                $historyExpenseType = ExpenseClaimType::create([
                     'expense_claim_id' => $this->crud->expenseClaim->id, 
                     'expense_type_id' => $expenseType->expense_type_id, 
                     'expense_name' => $expenseType->expense_name, 
@@ -745,6 +724,29 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     'remark_expense_type' => $expenseType->remark
                 ]);
             }
+
+            
+            $expenseClaimDetail = new ExpenseClaimDetail;
+
+            $expenseClaimDetail->expense_claim_id = $this->crud->expenseClaim->id;
+            $expenseClaimDetail->expense_claim_type_id = $historyExpenseType->id;
+            $expenseClaimDetail->date = $request->date;
+            $expenseClaimDetail->cost_center_id = $costCenter->id;
+            $expenseClaimDetail->expense_type_id = $expenseType->expense_type_id;
+            $expenseClaimDetail->total_person = $isLimitPerson ? $totalPerson : null;
+            $expenseClaimDetail->is_bp_approval = $isBpApproval;
+            $expenseClaimDetail->currency = $currency;
+            $expenseClaimDetail->exchange_value = $exchangeValue;
+            $expenseClaimDetail->converted_currency = $convertedCurrency;
+            $expenseClaimDetail->converted_cost = $convertedCost;
+            $expenseClaimDetail->cost = $cost;
+            $expenseClaimDetail->remark = $request->remark;
+            $expenseClaimDetail->document = $request->document;
+
+            $expenseClaimDetail->save();
+
+            $this->crud->expenseClaim->value += $cost;
+            $this->crud->expenseClaim->save();
 
             \Alert::success(trans('backpack::crud.insert_success'))->flash();
 

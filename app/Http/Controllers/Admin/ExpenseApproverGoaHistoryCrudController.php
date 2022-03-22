@@ -53,14 +53,21 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
                 $query->where('trans_expense_claims.status', '=', ExpenseClaim::FULLY_APPROVED)
-                ->where(function($innerQuery){
+                ->orWhere(function($innerQuery){
                     $innerQuery->whereNotNull('current_trans_goa_id')
-                    ->orWhere('trans_expense_claims.status', ExpenseClaim::REJECTED_TWO)
-                    ->orWhere(function($deepestQuery){
-                        $deepestQuery
-                        ->where('trans_expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
-                        ->whereNotNull('current_trans_goa_id');
-                    });
+                    ->where('trans_expense_claims.status', ExpenseClaim::REJECTED_ONE);
+                })
+                ->orWhere(function($innerQuery){
+                    $innerQuery->whereNotNull('current_trans_goa_id')
+                    ->where('trans_expense_claims.status', ExpenseClaim::REJECTED_TWO);
+                })
+                ->orWhere(function($innerQuery){
+                    $innerQuery->whereNotNull('current_trans_goa_id')
+                    ->where('trans_expense_claims.status', ExpenseClaim::CANCELED);
+                })
+                ->orWhere(function($innerQuery){
+                    $innerQuery->whereNotNull('current_trans_goa_id')
+                    ->where('trans_expense_claims.status', ExpenseClaim::PROCEED);
                 });
             });
         });

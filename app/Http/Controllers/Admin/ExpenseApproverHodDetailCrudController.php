@@ -68,7 +68,10 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         $this->crud->setUpdateView('expense_claim.hod.edit');
 
         if ($this->crud->expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL && 
-            $this->crud->expenseClaim->hod_id == $this->crud->user->id) 
+            ($this->crud->expenseClaim->hod_id == $this->crud->user->id ||
+            $this->crud->expenseClaim->hod_delegation_id == $this->crud->user->id
+            )
+            ) 
         {
             $this->crud->hasAction = true;
         }
@@ -98,7 +101,8 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             });
         });
         if($this->crud->role === Role::HOD){
-            $expenseClaim->where('trans_expense_claims.hod_id', $this->crud->user->id);
+            $expenseClaim->where('trans_expense_claims.hod_id', $this->crud->user->id)
+                        ->orWhere('trans_expense_claims.hod_delegation_id', $this->crud->user->id);
         }
         else{
             $expenseClaim->whereNotNull('trans_expense_claims.hod_id');
@@ -124,10 +128,9 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         $this->crud->viewBeforeContent = ['expense_claim.hod.header'];
         $allowActions = $this->crud->hasAction;
         
-        $this->crud->createCondition =  function () use ($allowActions) {
+        $this->crud->createCondition = function () use ($allowActions) {
             return $allowActions;
         };
-
         $this->crud->updateCondition = function () use ($allowActions) {
             return $allowActions;
         };

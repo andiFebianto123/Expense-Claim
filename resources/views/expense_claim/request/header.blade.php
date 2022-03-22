@@ -61,7 +61,7 @@
             @php
                 $classExpenseClaim = 'App\Models\ExpenseClaim';
             @endphp
-            @if (($crud->expenseClaim->status == $classExpenseClaim::DRAFT || $crud->expenseClaim->status == $classExpenseClaim::REQUEST_FOR_APPROVAL) && $crud->expenseClaim->request_id == $crud->user->id)
+            @if (($crud->expenseClaim->status == $classExpenseClaim::DRAFT || $crud->expenseClaim->status == $classExpenseClaim::NEED_REVISION) && $crud->expenseClaim->request_id == $crud->user->id)
                 <div class="card-footer">
                     <button class="btn btn-success" id="submit-button"><i
                             class="la la-send"></i>&nbsp;Submit</button>

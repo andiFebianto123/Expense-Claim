@@ -59,8 +59,45 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-user-request/' . ($this->crud->headerId ?? '-') . '/detail');
         CRUD::setEntityNameStrings('Expense User Request - Detail', 'Expense User Request - Detail');
 
-        // $expenseClaimDetail = ExpenseClaimDetail::where('expense_claim_id',  $this->crud->headerId)->get();
+        $expenseClaimDetail = ExpenseClaimDetail::where('expense_claim_id',  $this->crud->headerId)->get();
 
+        $this->crud->expenseClaimDetail = $expenseClaimDetail;
+        $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+
+        $this->crud->setCreateView('expense_claim.request.create');
+        $this->crud->setUpdateView('expense_claim.request.edit');
+
+        $isDraftOrRevision = $this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::NEED_REVISION;
+
+        if (!$isDraftOrRevision) {
+            $this->getHodAndGoa();
+            $this->crud->denyAccess(['create', 'edit', 'delete']);
+        }
+    }
+
+    public function getExpenseClaim($id)
+    {
+        $expenseClaim = ExpenseClaim::where('id', $id);
+        if ($this->crud->role != Role::ADMIN) {
+            $expenseClaim->where(function ($query) {
+                $query->where('request_id', $this->crud->user->id);
+                if ($this->crud->role == Role::SECRETARY) {
+                    $query->orWhere('secretrary_id', $this->crud->user->id);
+                }
+            });
+        }
+        $expenseClaim =  $expenseClaim->first();
+        if ($expenseClaim == null) {
+            DB::rollback();
+            abort(404, trans('custom.model_not_found'));
+        }
+        return $expenseClaim;
+    }
+
+    public function getHodAndGoa()
+    {
+
+        $expenseClaimDetail = $this->crud->expenseClaimDetail;
         $department = User::join('mst_departments', 'mst_users.department_id', '=', 'mst_departments.id')
             ->where('mst_users.id',  $this->crud->user->id)
             ->select(
@@ -68,7 +105,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             )
             ->first();
 
-        $hod = User::where('mst_users.id', $department->user_id ?? null)->first();
+        $hod = User::where('mst_users.id', $department->user_id)->first();
 
         $goaHolderId = null;
 
@@ -83,43 +120,15 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             ->select('goa_holders.*', 'mst_users.name as user_name')
             ->first();
 
-        // $this->crud->expenseClaimDetail = $expenseClaimDetail;
-       
-        $this->crud->hod = $hod;
-        $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
 
-        $totalCost = $this->crud->expenseClaim->value;
-
+        $totalCost = $expenseClaimDetail->sum('cost');
         $this->recursiveCheckValue($totalCost, $goa);
 
-        $this->crud->setCreateView('expense_claim.request.create');
-        $this->crud->setUpdateView('expense_claim.request.edit');
-
-        $isDraftOrRevision = $this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::NEED_REVISION;
-
-        if(!$isDraftOrRevision){
-            $this->crud->denyAccess(['create', 'edit', 'delete']);
-        }
+        $this->crud->user->department = $department;
+        $this->crud->hod = $hod;
     }
 
-    public function getExpenseClaim($id)
-    {
-        $expenseClaim = ExpenseClaim::where('id', $id);
-        if ($this->crud->role != Role::ADMIN) {
-            $expenseClaim->where(function($query){
-                $query->where('request_id', $this->crud->user->id);
-                if($this->crud->role == Role::SECRETARY){
-                    $query->orWhere('secretrary_id', $this->crud->user->id);
-                }
-            });
-        }
-        $expenseClaim =  $expenseClaim->first();
-        if ($expenseClaim == null) {
-            DB::rollback();
-            abort(404, trans('custom.model_not_found'));
-        }
-        return $expenseClaim;
-    }
+
 
     /**
      * Define what happens when the List operation is loaded.
@@ -162,11 +171,11 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'entity'    => 'expense_claim_type', // the method that defines the relationship in your Model
                 'attribute' => 'expense_name', // foreign key attribute that is shown to user
                 'model'     => "App\Models\ExpenseClaimType", // foreign key model
-                'orderLogic' => function($query, $column, $columnDirection){
+                'orderLogic' => function ($query, $column, $columnDirection) {
                     return $query
-                    ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
-                    ->orderBy('trans_expense_claim_types.expense_name', $columnDirection)
-                    ->select('trans_expense_claim_details.*');
+                        ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
+                        ->orderBy('trans_expense_claim_types.expense_name', $columnDirection)
+                        ->select('trans_expense_claim_details.*');
                 },
             ],
 
@@ -178,11 +187,11 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'attribute' => 'detail_level_id', // foreign key attribute that is shown to user
                 'model'     => "App\Models\ExpenseClaimType", // foreign key model
                 'key' => 'level_name',
-                'orderLogic' => function($query, $column, $columnDirection){
+                'orderLogic' => function ($query, $column, $columnDirection) {
                     return $query
-                    ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
-                    ->orderBy('trans_expense_claim_types.detail_level_id', $columnDirection)
-                    ->select('trans_expense_claim_details.*');
+                        ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
+                        ->orderBy('trans_expense_claim_types.detail_level_id', $columnDirection)
+                        ->select('trans_expense_claim_details.*');
                 },
             ],
 
@@ -193,11 +202,11 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'entity' => 'cost_center',
                 'model' => 'App\Models\CostCenter',
                 'attribute' => 'description',
-                'orderLogic' => function($query, $column, $columnDirection){
+                'orderLogic' => function ($query, $column, $columnDirection) {
                     return $query
-                    ->join('mst_cost_centers', 'trans_expense_claim_details.cost_center_id', '=', 'mst_cost_centers.id')
-                    ->orderBy('mst_cost_centers.description', $columnDirection)
-                    ->select('trans_expense_claim_details.*');
+                        ->join('mst_cost_centers', 'trans_expense_claim_details.cost_center_id', '=', 'mst_cost_centers.id')
+                        ->orderBy('mst_cost_centers.description', $columnDirection)
+                        ->select('trans_expense_claim_details.*');
                 },
             ],
             [
@@ -208,11 +217,11 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'attribute' => 'description', // foreign key attribute that is shown to user
                 'model'     => "App\Models\ExpenseClaimType", // foreign key model
                 'key' => 'description',
-                'orderLogic' => function($query, $column, $columnDirection){
+                'orderLogic' => function ($query, $column, $columnDirection) {
                     return $query
-                    ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
-                    ->orderBy('trans_expense_claim_types.description', $columnDirection)
-                    ->select('trans_expense_claim_details.*');
+                        ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
+                        ->orderBy('trans_expense_claim_types.description', $columnDirection)
+                        ->select('trans_expense_claim_details.*');
                 },
             ],
 
@@ -341,22 +350,22 @@ class ExpenseUserRequestDetailCrudController extends CrudController
     public function getUserExpenseTypes()
     {
         $user = User::join('mst_levels', 'mst_users.level_id', '=', 'mst_levels.id')
-        ->where('mst_users.id', $this->crud->expenseClaim->request_id)
-        ->select(
-            'mst_levels.level_id as level_code',
-            'mst_levels.name as level_name',
-            'mst_levels.id as level_id',
-            'department_id'
-        )
-        ->first();
+            ->where('mst_users.id', $this->crud->expenseClaim->request_id)
+            ->select(
+                'mst_levels.level_id as level_code',
+                'mst_levels.name as level_name',
+                'mst_levels.id as level_id',
+                'department_id'
+            )
+            ->first();
         $userExpenseTypes = ExpenseType::join('mst_levels', 'mst_expense_types.level_id', 'mst_levels.id')
             ->join('mst_expenses', 'mst_expenses.id', 'mst_expense_types.expense_id')
             ->where('mst_expense_types.level_id', ($user->level_id ?? null))
-            ->where(function($query) use($user){
+            ->where(function ($query) use ($user) {
                 $query->doesntHave('expense_type_dept')
-                ->orWhereHas('expense_type_dept', function($innerQuery) use($user){
-                    $innerQuery->where('department_id', ($user->department_id ?? null));
-                });
+                    ->orWhereHas('expense_type_dept', function ($innerQuery) use ($user) {
+                        $innerQuery->where('department_id', ($user->department_id ?? null));
+                    });
             })
             ->select(
                 'mst_expense_types.id as expense_type_id',
@@ -368,16 +377,23 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'mst_levels.level_id as level',
                 'mst_expenses.name as expense_name',
             )
-            ->get()->mapWithKeys(function($item){
-                return[$item->expense_type_id => $item];
+            ->get()->mapWithKeys(function ($item) {
+                return [$item->expense_type_id => $item];
             })->toArray();
 
         $userExpenseTypesHistory = ExpenseClaimType::where('expense_claim_id', $this->crud->expenseClaim->id)
-        ->select('expense_type_id', 'currency', 
-        'is_traf as traf', 'limit', 'is_bp_approval as bp_approval', 'is_limit_person as limit_person', 'detail_level_id as level', 
-        'expense_name')->get()->mapWithKeys(function($item){
-            return[$item->expense_type_id => $item];
-        });
+            ->select(
+                'expense_type_id',
+                'currency',
+                'is_traf as traf',
+                'limit',
+                'is_bp_approval as bp_approval',
+                'is_limit_person as limit_person',
+                'detail_level_id as level',
+                'expense_name'
+            )->get()->mapWithKeys(function ($item) {
+                return [$item->expense_type_id => $item];
+            });
 
 
         return collect($userExpenseTypes)->merge($userExpenseTypesHistory->toArray());
@@ -495,77 +511,74 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $errors = [];
 
             $user = User::join('mst_levels', 'mst_users.level_id', '=', 'mst_levels.id')
-            ->where('mst_users.id', $this->crud->expenseClaim->request_id)
-            ->select(
-                'mst_levels.level_id as level_code',
-                'mst_levels.name as level_name',
-                'mst_levels.id as level_id',
-                'department_id'
-            )
-            ->first();
-
-            $historyExpenseType = ExpenseClaimType::where('expense_type_id', $request->expense_type_id)
-            ->where('expense_claim_id', $this->crud->expenseClaim->id)
-            ->select(
-                'id',
-                'expense_name',
-                'expense_type_id',
-                'is_traf as is_traf',
-                'is_bod as is_bod',
-                'is_bp_approval as is_bp_approval',
-                'limit as limit',
-                'currency as currency',
-                'limit_business_approval as limit_business_approval',
-                'is_limit_person',
-                'expense_code_id',
-                'account_number',
-                'description',
-                'remark_expense_type'
-            )->first();
-
-            if($historyExpenseType == null){
-                $expenseType = ExpenseType::join('mst_expenses', 'mst_expense_types.expense_id', '=', 'mst_expenses.id')
-                ->join('mst_expense_codes', 'mst_expense_types.expense_code_id', '=', 'mst_expense_codes.id')
-                ->where('mst_expense_types.id', $request->expense_type_id)
-                ->where('level_id', ($user->level_id ?? null))
-                ->where(function($query) use($user){
-                    $query->doesntHave('expense_type_dept')
-                    ->orWhereHas('expense_type_dept', function($innerQuery) use($user){
-                        $innerQuery->where('department_id', ($user->department_id ?? null));
-                    });
-                })
+                ->where('mst_users.id', $this->crud->expenseClaim->request_id)
                 ->select(
-                    'mst_expenses.name as expense_name',
-                    'mst_expense_types.id as expense_type_id',
-                    'mst_expense_types.is_traf as is_traf',
-                    'mst_expense_types.is_bod as is_bod',
-                    'mst_expense_types.is_bp_approval as is_bp_approval',
-                    'mst_expense_types.limit as limit',
-                    'mst_expense_types.currency as currency',
-                    'mst_expense_types.limit_business_approval as limit_business_approval',
-                    'is_limit_person',
-                    'mst_expense_codes.id as expense_code_id',
-                    'mst_expense_codes.account_number as account_number',
-                    'mst_expense_codes.description as description',
-                    'mst_expense_types.remark'
+                    'mst_levels.level_id as level_code',
+                    'mst_levels.name as level_name',
+                    'mst_levels.id as level_id',
+                    'department_id'
                 )
                 ->first();
-            }
-            else{
+
+            $historyExpenseType = ExpenseClaimType::where('expense_type_id', $request->expense_type_id)
+                ->where('expense_claim_id', $this->crud->expenseClaim->id)
+                ->select(
+                    'id',
+                    'expense_name',
+                    'expense_type_id',
+                    'is_traf as is_traf',
+                    'is_bod as is_bod',
+                    'is_bp_approval as is_bp_approval',
+                    'limit as limit',
+                    'currency as currency',
+                    'limit_business_approval as limit_business_approval',
+                    'is_limit_person',
+                    'expense_code_id',
+                    'account_number',
+                    'description',
+                    'remark_expense_type'
+                )->first();
+
+            if ($historyExpenseType == null) {
+                $expenseType = ExpenseType::join('mst_expenses', 'mst_expense_types.expense_id', '=', 'mst_expenses.id')
+                    ->join('mst_expense_codes', 'mst_expense_types.expense_code_id', '=', 'mst_expense_codes.id')
+                    ->where('mst_expense_types.id', $request->expense_type_id)
+                    ->where('level_id', ($user->level_id ?? null))
+                    ->where(function ($query) use ($user) {
+                        $query->doesntHave('expense_type_dept')
+                            ->orWhereHas('expense_type_dept', function ($innerQuery) use ($user) {
+                                $innerQuery->where('department_id', ($user->department_id ?? null));
+                            });
+                    })
+                    ->select(
+                        'mst_expenses.name as expense_name',
+                        'mst_expense_types.id as expense_type_id',
+                        'mst_expense_types.is_traf as is_traf',
+                        'mst_expense_types.is_bod as is_bod',
+                        'mst_expense_types.is_bp_approval as is_bp_approval',
+                        'mst_expense_types.limit as limit',
+                        'mst_expense_types.currency as currency',
+                        'mst_expense_types.limit_business_approval as limit_business_approval',
+                        'is_limit_person',
+                        'mst_expense_codes.id as expense_code_id',
+                        'mst_expense_codes.account_number as account_number',
+                        'mst_expense_codes.description as description',
+                        'mst_expense_types.remark'
+                    )
+                    ->first();
+            } else {
                 $expenseType = $historyExpenseType;
             }
 
             if ($expenseType == null) {
                 $errors['expense_type_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_type')])];
-            }
-            else {
-                if($expenseType->currency == Config::USD){
+            } else {
+                if ($expenseType->currency == Config::USD) {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                    ->where('expense_type_id', $expenseType->expense_type_id)->sum('converted_cost');
-                }
-                else{
+                        ->where('expense_type_id', $expenseType->expense_type_id)->sum('converted_cost');
+                } else {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                    ->where('expense_type_id', $expenseType->expense_type_id)->sum('cost');
+                        ->where('expense_type_id', $expenseType->expense_type_id)->sum('cost');
                 }
                 $totalCost = $request->cost + $currentCost;
 
@@ -575,21 +588,20 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $errorLimitPerson = false;
                 if ($isLimitPerson) {
                     $totalPerson = $request->total_person;
-                    if(ctype_digit($totalPerson)){
+                    if (ctype_digit($totalPerson)) {
                         // $currentPerson = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
                         // ->select('expense_type_id', $expenseType->expense_type_id)->sum('total_person');
-                        if($limit != null){
+                        if ($limit != null) {
                             $limit *= ($totalPerson /*+ $currentPerson */);
                             $totalCost = $request->cost;
                         }
-                    }
-                    else{
+                    } else {
                         $errorLimitPerson = true;
                         $errors['total_person'] = [trans('validation.integer', ['attribute' => trans('validation.attributes.total_person')])];
                     }
                 }
 
-                if(!$errorLimitPerson){
+                if (!$errorLimitPerson) {
                     if ($limit != null && $totalCost > $limit) {
                         $errors['cost'] = [
                             trans(
@@ -617,7 +629,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         )
                     ];
                 }
-    
+
                 if ($expenseType->is_traf && !$request->hasFile('document')) {
                     $errors['document'] = [
                         trans(
@@ -634,15 +646,15 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     $usdToIdr = Config::where('key', Config::USD_TO_IDR)->first();
                     $startExchangeDate = Config::where('key', Config::START_EXCHANGE_DATE)->first();
                     $endExchangeDate = Config::where('key', Config::END_EXCHANGE_DATE)->first();
-                    if($usdToIdr == null || $startExchangeDate == null || $endExchangeDate == null){
+                    if ($usdToIdr == null || $startExchangeDate == null || $endExchangeDate == null) {
                         $errors['message'] = [trans('custom.config_usd_invalid')];
-                    }
-                    else if($requestDate < Carbon::parse($startExchangeDate->value)->startOfDay() 
-                    || $requestDate > Carbon::parse($endExchangeDate->value)->startOfDay()){
-                        $errors['date'] = array_merge($errors['date'] ?? [], [trans('custom.exchange_date_invalid', ['start' => 
+                    } else if (
+                        $this->crud->expenseClaim->request_date < Carbon::parse($startExchangeDate->value)->startOfDay()
+                        ||  $this->crud->expenseClaim->request_date > Carbon::parse($endExchangeDate->value)->startOfDay()
+                    ) {
+                        $errors['date'] = array_merge($errors['date'] ?? [], [trans('custom.exchange_date_invalid', ['start' =>
                         Carbon::parse($startExchangeDate->value)->format('d M Y'), 'end' => Carbon::parse($endExchangeDate->value)->format('d M Y')])]);
-                    }
-                    else{
+                    } else {
                         $currencyValue = (float) $usdToIdr->value;
                         $convertedCost = $cost;
                         $cost =  round($currencyValue * $cost);
@@ -658,7 +670,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             }
 
             $costCenter = CostCenter::where('id', $request->cost_center_id)->first();
-            if($costCenter == null){
+            if ($costCenter == null) {
                 $errors['cost_center_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.cost_center_id')])];
             }
 
@@ -677,21 +689,23 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 )];
             }
 
-           
+
             if (count($errors) != 0) {
                 DB::rollback();
                 return $this->redirectStoreCrud($errors);
             }
 
 
-            if($this->crud->expenseClaim->status != ExpenseClaim::DRAFT){
+            if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
                 $upperLimit = $this->crud->expenseClaim->upper_limit;
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
-                if($upperLimit != null && $bottomLimit != null){
+                if ($upperLimit != null && $bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value + $cost;
-                    if($newCost < $bottomLimit || $newCost > $upperLimit){
-                        $errors['message'] = array_merge($errors['message'] ?? [], [trans('custom.expense_claim_limit', 
-                        ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)])]);
+                    if ($newCost < $bottomLimit || $newCost > $upperLimit) {
+                        $errors['message'] = array_merge($errors['message'] ?? [], [trans(
+                            'custom.expense_claim_limit',
+                            ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)]
+                        )]);
                     }
                 }
             }
@@ -701,29 +715,29 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 return $this->redirectStoreCrud($errors);
             }
 
-            if($historyExpenseType == null){
+            if ($historyExpenseType == null) {
                 $historyExpenseType = ExpenseClaimType::create([
-                    'expense_claim_id' => $this->crud->expenseClaim->id, 
-                    'expense_type_id' => $expenseType->expense_type_id, 
-                    'expense_name' => $expenseType->expense_name, 
+                    'expense_claim_id' => $this->crud->expenseClaim->id,
+                    'expense_type_id' => $expenseType->expense_type_id,
+                    'expense_name' => $expenseType->expense_name,
                     'level_id' => $user->level_id,
-                    'detail_level_id' => $user->level_code, 
-                    'level_name' => $user->level_name, 
-                    'limit' => $expenseType->limit, 
-                    'expense_code_id' => $expenseType->expense_code_id, 
-                    'account_number' => $expenseType->account_number, 
-                    'description' => $expenseType->description, 
+                    'detail_level_id' => $user->level_code,
+                    'level_name' => $user->level_name,
+                    'limit' => $expenseType->limit,
+                    'expense_code_id' => $expenseType->expense_code_id,
+                    'account_number' => $expenseType->account_number,
+                    'description' => $expenseType->description,
                     'is_traf' => $expenseType->is_traf,
-                    'is_bod' => $expenseType->is_bod, 
-                    'is_bp_approval' => $expenseType->is_bp_approval, 
-                    'is_limit_person' => $expenseType->is_limit_person, 
-                    'currency' => $expenseType->currency, 
-                    'limit_business_approval' => $expenseType->limit_business_approval, 
+                    'is_bod' => $expenseType->is_bod,
+                    'is_bp_approval' => $expenseType->is_bp_approval,
+                    'is_limit_person' => $expenseType->is_limit_person,
+                    'currency' => $expenseType->currency,
+                    'limit_business_approval' => $expenseType->limit_business_approval,
                     'remark_expense_type' => $expenseType->remark
                 ]);
             }
 
-            
+
             $expenseClaimDetail = new ExpenseClaimDetail;
 
             $expenseClaimDetail->expense_claim_id = $this->crud->expenseClaim->id;
@@ -905,8 +919,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         DB::beginTransaction();
         try {
             $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)
-            ->where('expense_claim_id', $this->crud->expenseClaim->id)->first();
-            if($expenseClaimDetail == null){
+                ->where('expense_claim_id', $this->crud->expenseClaim->id)->first();
+            if ($expenseClaimDetail == null) {
                 DB::rollback();
                 abort(404, trans('custom.model_not_found'));
             }
@@ -914,49 +928,47 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $errors = [];
 
             $user = User::join('mst_levels', 'mst_users.level_id', '=', 'mst_levels.id')
-            ->where('mst_users.id', $this->crud->expenseClaim->request_id)
-            ->select(
-                'mst_levels.level_id as level_code',
-                'mst_levels.name as level_name',
-                'mst_levels.id as level_id',
-                'department_id'
-            )
-            ->first();
+                ->where('mst_users.id', $this->crud->expenseClaim->request_id)
+                ->select(
+                    'mst_levels.level_id as level_code',
+                    'mst_levels.name as level_name',
+                    'mst_levels.id as level_id',
+                    'department_id'
+                )
+                ->first();
 
             $historyExpenseType = ExpenseClaimType::where('id', $expenseClaimDetail->expense_claim_type_id)
-            ->where('expense_claim_id', $this->crud->expenseClaim->id)
-            ->select(
-                'id',
-                'expense_name',
-                'expense_type_id',
-                'is_traf as is_traf',
-                'is_bod as is_bod',
-                'is_bp_approval as is_bp_approval',
-                'limit as limit',
-                'currency as currency',
-                'limit_business_approval as limit_business_approval',
-                'is_limit_person',
-                'expense_code_id',
-                'account_number',
-                'description',
-                'remark_expense_type'
-            )->first();
+                ->where('expense_claim_id', $this->crud->expenseClaim->id)
+                ->select(
+                    'id',
+                    'expense_name',
+                    'expense_type_id',
+                    'is_traf as is_traf',
+                    'is_bod as is_bod',
+                    'is_bp_approval as is_bp_approval',
+                    'limit as limit',
+                    'currency as currency',
+                    'limit_business_approval as limit_business_approval',
+                    'is_limit_person',
+                    'expense_code_id',
+                    'account_number',
+                    'description',
+                    'remark_expense_type'
+                )->first();
 
             if ($historyExpenseType == null) {
                 $errors['expense_type_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_type')])];
-            }
-            else {
+            } else {
                 $expenseType = $historyExpenseType;
-                if($expenseType->currency == Config::USD){
+                if ($expenseType->currency == Config::USD) {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                    ->where('expense_type_id', $expenseType->expense_type_id)
-                    ->where('id', '!=', $expenseClaimDetail->id)->sum('converted_cost');
-                }
-                else{
+                        ->where('expense_type_id', $expenseType->expense_type_id)
+                        ->where('id', '!=', $expenseClaimDetail->id)->sum('converted_cost');
+                } else {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                    ->where('expense_type_id', $expenseType->expense_type_id)
-                    ->where('id', '!=', $expenseClaimDetail->id)
-                    ->sum('cost');
+                        ->where('expense_type_id', $expenseType->expense_type_id)
+                        ->where('id', '!=', $expenseClaimDetail->id)
+                        ->sum('cost');
                 }
                 $totalCost = $request->cost + $currentCost;
 
@@ -966,21 +978,20 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $errorLimitPerson = false;
                 if ($isLimitPerson) {
                     $totalPerson = $request->total_person;
-                    if(ctype_digit($totalPerson)){
+                    if (ctype_digit($totalPerson)) {
                         // $currentPerson = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
                         // ->select('expense_type_id', $expenseType->expense_type_id)->where('id', '!=', $expenseClaimDetail->id)->sum('total_person');
-                        if($limit != null){
+                        if ($limit != null) {
                             $limit *= ($totalPerson /*+ $currentPerson */);
                             $totalCost = $request->cost;
                         }
-                    }
-                    else{
+                    } else {
                         $errorLimitPerson = true;
                         $errors['total_person'] = [trans('validation.integer', ['attribute' => trans('validation.attributes.total_person')])];
                     }
                 }
 
-                if(!$errorLimitPerson){
+                if (!$errorLimitPerson) {
                     if ($limit != null && $totalCost > $limit) {
                         $errors['cost'] = [
                             trans(
@@ -1008,7 +1019,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         )
                     ];
                 }
-    
+
                 if ($expenseType->is_traf && !$request->hasFile('document') && $request->document_change) {
                     $errors['document'] = [
                         trans(
@@ -1037,25 +1048,27 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             }
 
             $costCenter = CostCenter::where('id', $request->cost_center_id)->first();
-            if($costCenter == null){
+            if ($costCenter == null) {
                 $errors['cost_center_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.cost_center_id')])];
             }
 
-           
+
             if (count($errors) != 0) {
                 DB::rollback();
                 return $this->redirectUpdateCrud($id, $errors);
             }
 
 
-            if($this->crud->expenseClaim->status != ExpenseClaim::DRAFT){
+            if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
                 $upperLimit = $this->crud->expenseClaim->upper_limit;
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
-                if($upperLimit != null && $bottomLimit != null){
+                if ($upperLimit != null && $bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value + ($cost - $prevCost);
-                    if($newCost < $bottomLimit || $newCost > $upperLimit){
-                        $errors['message'] = array_merge($errors['message'] ?? [], [trans('custom.expense_claim_limit', 
-                        ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)])]);
+                    if ($newCost < $bottomLimit || $newCost > $upperLimit) {
+                        $errors['message'] = array_merge($errors['message'] ?? [], [trans(
+                            'custom.expense_claim_limit',
+                            ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)]
+                        )]);
                     }
                 }
             }
@@ -1077,7 +1090,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->converted_cost = $convertedCost;
             $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->remark = $request->remark;
-            if($request->document_change){
+            if ($request->document_change) {
                 $expenseClaimDetail->document = $request->document;
             }
 
@@ -1099,7 +1112,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         }
     }
 
-    public function destroy($header_id, $id){
+    public function destroy($header_id, $id)
+    {
         $this->crud->hasAccessOrFail('delete');
 
         DB::beginTransaction();
@@ -1107,27 +1121,29 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $id = $this->crud->getCurrentEntryId() ?? $id;
 
             $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)
-            ->where('expense_claim_id', $this->crud->expenseClaim->id)->first();
-            if($expenseClaimDetail == null){
+                ->where('expense_claim_id', $this->crud->expenseClaim->id)->first();
+            if ($expenseClaimDetail == null) {
                 DB::rollback();
                 return response()->json(['message' => trans('custom.model_not_found')], 404);
             }
 
             $cost = $expenseClaimDetail->cost;
 
-            if($this->crud->expenseClaim->status != ExpenseClaim::DRAFT){
+            if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
                 $upperLimit = $this->crud->expenseClaim->upper_limit;
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
-                if($upperLimit != null && $bottomLimit != null){
+                if ($upperLimit != null && $bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value - $cost;
-                    if($newCost < $bottomLimit || $newCost > $upperLimit){
+                    if ($newCost < $bottomLimit || $newCost > $upperLimit) {
                         DB::rollback();
-                        return response()->json(['message' => trans('custom.expense_claim_limit', 
-                        ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)])], 403);
+                        return response()->json(['message' => trans(
+                            'custom.expense_claim_limit',
+                            ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)]
+                        )], 403);
                     }
                 }
             }
-            
+
             $this->crud->expenseClaim->value -= $cost;
             $this->crud->expenseClaim->save();
 
@@ -1136,8 +1152,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             return $response;
         } catch (Exception $e) {
             DB::rollBack();
-            if($e instanceof QueryException){
-                if(isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451){
+            if ($e instanceof QueryException) {
+                if (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451) {
                     return response()->json(['message' => trans('custom.model_has_relation')], 403);
                 }
             }
@@ -1165,7 +1181,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
             $expenseClaimDetail = ExpenseClaimDetail::where('expense_claim_id',  $this->crud->headerId)->get();
 
-            if ($expenseClaim->status != ExpenseClaim::DRAFT && $expenseClaim->status != ExpenseClaim::REQUEST_FOR_APPROVAL) {
+            if ($expenseClaim->status != ExpenseClaim::DRAFT && $expenseClaim->status != ExpenseClaim::NEED_REVISION) {
                 DB::rollback();
                 return response()->json(['message' => trans('custom.expense_claim_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.submitted')])], 403);
             } else if (!ExpenseClaimDetail::exists()) {
@@ -1175,19 +1191,36 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $now = Carbon::now();
             $expenseClaim->request_date = $now;
 
-            if ($expenseClaim->status == ExpenseClaim::DRAFT || $expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL) {
-                $lastExpenseNumber = ExpenseClaim::where('request_date', '=', $now->format('Y-m-d'))->whereNotNull('expense_number')
-                    ->orderBy('id', 'desc')->select('expense_number')->first();
-                if ($lastExpenseNumber != null) {
-                    $number = (int) str_replace('ER' . $now->format('Ymd'), '', $lastExpenseNumber->expense_number);
-                    $number++;
-                    $expenseClaim->expense_number = 'ER' . $now->format('Ymd') . str_repeat('0', (strlen($number) > 2 ? 0 : (3 - strlen($number)))) . $number;
-                } else {
-                    $expenseClaim->expense_number = 'ER' . $now->format('Ymd') . '001';
+            if ($expenseClaim->status == ExpenseClaim::DRAFT || $expenseClaim->status == ExpenseClaim::NEED_REVISION) {
+                $expenseNumber = $expenseClaim->expense_number;
+
+                if (empty($expenseNumber)) {
+                    $lastExpenseNumber = ExpenseClaim::whereDate('request_date', '=', $now->format('Y-m-d'))
+                        ->where('expense_number', 'LIKE', 'TPI' . '%')
+                        ->select('expense_number')
+                        ->get();
+
+                    $greaterNumber = 0;
+
+                    if (count($lastExpenseNumber) <= 0) {
+                        $expenseNumber = 'TPI' . $now->format('dmY') . 1;
+                    } else {
+                        foreach ($lastExpenseNumber as $item) {
+                            $expenseNumberArr = explode($now->format('dmY'), $item->expense_number);
+                            $number = (int) $expenseNumberArr[count($expenseNumberArr) - 1];
+                            if ($number > $greaterNumber) {
+                                $greaterNumber = $number;
+                            }
+                        }
+                        $greaterNumber++;
+                        $expenseNumber = 'TPI' . $now->format('dmY') . $greaterNumber;
+                    }
                 }
+
+                $expenseClaim->expense_number = $expenseNumber;
                 $expenseClaim->value = $expenseClaimDetail->sum('cost');
                 $expenseClaim->currency = Config::IDR;
-                $expenseClaim->status = ExpenseClaim::REQUEST_FOR_APPROVAL;
+                $expenseClaim->status = $expenseClaim->hod_id ? ExpenseClaim::REQUEST_FOR_APPROVAL : ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
 
                 TransGoaApproval::where('expense_claim_id', $expenseClaim->id)->delete();
 
@@ -1199,7 +1232,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     $transGoaApproval->goa_id = $goa->id;
                     $transGoaApproval->start_approval_date = $now;
                     $transGoaApproval->is_admin_delegation = 0;
-                    $transGoaApproval->status = ExpenseClaim::REQUEST_FOR_APPROVAL;
+                    $transGoaApproval->status =  $expenseClaim->hod_id ? ExpenseClaim::REQUEST_FOR_APPROVAL : ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
                     $transGoaApproval->order = $index + 1;
                     $transGoaApproval->save();
                 }

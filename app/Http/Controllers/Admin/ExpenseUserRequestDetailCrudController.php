@@ -1356,6 +1356,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         $transGoaApproval->start_approval_date = $now;
                         $transGoaApproval->status = "-";
                         $transGoaApproval->save();
+                        $expenseClaim->current_trans_goa_id = $transGoaApproval->id;
                         break;
                     }
                 }

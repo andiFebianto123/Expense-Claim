@@ -10,17 +10,40 @@
                         <p>Request Date : <b>{{ formatDate($crud->expenseClaim->request_date) }}</b></p>
                         <p>Requestor : <b>{{ $crud->user->name ?? '-' }}</b></p>
                         <p>Department : <b>{{ $crud->user->department->name ?? '-' }}</b></p>
-                        <p>Hod By : <b>{{ $crud->expenseClaim->approval->name ?? '-' }}</b></p>
-                        <p>Hod Date : <b>{{ formatDate($crud->expenseClaim->approval_date) }}</b></p>
-                        <p>GoA By : <b>{{ $crud->expenseClaim->goa->name ?? '-' }}</b></p>
-                        <p>GoA Date : <b>{{ formatDate($crud->expenseClaim->goa_date) }}</b></p>
+                        @if (empty($crud->hod))
+                            <p>Hod By : <b>-</b></p>
+                        @else
+                            <div class="mb-2">
+                                <p class="mb-0">Hod By :</p>
+                                <ul class="mb-1 ml-3">
+                                    <li>
+                                        Name : <b>{{ $crud->hod->name ?? '-' }}</b>
+                                        <p>Hod Date : <b>{{ formatDate($crud->expenseClaim->approval_date) }}</b></p>
+                                    </li>
+                                </ul>
+                            </div>
+                        @endif
+                        <div class="mb-2">
+                            <p class="mb-0">GoA By : </p>
+                            <ul class="mb-1 ml-3">
+                                @foreach ($crud->goaList as $item)
+                                    <li>
+                                        Name : <b>{{ $item->user_name }}</b>
+                                        <br>
+                                        Limit : <b>Rp {{ formatNumber($item->limit) }}</b>
+                                        <br>
+                                        GoA Date : <b>{{ formatDate($crud->expenseClaim->goa_date) }}</b>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
                         <p>Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
                     </div>
                     <div class="col-md-6">
                         <p>Total Value : <b
-                                id="total-value">{{ formatNumber($crud->expenseClaimDetail->sum('cost')) }}</b>
+                                id="total-value">{{ formatNumber($crud->expenseClaim->value) }}</b>
                         </p>
-                        <p>Currency : <b>{{ App\Models\Config::IDR }}</b></p>
+                        <p>Currency : <b>{{ $crud->expenseClaim->currency }}</b></p>
                         <p>Status : <span
                                 class="rounded p-1 font-weight-bold text-white {{ App\Models\ExpenseClaim::mapColorStatus($crud->expenseClaim->status) }}">{{ $crud->expenseClaim->status }}</span>
                         </p>
@@ -38,7 +61,7 @@
             @php
                 $classExpenseClaim = 'App\Models\ExpenseClaim';
             @endphp
-            @if (($crud->expenseClaim->status == $classExpenseClaim::DRAFT || $crud->expenseClaim->status == $classExpenseClaim::REQUEST_FOR_APPROVAL) && $crud->expenseClaim->request_id == $crud->user->id)
+            @if (($crud->expenseClaim->status == $classExpenseClaim::DRAFT || $crud->expenseClaim->status == $classExpenseClaim::NEED_REVISION) && $crud->expenseClaim->request_id == $crud->user->id)
                 <div class="card-footer">
                     <button class="btn btn-success" id="submit-button"><i
                             class="la la-send"></i>&nbsp;Submit</button>
@@ -89,6 +112,9 @@
             $('#crudTable').on('xhr.dt', function(e, settings, json, xhr) {
                 if (xhr.status == 200) {
                     var result = json;
+                    var value = result.value;
+                    value = value === null || value === undefined ? 0 : value;
+                    $('#total-value').text(value);
                 }
             });
         });

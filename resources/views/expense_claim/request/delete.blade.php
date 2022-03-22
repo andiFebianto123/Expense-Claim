@@ -1,4 +1,4 @@
-@if ($crud->hasAccess('delete') && ((isset($crud->deleteCondition) && call_user_func_array($crud->deleteCondition, array($entry))) || !isset($crud->deleteCondition)))
+@if ($crud->hasAccess('delete'))
 	<a href="javascript:void(0)" onclick="deleteEntry(this)" data-route="{{ url($crud->route.'/'.$entry->getKey()) }}" class="btn btn-sm btn-link" data-button-type="delete"><i class="la la-trash"></i> {{ trans('backpack::crud.delete') }}</a>
 @endif
 
@@ -37,10 +37,9 @@
 							  }
 
 							  crud.table.draw(false);
-							  crud.table.ajax.reload();
+                              window.location.reload();
 						  }
-
-			          	  // Show a success notification bubble
+                          
 			              new Noty({
 		                    type: "success",
 		                    text: "{!! '<strong>'.trans('backpack::crud.delete_confirmation_title').'</strong><br>'.trans('backpack::crud.delete_confirmation_message') !!}"
@@ -75,13 +74,9 @@
 			      },
 			      error: function(result) {
 			          // Show an alert with the result
-                      var defaultText = "{!! trans('backpack::crud.delete_confirmation_not_message') !!}";
-                      if(result.status != 500 && result.responseJSON != null && result.responseJSON.message != null && result.responseJSON.message.length != 0){
-						  defaultText = result.responseJSON.message;
-					  }
 			          swal({
 		              	title: "{!! trans('backpack::crud.delete_confirmation_not_title') !!}",
-                        text: defaultText,
+                        text: "{!! trans('backpack::crud.delete_confirmation_not_message') !!}",
 		              	icon: "error",
 		              	timer: 4000,
 		              	buttons: false,

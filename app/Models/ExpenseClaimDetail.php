@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\ExpenseClaimType;
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,8 +14,11 @@ class ExpenseClaimDetail extends Model
     use HasFactory, SoftDeletes, CrudTrait;
 
     protected $fillable = [
-        'expense_claim_id', 'approval_card_id', 'level_id', 'level_type', 'date',
-        'cost_center', 'expense_code', 'cost', 'currency', 'document', 'remark'
+        'expense_claim_id', 'expense_claim_type_id', 'date',
+        'cost_center_id', 'expense_type_id', 'total_person',
+        'is_bp_approval',
+        'cost', 'currency', 'converted_currency', 'exchange_value', 'converted_cost',
+        'document', 'remark'
     ];
     protected $table = 'trans_expense_claim_details';
 
@@ -22,19 +26,19 @@ class ExpenseClaimDetail extends Model
 
     public static $expenseCode = ['35202' => '35202', '31601' => '31601'];
 
-    public function approvalCard()
+    public function expense_claim()
     {
-        return $this->belongsTo(ApprovalCard::class, 'approval_card_id');
-    }
-
-    public function level()
-    {
-        return $this->morphTo(__FUNCTION__, 'level_type', 'level_id');
+        return $this->belongsTo(ExpenseClaim::class, 'expense_claim_id');
     }
 
     public function expense_code()
     {
         return $this->belongsTo(ExpenseCode::class, 'expense_code_id');
+    }
+
+    public function expense_claim_type()
+    {
+        return $this->belongsTo(ExpenseClaimType::class, 'expense_claim_type_id');
     }
 
     public function expense_type()

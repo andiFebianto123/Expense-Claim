@@ -89,6 +89,8 @@ class ApJournalExport implements FromView, WithEvents
         $filters = [];
         
         $data['headers'] = $this->headers;
+        $data['bodies'] = $this->headers;
+        
 
         $dataRow = [];
         // tiap2 column ada 57

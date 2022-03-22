@@ -39,7 +39,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
 
-        if($this->crud->role !== Role::SUPER_ADMIN && $this->crud->role !== Role::DIRECTOR){
+        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::GOA_HOLDER])) {
             $this->crud->denyAccess(['list', 'update']);
         }
 
@@ -56,26 +56,26 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
         
         $expenseClaim = ExpenseClaim::where('id', $id)
         ->where(function($query){
-            $query->where('expense_claims.status', ExpenseClaim::NEED_APPROVAL_TWO)
+            $query->where('trans_expense_claims.status', ExpenseClaim::REQUEST_FOR_APPROVAL_TWO)
             ->orWhere(function($innerQuery){
-                $innerQuery->where('expense_claims.status', '!=', ExpenseClaim::NONE)
-                ->where('expense_claims.status', '!=', ExpenseClaim::NEED_APPROVAL_TWO)
+                $innerQuery->where('trans_expense_claims.status', '!=', ExpenseClaim::NONE)
+                ->where('trans_expense_claims.status', '!=', ExpenseClaim::REQUEST_FOR_APPROVAL_TWO)
                 ->where(function($innerQuery){
-                    $innerQuery->whereNotNull('goa_id')
-                    ->orWhere('expense_claims.status', ExpenseClaim::REJECTED_TWO)
+                    $innerQuery->whereNotNull('current_trans_goa_id')
+                    ->orWhere('trans_expense_claims.status', ExpenseClaim::REJECTED_TWO)
                     ->orWhere(function($deepestQuery){
                         $deepestQuery
-                        ->where('expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
-                        ->whereNotNull('approval_id');
+                        ->where('trans_expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
+                        ->whereNotNull('current_trans_goa_id');
                     });
                 });
             });
         });
-        if($this->crud->role === Role::DIRECTOR){
-            $expenseClaim->where('expense_claims.goa_temp_id', $this->crud->user->id);
+        if($this->crud->role === Role::GOA_HOLDER){
+            $expenseClaim->where('trans_expense_claims.current_trans_goa_id', $this->crud->user->id);
         }
         else{
-            $expenseClaim->whereNotNull('expense_claims.goa_temp_id');
+            $expenseClaim->whereNotNull('trans_expense_claims.current_trans_goa_id');
         }
 
         $expenseClaim =  $expenseClaim->first();
@@ -98,7 +98,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
         $this->crud->viewBeforeContent = ['expense_claim.goa.header'];
 
         $this->crud->updateCondition = function($entry){
-            return $this->crud->expenseClaim->status == ExpenseClaim::NEED_APPROVAL_TWO && $this->crud->expenseClaim->goa_temp_id == $this->crud->user->id;
+            return $this->crud->expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL_TWO && $this->crud->expenseClaim->current_trans_goa_id == $this->crud->user->id;
         };
 
         CRUD::addColumns([
@@ -113,28 +113,28 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 'name' => 'date',
                 'type'  => 'date',
             ],
-            [
-                'label' => 'Expense Type',
-                'name' => 'approval_card_id',
-                'type'      => 'select',
-                'entity'    => 'approvalCard',
-                'attribute' => 'name',
-                'model'     => ApprovalCard::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('approval_cards as a', 'a.id', '=', 'expense_claim_details.approval_card_id')
-                    ->orderBy('a.name', $columnDirection)->select('expense_claim_details.*');
-                },
-            ],
-            [
-                'label' => 'Level',
-                'name' => 'level_id',
-                'type' => 'closure',
-                'orderable' => false,
-                'searchLogic' => false,
-                'function' => function($entry) {
-                    return $entry->level->name;
-                }
-            ],
+            // [
+            //     'label' => 'Expense Type',
+            //     'name' => 'approval_card_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'approvalCard',
+            //     'attribute' => 'name',
+            //     'model'     => ApprovalCard::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('approval_cards as a', 'a.id', '=', 'expense_claim_details.approval_card_id')
+            //         ->orderBy('a.name', $columnDirection)->select('expense_claim_details.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'Level',
+            //     'name' => 'level_id',
+            //     'type' => 'closure',
+            //     'orderable' => false,
+            //     'searchLogic' => false,
+            //     'function' => function($entry) {
+            //         return $entry->level->name;
+            //     }
+            // ],
             [
                 'label' => 'Cost Center',
                 'name' => 'cost_center',
@@ -421,20 +421,20 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
     }
 
     private function checkStatusForDetail($expenseClaim, $action){
-        if($expenseClaim->goa_temp_id != $this->crud->user->id){
+        if($expenseClaim->current_trans_goa_id != $this->crud->user->id){
             return trans('custom.error_permission_message');
         }
-        if($expenseClaim->status !== ExpenseClaim::NEED_APPROVAL_TWO) {
+        if($expenseClaim->status !== ExpenseClaim::REQUEST_FOR_APPROVAL_TWO) {
             return trans('custom.expense_claim_detail_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.' . $action)]);
         }
         return true;
     }
 
     private function checkStatusForApprover($expenseClaim, $action){
-        if($expenseClaim->goa_temp_id != $this->crud->user->id){
+        if($expenseClaim->current_trans_goa_id != $this->crud->user->id){
             return trans('custom.error_permission_message');
         }
-        if($expenseClaim->status !== ExpenseClaim::NEED_APPROVAL_TWO) {
+        if($expenseClaim->status !== ExpenseClaim::REQUEST_FOR_APPROVAL_TWO) {
             return trans('custom.expense_claim_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.' . $action)]);
         }
         return true;

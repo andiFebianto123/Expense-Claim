@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 use App\Models\ExpenseClaimDetail;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ExpenseApproverHodDetailRequest extends FormRequest
+class ExpenseUserRequestUpdateDetailRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -28,11 +28,7 @@ class ExpenseApproverHodDetailRequest extends FormRequest
      */
     public function rules()
     {
-
         return [
-            'expense_type_id' => 'required',
-            'date' => Rule::requiredIf($this->method() == 'POST'),
-            'cost' => [Rule::requiredIf($this->method() == 'POST'), 'date'],
             'cost_center_id' => 'required',
             'cost' => ['required', 'int', 'min:0'],
             'document' => ['nullable', 'file', 'max:5000'],
@@ -49,9 +45,7 @@ class ExpenseApproverHodDetailRequest extends FormRequest
      */
     public function attributes()
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     /**
@@ -61,8 +55,6 @@ class ExpenseApproverHodDetailRequest extends FormRequest
      */
     public function messages()
     {
-        return [
-            //
-        ];
+        return [];
     }
 }

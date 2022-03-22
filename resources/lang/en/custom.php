@@ -62,6 +62,9 @@ return [
     ],
 
     'business_purposes_restrict_level' => 'The business purposes approval can only be used for level :level.',
-    'cant_change_expense_and_level' => 'The expense type or level cannot be changed because has already been used in User Request.'
+    'cant_change_expense_and_level' => 'The expense type or level cannot be changed because has already been used in User Request.',
+    'exchange_date_invalid' => 'The selected date is out of range from the start and end exchange date (:start - :end).',
+    'config_usd_invalid' => 'The configuration for USD to IDR / Start Exchange Date / End Exchange Date is not found.',
+    'expense_claim_limit' => 'The total value must be greater than :bottom and less than or equal to :upper.'
 
 ];

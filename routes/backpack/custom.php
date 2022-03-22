@@ -40,16 +40,11 @@ Route::group([
     'namespace'  => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
 
-    // USER ACCESS CONTROL
-    Route::crud('user-access-control', 'UserAccessControlCrudController');
-
-    // APPROVAL CARD
-    Route::crud('approval-card', 'ApprovalCardCrudController');
-
     Route::middleware('access.expense')->group(function () {
         // EXPENSE USER REQUEST
         Route::crud('expense-user-request', 'ExpenseUserRequestCrudController');
         Route::post('expense-user-request/new-request', [ExpenseUserRequestCrudController::class, 'newRequest']);
+        Route::post('expense-user-request/new-request-goa', [ExpenseUserRequestCrudController::class, 'newRequestGoa']);
         Route::delete('expense-user-request/{id}/cancel', [ExpenseUserRequestCrudController::class, 'cancel']);
         Route::prefix('expense-user-request/{header_id}')->group(function () {
             Route::crud('detail', 'ExpenseUserRequestDetailCrudController');

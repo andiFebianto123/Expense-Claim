@@ -665,8 +665,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     if ($usdToIdr == null || $startExchangeDate == null || $endExchangeDate == null) {
                         $errors['message'] = [trans('custom.config_usd_invalid')];
                     } else if (
-                        $this->crud->expenseClaim->request_date < Carbon::parse($startExchangeDate->value)->startOfDay()
-                        ||  $this->crud->expenseClaim->request_date > Carbon::parse($endExchangeDate->value)->startOfDay()
+                        Carbon::parse($request->date)->startOfDay() < Carbon::parse($startExchangeDate->value)->startOfDay()
+                        ||  Carbon::parse($request->date)->startOfDay() > Carbon::parse($endExchangeDate->value)->startOfDay()
                     ) {
                         $errors['date'] = array_merge($errors['date'] ?? [], [trans('custom.exchange_date_invalid', ['start' =>
                         Carbon::parse($startExchangeDate->value)->format('d M Y'), 'end' => Carbon::parse($endExchangeDate->value)->format('d M Y')])]);
@@ -904,11 +904,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->data['configs']['start_exchange_date'] = Config::where('key', Config::START_EXCHANGE_DATE)->first()->value ?? null;
         $this->data['configs']['end_exchange_date'] = Config::where('key', Config::END_EXCHANGE_DATE)->first()->value ?? null;
 
-        $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)->first();
-
-        if ($expenseClaimDetail->converted_currency != null) {
+        if ($this->data['entry']->converted_currency != null) {
             $this->crud->modifyField('cost', [
-                'value' => $expenseClaimDetail->converted_cost
+                'value' => $this->data['entry']->converted_cost
             ]);
         }
 
@@ -934,8 +932,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $request = $this->crud->validateRequest();
         DB::beginTransaction();
         try {
-            $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)
-                ->where('expense_claim_id', $this->crud->expenseClaim->id)->first();
+            $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)->first();
             if ($expenseClaimDetail == null) {
                 DB::rollback();
                 abort(404, trans('custom.model_not_found'));
@@ -1136,8 +1133,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         try {
             $id = $this->crud->getCurrentEntryId() ?? $id;
 
-            $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)
-                ->where('expense_claim_id', $this->crud->expenseClaim->id)->first();
+            $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)->first();
             if ($expenseClaimDetail == null) {
                 DB::rollback();
                 return response()->json(['message' => trans('custom.model_not_found')], 404);

@@ -11,19 +11,35 @@
                 <div class="row">
                     <div class="col-md-6">
                         <p>Request Date : <b>{{ formatDate($crud->expenseClaim->request_date) }}</b></p>
-                        <p>Requestor : <b>{{ $crud->user->name ?? '-' }}</b></p>
-                        <p>Department : <b>{{ $crud->user->department->name ?? '-' }}</b></p>
-                        @if (empty($crud->hod) || $crud->expenseClaim->status == $classExpenseClaim::DRAFT)
-                            <p>Hod By : <b>-</b></p>
+                        <p>Requestor : <b>{{ $crud->expenseClaim->request->name ?? '-' }}</b></p>
+                        <p>Department : <b>{{ $crud->expenseClaim->request->department->name ?? '-' }}</b></p>
+                        @if ($crud->expenseClaim->hod_id == null)
+                            <p>HoD By : <b>-</b></p>
                         @else
                             <div class="mb-2">
-                                <p class="mb-0">Hod By :</p>
+                                <p class="mb-0">HoD By :</p>
                                 <ul class="mb-1 ml-3">
                                     <li class="position-relative">
-                                        Name : <b>{{ $crud->hod->name ?? '-' }}</b>
-                                        @if ($crud->expenseClaim->hod_date != null && $crud->expenseClaim->status == $classExpenseClaim::PARTIAL_APPROVED)
-                                            <i class="position-absolute las la-check-circle text-success ml-2"
+                                        <p class="mb-0">Name : <b>{{ $crud->expenseClaim->hod->name ?? '-' }}</b>
+                                        @if ($crud->expenseClaim->hod_date != null && $crud->expenseClaim->rejected_date == null && $crud->expenseClaim->hod_delegation_id == null)
+                                            <i class="position-absolute la la-check-circle text-success ml-2"
                                                 style="font-size: 24px"></i>
+                                        @elseif($crud->expenseClaim->rejected_date != null && $crud->expenseClaim->hod_delegation_id == null)
+                                            <i class="position-absolute la la-close text-danger ml-2"
+                                            style="font-size: 24px"></i>
+                                        @endif
+                                        </p>
+                                        @if ($crud->expenseClaim->hod_delegation_id != null)
+                                            <p class="mb-0">
+                                                Delegation Name : <b>{{ $crud->expenseClaim->hod_delegation->name ?? '-' }}</b>
+                                                @if ($crud->expenseClaim->hod_date != null && $crud->expenseClaim->rejected_date == null)
+                                                    <i class="position-absolute la la-check-circle text-success ml-2"
+                                                        style="font-size: 24px"></i>
+                                                @elseif($crud->expenseClaim->rejected_date != null)
+                                                        <i class="position-absolute la la-close text-danger ml-2"
+                                                        style="font-size: 24px"></i>
+                                                @endif
+                                            </p>
                                         @endif
                                         <p>Hod Date : <b>{{ formatDate($crud->expenseClaim->hod_date) }}</b></p>
                                     </li>
@@ -31,24 +47,43 @@
                             </div>
                         @endif
                         <div class="mb-2">
+                            @if (count($crud->goaApprovals) == 0)
+                                <p>GoA By : <b>-</b></p>
+                            @else
                             <p class="mb-0">GoA By : </p>
                             <ul class="mb-1 ml-3">
                                 @foreach ($crud->goaApprovals as $item)
                                     <li class="position-relative">
-                                        Name : <b>{{ $item->user_name }}</b>
-                                        @if ($item->goa_date != null && ($crud->expenseClaim->status == $classExpenseClaim::PARTIAL_APPROVED || $crud->expenseClaim->status == $classExpenseClaim::FULLY_APPROVED))
-                                            <i class="position-absolute las la-check-circle text-success ml-2"
+                                        <p class="mb-0">Name : <b>{{ $item->user_name }}</b>
+                                            @if ($item->status == 'Approved' && $item->goa_delegation_id == null)
+                                                <i class="position-absolute la la-check-circle text-success ml-2"
+                                                    style="font-size: 24px"></i>
+                                            @elseif($item->status == 'Rejected' && $item->goa_delegation_id == null)
+                                                <i class="position-absolute las la-close text-danger ml-2"
                                                 style="font-size: 24px"></i>
+                                            @endif
+                                        </p>
+                                        @if ($item->goa_delegation_id  != null)
+                                            <p class="mb-0">
+                                                Delegation Name : <b>{{ $item->user_delegation_name ?? '-' }}</b>
+                                                @if ($item->status == 'Approved')
+                                                    <i class="position-absolute las la-check-circle text-success ml-2"
+                                                        style="font-size: 24px"></i>
+                                                @elseif($item->status == 'Rejected')
+                                                    <i class="position-absolute las la-close text-danger ml-2"
+                                                    style="font-size: 24px"></i>
+                                                @endif
+                                            </p>
                                         @endif
-                                        <br>
-                                        Limit : <b>Rp {{ formatNumber($item->limit) }}</b>
-                                        <br>
-                                        GoA Date : <b>{{ formatDate($item->goa_date) }}</b>
+                                        <p class="mb-0">GoA Date : <b>{{ formatDate($item->goa_date) }}</b></p>
                                     </li>
                                 @endforeach
                             </ul>
+                            @endif
                         </div>
-                        <p>Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
+                        @if (isset($crud->expenseClaim->remark))
+                            <p>Revision Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
+                        @endif
                     </div>
                     <div class="col-md-6">
                         <p>Total Value : <b id="total-value">{{ formatNumber($crud->expenseClaim->value) }}</b>
@@ -68,10 +103,9 @@
                     </div>
                 </div>
             </div>
-            @if (($crud->expenseClaim->status == $classExpenseClaim::DRAFT || $crud->expenseClaim->status == $classExpenseClaim::NEED_REVISION) && $crud->expenseClaim->request_id == $crud->user->id)
+            @if ($crud->isDraftOrRevision)
                 <div class="card-footer">
-                    <button class="btn btn-success" id="submit-button"><i
-                            class="la la-send"></i>&nbsp;Submit</button>
+                    <button class="btn btn-success" id="submit-button"><i class="la la-send"></i>&nbsp;Submit</button>
                 </div>
             @endif
         </div>

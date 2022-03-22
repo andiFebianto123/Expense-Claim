@@ -13,13 +13,15 @@ return [
 
     //ACTION
     'canceled' => 'canceled',
-    'submmited' => 'submitted',
+    'submitted' => 'submitted',
     'add' => 'add',
     'edit' => 'edit',
     'delete' => 'delete',
     'approved' => 'approved',
     'rejected' => 'rejected',
     'revised' => 'revised',
+
+    'user_dept_goa_not_found' => 'The head of department / goA from the requestor is not found.',
 
 
     // USER REQUEST
@@ -35,6 +37,8 @@ return [
     'file_not_found' => 'File is not found.',
     'expense_claim_detail_cant_status' => 'The expense claim status is :status and cannot :action item from the list.',
     'expense_claim_detail_same_current' => 'The item in expense claim must have same currency with the others (:currency).',
+    'cant_add_other_bod_level' => 'Cannot add new expense type with boD Approval = Yes and boD level = :level.',
+    'cant_delete_other_bod_level' => 'Cannot delete expense type with boD Approval = Yes and boD level = :level.',
 
 
     // APPROVER HOD & GOA

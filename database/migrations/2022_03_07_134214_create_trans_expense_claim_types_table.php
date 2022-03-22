@@ -31,6 +31,7 @@ return new class extends Migration
 
             $table->boolean('is_traf');
             $table->boolean('is_bod');
+            $table->string('bod_level', 255)->nullable();
             $table->boolean('is_bp_approval');
             $table->boolean('is_limit_person');
             $table->string('currency');

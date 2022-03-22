@@ -15,6 +15,7 @@ class ExpenseClaimType extends Model
         'expense_claim_id', 'expense_type_id', 'expense_name',
         'level_id', 'detail_level_id', 'level_name', 'limit',
         'expense_code_id', 'account_number', 'description', 'is_traf', 'is_bod',
+        'bod_level',
         'is_bp_approval', 'is_limit_person', 'currency', 'limit_business_approval',
         'remark_expense_type'
     ];

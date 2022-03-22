@@ -66,7 +66,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->crud->setCreateView('expense_claim.request.create');
         $this->crud->setUpdateView('expense_claim.request.edit');
 
-        $isDraftOrRevision = $this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::NEED_REVISION;
+        $isDraftOrRevision = ($this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::NEED_REVISION)
+        && ($this->crud->user->id == $this->crud->expenseClaim->request_id || ($this->crud->role == Role::SECRETARY && $this->crud->expenseClaim->secretary_id == $this->crud->user->id));
 
         if (!$isDraftOrRevision) {
             $this->crud->denyAccess(['create', 'edit', 'delete']);
@@ -154,7 +155,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
     {
         $this->crud->viewBeforeContent = ['expense_claim.request.header'];
 
-        $isDraftOrRevision = $this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::NEED_REVISION;
+        $isDraftOrRevision = ($this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::NEED_REVISION)
+        && ($this->crud->user->id == $this->crud->expenseClaim->request_id || ($this->crud->role == Role::SECRETARY && $this->crud->expenseClaim->secretary_id == $this->crud->user->id));
 
         $this->crud->createCondition = function () use ($isDraftOrRevision) {
             return $isDraftOrRevision;

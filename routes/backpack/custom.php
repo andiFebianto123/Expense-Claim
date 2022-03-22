@@ -79,7 +79,7 @@ Route::group([
         // EXPENSE FINANCE AP
         Route::crud('expense-finance-ap', 'ExpenseFinanceApCrudController');
         Route::post('expense-finance-ap/upload', [ExpenseFinanceApCrudController::class, 'uploadSap']);
-        Route::get('expense-finance-ap/download-ap-journal', [ExpenseFinanceApCrudController::class, 'downloadApJournal']);
+        Route::post('expense-finance-ap/download-ap-journal', [ExpenseFinanceApCrudController::class, 'downloadApJournal']);
         Route::prefix('expense-finance-ap/{header_id}')->group(function () {
             Route::crud('detail', 'ExpenseFinanceApDetailCrudController');
             Route::get('detail/{id}/document', [ExpenseFinanceApDetailCrudController::class, 'document']);

@@ -6,6 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>TPI Journal</title>
     </head>
+    @php
+        $no = 1;
+    @endphp
     <body>
         <table>
             <thead>
@@ -17,7 +20,22 @@
             </tr>
             </thead>
             <tbody>
-            
+                @if(count($rows) > 0)
+                    @foreach($rows as $row)
+                        @php
+                            $keys = array_keys($row);
+                        @endphp
+                        <tr>
+                            <td>{{ $no }}</td>
+                            @foreach($keys as $key)
+                                <td> {{ $row[$key] }} </td>
+                            @endforeach
+                        </tr>
+                        @php
+                            $no++;
+                        @endphp
+                    @endforeach
+                @endif
             </tbody>
         </table>
     </body>

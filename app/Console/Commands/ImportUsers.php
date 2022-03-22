@@ -40,7 +40,7 @@ class ImportUsers extends Command
         $getFile = null;
         if(count($files) > 0){
             foreach($files as $file){
-                $pattern = "/^Y([0-9]+)\-([0-9]+)\-([0-9]+)\.(CSV|csv)$/i";
+                $pattern = "/^[A-Z]+([0-9]+)\-([0-9]+)\-([0-9]+)\.(CSV|csv)$/i";
                 if(preg_match($pattern, $file->getFilename())){
                     // jika ada 1 file memiliki pola yang benar
                     $getFile = $file;

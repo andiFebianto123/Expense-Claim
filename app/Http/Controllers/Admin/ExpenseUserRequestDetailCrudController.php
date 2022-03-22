@@ -52,7 +52,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->crud->headerId = \Route::current()->parameter('header_id');
 
         ExpenseClaimDetail::addGlobalScope('header_id', function (Builder $builder) {
-            $builder->where('expense_claim_id', $this->crud->headerId);
+            $builder->where('trans_expense_claim_details.expense_claim_id', $this->crud->headerId);
         });
 
         CRUD::setModel(ExpenseClaimDetail::class);
@@ -156,36 +156,36 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'type'  => 'date',
             ],
             [
-                'name'     => 'expense_type_id',
+                'name'     => 'expense_claim_type_id',
                 'label'    => 'Expense Type',
                 'type'     => 'select',
-                'entity'    => 'expense_type.mst_expense', // the method that defines the relationship in your Model
-                'attribute' => 'name', // foreign key attribute that is shown to user
-                'model'     => "App\Models\MstExpense", // foreign key model
+                'entity'    => 'expense_claim_type', // the method that defines the relationship in your Model
+                'attribute' => 'expense_name', // foreign key attribute that is shown to user
+                'model'     => "App\Models\ExpenseClaimType", // foreign key model
                 'orderLogic' => function($query, $column, $columnDirection){
                     return $query
-                    ->join('mst_expense_types', 'trans_expense_claim_details.expense_type_id', '=', 'mst_expense_types.id')
-                    ->join('mst_expenses', 'mst_expenses.id', '=', 'mst_expense_types.expense_id')
-                    ->orderBy('mst_expenses.name', $columnDirection)
+                    ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
+                    ->orderBy('trans_expense_claim_types.expense_name', $columnDirection)
                     ->select('trans_expense_claim_details.*');
                 },
             ],
+
             [
-                'name'     => 'expense_type_id',
+                'name'     => 'expense_claim_type_id',
                 'label'    => 'Level',
                 'type'     => 'select',
-                'entity'    => 'expense_type.level', // the method that defines the relationship in your Model
-                'attribute' => 'level_id', // foreign key attribute that is shown to user
-                'model'     => "App\Models\Level", // foreign key model
+                'entity'    => 'expense_claim_type', // the method that defines the relationship in your Model
+                'attribute' => 'detail_level_id', // foreign key attribute that is shown to user
+                'model'     => "App\Models\ExpenseClaimType", // foreign key model
                 'key' => 'level_name',
                 'orderLogic' => function($query, $column, $columnDirection){
                     return $query
-                    ->join('mst_expense_types', 'trans_expense_claim_details.expense_type_id', '=', 'mst_expense_types.id')
-                    ->join('mst_levels', 'mst_levels.id', '=', 'mst_expense_types.level_id')
-                    ->orderBy('mst_levels.level_id', $columnDirection)
+                    ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
+                    ->orderBy('trans_expense_claim_types.detail_level_id', $columnDirection)
                     ->select('trans_expense_claim_details.*');
                 },
             ],
+
             [
                 'label' => 'Cost Center',
                 'name' => 'cost_center_id',
@@ -201,21 +201,21 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 },
             ],
             [
-                'name'     => 'expense_type_id',
+                'name'     => 'expense_claim_type_id',
                 'label'    => 'Expense Code',
                 'type'     => 'select',
-                'entity'    => 'expense_type.expense_code', // the method that defines the relationship in your Model
+                'entity'    => 'expense_claim_type', // the method that defines the relationship in your Model
                 'attribute' => 'description', // foreign key attribute that is shown to user
-                'model'     => "App\Models\ExpenseCode", // foreign key model
-                'key' => 'expense_code',
+                'model'     => "App\Models\ExpenseClaimType", // foreign key model
+                'key' => 'description',
                 'orderLogic' => function($query, $column, $columnDirection){
                     return $query
-                    ->join('mst_expense_types', 'trans_expense_claim_details.expense_type_id', '=', 'mst_expense_types.id')
-                    ->join('mst_expense_codes', 'mst_expense_codes.id', '=', 'mst_expense_types.expense_code_id')
-                    ->orderBy('mst_expense_codes.description', $columnDirection)
+                    ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
+                    ->orderBy('trans_expense_claim_types.description', $columnDirection)
                     ->select('trans_expense_claim_details.*');
                 },
             ],
+
             [
                 'label' => 'Cost',
                 'name' => 'cost',

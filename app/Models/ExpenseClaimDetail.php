@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\ExpenseClaimType;
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,7 +14,7 @@ class ExpenseClaimDetail extends Model
     use HasFactory, SoftDeletes, CrudTrait;
 
     protected $fillable = [
-        'expense_claim_id', 'date',
+        'expense_claim_id', 'expense_claim_type_id', 'date',
         'cost_center_id', 'expense_type_id', 'total_person',
         'is_bp_approval',
         'cost', 'currency', 'converted_currency', 'exchange_value', 'converted_cost',
@@ -33,6 +34,11 @@ class ExpenseClaimDetail extends Model
     public function expense_code()
     {
         return $this->belongsTo(ExpenseCode::class, 'expense_code_id');
+    }
+
+    public function expense_claim_type()
+    {
+        return $this->belongsTo(ExpenseClaimType::class, 'expense_claim_type_id');
     }
 
     public function expense_type()

@@ -37,6 +37,7 @@
 							  }
 
 							  crud.table.draw(false);
+							  crud.table.ajax.reload();
 						  }
 
 			          	  // Show a success notification bubble

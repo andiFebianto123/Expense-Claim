@@ -28,14 +28,16 @@ class ExpenseApproverHodDetailRequest extends FormRequest
      */
     public function rules()
     {
+
         return [
-            'approval_card_id' => ['required', 'regex:/^[0-9]+$/'],
-            'date' => 'required|date', 
-            'cost_center' => ['required', Rule::in(array_keys(ExpenseClaimDetail::$costCenter))], 
-            'expense_code' => ['required', Rule::in(array_keys(ExpenseClaimDetail::$expenseCode))], 
-            'cost' => ['required', 'int', 'min:0'], 
-            'currency' => ['required', Rule::in(array_keys(ApprovalCard::$listCurrency))],
-            'document' => ['nullable', 'file', 'max:5000'], 
+            'expense_type_id' => 'required',
+            'date' => Rule::requiredIf($this->method() == 'POST'),
+            'cost' => [Rule::requiredIf($this->method() == 'POST'), 'date'],
+            'cost_center_id' => 'required',
+            'cost' => ['required', 'int', 'min:0'],
+            'document' => ['nullable', 'file', 'max:5000'],
+            'is_bp_approval' => 'nullable|boolean',
+            'total_person' => 'nullable|int|min:1',
             'remark' => 'nullable|max:255'
         ];
     }

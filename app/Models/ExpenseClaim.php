@@ -50,9 +50,9 @@ class ExpenseClaim extends Model
         return $this->belongsTo(Department::class, 'department_id');
     }
 
-    public function approval()
+    public function hod()
     {
-        return $this->belongsTo(User::class, 'approval_id');
+        return $this->belongsTo(User::class, 'hod_id');
     }
 
     public function goa()

@@ -30,10 +30,9 @@ class ExpenseApproverHodDetailRequest extends FormRequest
     {
 
         return [
-            'expense_type_id' => 'required',
-            'date' => Rule::requiredIf($this->method() == 'POST'),
-            'cost' => [Rule::requiredIf($this->method() == 'POST'), 'date'],
             'cost_center_id' => 'required',
+            'date' => [Rule::requiredIf($this->method() == 'POST'), 'date'],
+            'expense_type_id' => [Rule::requiredIf($this->method() == 'POST')],
             'cost' => ['required', 'int', 'min:0'],
             'document' => ['nullable', 'file', 'max:5000'],
             'is_bp_approval' => 'nullable|boolean',

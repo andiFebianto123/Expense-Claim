@@ -94,9 +94,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         return $expenseClaim;
     }
 
+
     public function getHodAndGoa()
     {
-
         $expenseClaimDetail = $this->crud->expenseClaimDetail;
         $department = User::join('mst_departments', 'mst_users.department_id', '=', 'mst_departments.id')
             ->where('mst_users.id',  $this->crud->user->id)
@@ -119,7 +119,6 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             ->where('goa_holders.id', $goaHolderId)
             ->select('goa_holders.*', 'mst_users.name as user_name')
             ->first();
-
 
         $totalCost = $expenseClaimDetail->sum('cost');
         $this->recursiveCheckValue($totalCost, $goa);

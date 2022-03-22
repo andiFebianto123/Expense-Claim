@@ -8,12 +8,10 @@
     $classRole = 'App\Models\Role';
     $allowAll = in_array($role, [$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY]);
 
-    // INVALID CODE
     $allowMaster = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
-    $allowLevelOne = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::NATIONAL_SALES]);
-    $allowLevelTwo = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
+    $allowHod= in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::HOD]);
+    $allowGoa = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::GOA_HOLDER]);
     $allowFinance = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
-    // END INVALID CODE
 @endphp
 
 @php
@@ -56,7 +54,7 @@
 </li>
 @endif
 
-@if ($allowLevelOne)
+@if ($allowHod)
 <li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-angle-right"></i> Approver HoD</a>
     <ul class="nav-dropdown-items">
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-approver-hod')}}"> Ongoing</a></li>
@@ -66,7 +64,7 @@
 @endif
 
 
-@if ($allowLevelTwo)
+@if ($allowGoa)
 <li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-angle-double-right"></i> Approver GoA</a>
     <ul class="nav-dropdown-items">
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-approver-goa')}}"> Ongoing</a></li>

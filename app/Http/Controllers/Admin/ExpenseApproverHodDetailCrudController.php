@@ -19,6 +19,7 @@ use App\Models\Config;
 use App\Models\CostCenter;
 use App\Models\ExpenseClaimType;
 use App\Models\ExpenseType;
+use App\Models\TransGoaApproval;
 use App\Traits\RedirectCrud;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
@@ -46,6 +47,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
     {
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
+        $this->crud->hasAction = false;
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
@@ -64,6 +66,16 @@ class ExpenseApproverHodDetailCrudController extends CrudController
 
         $this->crud->setCreateView('expense_claim.hod.create');
         $this->crud->setUpdateView('expense_claim.hod.edit');
+
+        if ($this->crud->expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL && 
+            $this->crud->expenseClaim->hod_id == $this->crud->user->id) 
+        {
+            $this->crud->hasAction = true;
+        }
+
+        $this->crud->goaList = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
+                ->get(['mst_users.name', 'trans_goa_approvals.goa_date']);
     }
 
     public function getExpenseClaim($id){
@@ -110,7 +122,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
     {
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
         $this->crud->viewBeforeContent = ['expense_claim.hod.header'];
-        $allowActions = $this->crud->expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL && $this->crud->expenseClaim->hod_id == $this->crud->user->id;
+        $allowActions = $this->crud->hasAction;
         
         $this->crud->createCondition =  function () use ($allowActions) {
             return $allowActions;
@@ -305,7 +317,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
 
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(ExpenseApproverHodDetailRequest::class);
+        CRUD::setValidation(ExpenseApproverHodRequest::class);
         $this->crud->userExpenseTypes = $this->getUserExpenseTypes();
 
         CRUD::addField([
@@ -1072,7 +1084,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         return true;
     }
 
-    
+
     private function checkStatusForApprover($expenseClaim, $action){
         if($expenseClaim->hod_id != $this->crud->user->id){
             return trans('custom.error_permission_message');
@@ -1095,9 +1107,14 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 return response()->json(['message' =>  $checkStatus], 403);
             }
 
+            $goaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                            ->orderBy('order', 'asc')
+                            ->first();
+
             $now = Carbon::now();
             $expenseClaim->hod_id = $this->crud->user->id;
             $expenseClaim->hod_date = $now;
+            $expenseClaim->current_trans_goa_id = $goaApproval->goa_id ?? null;
             $expenseClaim->status = ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();

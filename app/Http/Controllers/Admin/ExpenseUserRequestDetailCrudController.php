@@ -1159,6 +1159,11 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $this->crud->expenseClaim->save();
 
             $response = $this->crud->delete($id);
+
+            if(!ExpenseClaimDetail::where('expense_claim_type_id', $expenseClaimDetail->expense_claim_type_id)->exists()){
+                ExpenseClaimType::where('id', $expenseClaimDetail->expense_claim_type_id)->delete();
+            }
+            
             DB::commit();
             return $response;
         } catch (Exception $e) {

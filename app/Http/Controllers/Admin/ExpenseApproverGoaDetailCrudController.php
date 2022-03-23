@@ -1147,10 +1147,9 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 return response()->json(['message' =>  $checkStatus], 403);
             }
 
-            $goaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
-                            ->where('goa_id',  $this->crud->user->id);
+            $goaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId);
 
-            $transGoaApproval = $goaApproval->first();
+            $transGoaApproval = $goaApproval->where('goa_id',  $this->crud->user->id)->first();
 
             $statusApproval = ExpenseClaim::FULLY_APPROVED;
             if ($goaApproval->count() > 1 && $transGoaApproval->order < $goaApproval->count()) {

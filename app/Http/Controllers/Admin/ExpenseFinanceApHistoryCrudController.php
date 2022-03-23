@@ -32,7 +32,6 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
     {
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
-        $this->crud->department = $this->crud->user->department->name ?? null;
 
         if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
             $this->crud->denyAccess('list');
@@ -47,8 +46,6 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         CRUD::setModel(ExpenseClaim::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap-history');
         CRUD::setEntityNameStrings('Expense Finance AP - History', 'Expense Finance AP - History');
-
-        
     }
 
     /**

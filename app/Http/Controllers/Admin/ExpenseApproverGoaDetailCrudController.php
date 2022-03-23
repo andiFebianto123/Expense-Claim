@@ -67,14 +67,15 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
         $this->crud->setCreateView('expense_claim.goa.create');
         $this->crud->setUpdateView('expense_claim.goa.edit');
         $allowedStatus = in_array($this->crud->expenseClaim->status, [ExpenseClaim::REQUEST_FOR_APPROVAL_TWO,ExpenseClaim::PARTIAL_APPROVED]);
-        $findDelegation = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
-            ->where('goa_delegation_id', $this->crud->user->id)
+        $existsDelegation = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+            ->where(function($query){
+                $query->where('goa_id', $this->crud->user->id)
+                ->orWhere('goa_delegation_id', $this->crud->user->id);
+            })
+            ->where('goa_date', null)
             ->exists();
 
-        if ($allowedStatus && 
-            ($this->crud->expenseClaim->current_trans_goa_id == $this->crud->user->id || $findDelegation == $this->crud->user->id)
-            )
-        {
+        if ($allowedStatus && $existsDelegation){
             $this->crud->hasAction = true;
         }
 
@@ -102,11 +103,15 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 });
             });
         });
-        if($this->crud->role === Role::GOA_HOLDER){
-            $expenseClaim->where('trans_expense_claims.current_trans_goa_id', $this->crud->user->id);
-        }
-        else{
+        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN])) {
             $expenseClaim->whereNotNull('trans_expense_claims.current_trans_goa_id');
+        }else{
+            $expenseClaim->join('trans_goa_approvals','trans_goa_approvals.expense_claim_id' , '=' ,'trans_expense_claims.id')
+            ->where(function($query){
+                $query->where('trans_goa_approvals.goa_id', $this->crud->user->id)
+                ->orWhere('trans_goa_approvals.goa_delegation_id', $this->crud->user->id);
+            })
+            ->select('trans_expense_claims.*', 'trans_goa_approvals.goa_delegation_id');
         }
 
         $expenseClaim =  $expenseClaim->first();
@@ -1127,10 +1132,15 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
 
 
     private function checkStatusForApprover($expenseClaim, $action){
-        if($expenseClaim->current_trans_goa_id != $this->crud->user->id){
+        $allowedStatus = in_array($expenseClaim->status, [ExpenseClaim::REQUEST_FOR_APPROVAL_TWO,ExpenseClaim::PARTIAL_APPROVED]);
+        $allowedGoaApproval = TransGoaApproval::where('expense_claim_id', $expenseClaim->id)
+            ->where('goa_delegation_id', $this->crud->user->id)
+            ->orWhere('goa_id', $this->crud->user->id)
+            ->exists();
+        if(!$allowedGoaApproval){
             return trans('custom.error_permission_message');
         }
-        if($expenseClaim->status !== ExpenseClaim::REQUEST_FOR_APPROVAL_TWO) {
+        if(!$allowedStatus) {
             return trans('custom.expense_claim_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.' . $action)]);
         }
         return true;
@@ -1148,12 +1158,19 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 return response()->json(['message' =>  $checkStatus], 403);
             }
             $now = Carbon::now();
-            $goaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId);
-            $transGoaApproval = $goaApproval->where('goa_id',  $this->crud->user->id)->first();
             $statusApproval = ExpenseClaim::FULLY_APPROVED;
-            if ($goaApproval->count() > 1 && $transGoaApproval->order < $goaApproval->count()) {
+            $currentTransGoaId = $this->crud->user->id;
+            $countGoaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)->count();
+            $transGoaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                ->where('goa_id',  $this->crud->user->id)
+                ->first();
+            if ($countGoaApproval > 1 && $transGoaApproval->order < $countGoaApproval) {
                 $statusApproval = ExpenseClaim::PARTIAL_APPROVED;
-                $goaApprovalWillReplaces = $goaApproval->where('order','>=', $transGoaApproval->order)->get();
+                $goaApprovalWillReplaces = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                    ->where('order','>', 1)
+                    ->where('order','>=', $transGoaApproval->order)
+                    ->get();
+                $currentTransGoaId = $goaApprovalWillReplaces[0]->goa_id;
                 foreach ($goaApprovalWillReplaces as $key => $gawr) {
                     $delegation = MstDelegation::where('from_user_id', $gawr->goa_id)
                         ->whereDate('start_date', '>=', $now)                                 
@@ -1167,9 +1184,9 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                         $setDelegation->save();
                     }
                 }
-                
             }
-            $expenseClaim->current_trans_goa_id = $this->crud->user->id;
+
+            $expenseClaim->current_trans_goa_id = $currentTransGoaId;
             $expenseClaim->status = $statusApproval;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();

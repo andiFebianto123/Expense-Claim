@@ -107,6 +107,15 @@ class ExpenseTypeCrudController extends CrudController
         ]);
 
         CRUD::addColumn([
+            'name'     => 'limit_daily',
+            'label'    => 'Limit Daily',
+            'type'     => 'boolean',
+            'orderable' => false,
+            'searchLogic' => false,
+            'limit' => $limit,
+        ]);
+
+        CRUD::addColumn([
             'name'     => 'expense_code_id',
             'label'    => 'Expense Code',
             'type'     => 'select',
@@ -262,6 +271,17 @@ class ExpenseTypeCrudController extends CrudController
             'options' => collect(CostCenter::OPTIONS_CURRENCY)->mapWithKeys(function($currency){
                 return [$currency => $currency];
             })
+        ]);
+
+        CRUD::addField([
+            'name' => 'limit_daily',
+            'label' => 'Limit Daily',
+            'type'  => 'radio',
+            'default' => 0,
+            'options'     => [
+                1 => "Yes",
+                0 => "No",
+            ],
         ]);
 
         CRUD::addField([
@@ -448,6 +468,7 @@ class ExpenseTypeCrudController extends CrudController
             $expenseType->expense_id = $expense->id;
             $expenseType->level_id = $request->level_id;
             $expenseType->limit = $request->limit;
+            $expenseType->limit_daily = $request->limit_daily;
             $expenseType->expense_code_id = $request->expense_code_id;
             $expenseType->is_bod = $request->is_bod;
             $expenseType->is_traf = $request->is_traf;
@@ -600,6 +621,7 @@ class ExpenseTypeCrudController extends CrudController
             $expenseType->expense_id = $expense->id;
             $expenseType->level_id = $request->level_id;
             $expenseType->limit = $request->limit;
+            $expenseType->limit_daily = $request->limit_daily;
             $expenseType->expense_code_id = $request->expense_code_id;
             $expenseType->is_bod = $request->is_bod;
             $expenseType->is_traf = $request->is_traf;

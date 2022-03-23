@@ -22,6 +22,7 @@ use App\Models\TransGoaApproval;
 use App\Traits\RedirectCrud;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Doctrine\DBAL\Query\QueryException;
 
 /**
  * Class ExpenseApproverGoaDetailCrudController
@@ -445,6 +446,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 'expense_type_id',
                 'is_traf as is_traf',
                 'is_bod as is_bod',
+                'bod_level',
                 'is_bp_approval as is_bp_approval',
                 'limit as limit',
                 'currency as currency',
@@ -472,6 +474,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                     'mst_expense_types.id as expense_type_id',
                     'mst_expense_types.is_traf as is_traf',
                     'mst_expense_types.is_bod as is_bod',
+                    'bod_level',
                     'mst_expense_types.is_bp_approval as is_bp_approval',
                     'mst_expense_types.limit as limit',
                     'mst_expense_types.currency as currency',
@@ -661,6 +664,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                     'description' => $expenseType->description, 
                     'is_traf' => $expenseType->is_traf,
                     'is_bod' => $expenseType->is_bod, 
+                    'bod_level' => $expenseType->bod_level, 
                     'is_bp_approval' => $expenseType->is_bp_approval, 
                     'is_limit_person' => $expenseType->is_limit_person, 
                     'currency' => $expenseType->currency, 
@@ -1052,7 +1056,8 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
 
             $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)
             ->where('expense_claim_id', $this->crud->expenseClaim->id)->first();
-            if($expenseClaimDetail == null){
+            $expenseClaimType = ExpenseClaimType::where('id', ($expenseClaimDetail->expense_claim_type_id ?? null))->first();
+            if ($expenseClaimDetail == null || $expenseClaimType == null) {
                 DB::rollback();
                 return response()->json(['message' => trans('custom.model_not_found')], 404);
             }
@@ -1076,6 +1081,25 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
             $this->crud->expenseClaim->save();
 
             $response = $this->crud->delete($id);
+            if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
+                $hasBodRespective = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
+                    $query->where('is_bod', 1)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
+                })->exists();
+                $hasBodGeneral = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
+                    $query->where('is_bod', 1)->where('bod_level', ExpenseType::GENERAL_MANAGER);
+                })->exists();
+
+                if($expenseClaimType->is_bod){
+                    if(($expenseClaimType->bod_level == ExpenseType::GENERAL_MANAGER && !$hasBodGeneral)){
+                        DB::rollback();
+                        return response()->json(['message' => trans('custom.cant_delete_other_bod_level', ['level' => $expenseClaimType->bod_level])], 403);
+                    }
+                    else if(($expenseClaimType->bod_level == ExpenseType::RESPECTIVE_DIRECTOR && !$hasBodRespective && !$hasBodGeneral)){
+                        DB::rollback();
+                        return response()->json(['message' => trans('custom.cant_delete_other_bod_level', ['level' => $expenseClaimType->bod_level])], 403);
+                    }
+                }
+            }
             DB::commit();
             return $response;
         } catch (Exception $e) {

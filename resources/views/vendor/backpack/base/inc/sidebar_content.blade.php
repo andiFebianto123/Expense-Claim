@@ -11,7 +11,7 @@
     $allowMaster = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
     $allowHod= in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::HOD]);
     $allowGoa = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::GOA_HOLDER]);
-    $allowFinance = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
+    $allowFinance = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::FINANCE_AP]);
 @endphp
 
 @php

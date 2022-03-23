@@ -570,15 +570,15 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                     $usdToIdr = Config::where('key', Config::USD_TO_IDR)->first();
                     $startExchangeDate = Config::where('key', Config::START_EXCHANGE_DATE)->first();
                     $endExchangeDate = Config::where('key', Config::END_EXCHANGE_DATE)->first();
-                    if($usdToIdr == null || $startExchangeDate == null || $endExchangeDate == null){
+                    if ($usdToIdr == null || $startExchangeDate == null || $endExchangeDate == null) {
                         $errors['message'] = [trans('custom.config_usd_invalid')];
-                    }
-                    else if($requestDate < Carbon::parse($startExchangeDate->value)->startOfDay() 
-                    || $requestDate > Carbon::parse($endExchangeDate->value)->startOfDay()){
-                        $errors['date'] = array_merge($errors['date'] ?? [], [trans('custom.exchange_date_invalid', ['start' => 
+                    } else if (
+                        Carbon::parse($request->date)->startOfDay() < Carbon::parse($startExchangeDate->value)->startOfDay()
+                        ||  Carbon::parse($request->date)->startOfDay() > Carbon::parse($endExchangeDate->value)->startOfDay()
+                    ) {
+                        $errors['date'] = array_merge($errors['date'] ?? [], [trans('custom.exchange_date_invalid', ['start' =>
                         Carbon::parse($startExchangeDate->value)->format('d M Y'), 'end' => Carbon::parse($endExchangeDate->value)->format('d M Y')])]);
-                    }
-                    else{
+                    } else {
                         $currencyValue = (float) $usdToIdr->value;
                         $convertedCost = $cost;
                         $cost =  round($currencyValue * $cost);
@@ -628,6 +628,20 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                     if($newCost < $bottomLimit || $newCost > $upperLimit){
                         $errors['message'] = array_merge($errors['message'] ?? [], [trans('custom.expense_claim_limit', 
                         ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)])]);
+                    }
+                }
+                $hasBodRespective = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
+                    $query->where('is_bod', 1)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
+                })->exists();
+                $hasBodGeneral = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
+                    $query->where('is_bod', 1)->where('bod_level', ExpenseType::GENERAL_MANAGER);
+                })->exists();
+                if($expenseType->is_bod){
+                    if(($expenseType->bod_level == ExpenseType::GENERAL_MANAGER && !$hasBodGeneral)){
+                        $errors['expense_type_id'] = [trans('custom.cant_add_other_bod_level', ['level' => $expenseType->bod_level])];
+                    }
+                    else if(($expenseType->bod_level == ExpenseType::RESPECTIVE_DIRECTOR && !$hasBodRespective && !$hasBodGeneral)){
+                        $errors['expense_type_id'] = [trans('custom.cant_add_other_bod_level', ['level' => $expenseType->bod_level])];
                     }
                 }
             }
@@ -830,22 +844,22 @@ class ExpenseApproverHodDetailCrudController extends CrudController
     public function getUserExpenseTypes()
     {
         $user = User::join('mst_levels', 'mst_users.level_id', '=', 'mst_levels.id')
-        ->where('mst_users.id', $this->crud->expenseClaim->request_id)
-        ->select(
-            'mst_levels.level_id as level_code',
-            'mst_levels.name as level_name',
-            'mst_levels.id as level_id',
-            'department_id'
-        )
-        ->first();
+            ->where('mst_users.id', $this->crud->expenseClaim->request_id)
+            ->select(
+                'mst_levels.level_id as level_code',
+                'mst_levels.name as level_name',
+                'mst_levels.id as level_id',
+                'department_id'
+            )
+            ->first();
         $userExpenseTypes = ExpenseType::join('mst_levels', 'mst_expense_types.level_id', 'mst_levels.id')
             ->join('mst_expenses', 'mst_expenses.id', 'mst_expense_types.expense_id')
             ->where('mst_expense_types.level_id', ($user->level_id ?? null))
-            ->where(function($query) use($user){
+            ->where(function ($query) use ($user) {
                 $query->doesntHave('expense_type_dept')
-                ->orWhereHas('expense_type_dept', function($innerQuery) use($user){
-                    $innerQuery->where('department_id', ($user->department_id ?? null));
-                });
+                    ->orWhereHas('expense_type_dept', function ($innerQuery) use ($user) {
+                        $innerQuery->where('department_id', ($user->department_id ?? null));
+                    });
             })
             ->select(
                 'mst_expense_types.id as expense_type_id',
@@ -857,19 +871,25 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 'mst_levels.level_id as level',
                 'mst_expenses.name as expense_name',
             )
-            ->get()->mapWithKeys(function($item){
-                return[$item->expense_type_id => $item];
-            })->toArray();
+            ->get()->mapWithKeys(function ($item) {
+                return ['key-' . $item->expense_type_id => $item];
+            });
 
         $userExpenseTypesHistory = ExpenseClaimType::where('expense_claim_id', $this->crud->expenseClaim->id)
-        ->select('expense_type_id', 'currency', 
-        'is_traf as traf', 'limit', 'is_bp_approval as bp_approval', 'is_limit_person as limit_person', 'detail_level_id as level', 
-        'expense_name')->get()->mapWithKeys(function($item){
-            return[$item->expense_type_id => $item];
-        });
+            ->select(
+                'expense_type_id',
+                'currency',
+                'is_traf as traf',
+                'limit',
+                'is_bp_approval as bp_approval',
+                'is_limit_person as limit_person',
+                'detail_level_id as level',
+                'expense_name'
+            )->get()->mapWithKeys(function ($item) {
+                return ['key-' . $item->expense_type_id => $item];
+            });
 
-
-        return collect($userExpenseTypes)->merge($userExpenseTypesHistory->toArray());
+        return collect(array_merge($userExpenseTypes->toArray(), $userExpenseTypesHistory->toArray()))->values();
     }
 
 

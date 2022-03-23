@@ -79,7 +79,10 @@ class ExpenseApproverHodDetailCrudController extends CrudController
 
         $this->crud->goaList = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
                 ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
-                ->get(['mst_users.name', 'trans_goa_approvals.goa_date']);
+                ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+                ->select('mst_users.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+                ->orderBy('order')
+                ->get();  
     }
 
     public function getExpenseClaim($id){
@@ -101,14 +104,13 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 });
             });
         });
-        if($this->crud->role === Role::HOD){
+        if (in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN])) {
+            $expenseClaim->whereNotNull('trans_expense_claims.hod_id');
+        }
+        else{
             $expenseClaim->where('trans_expense_claims.hod_id', $this->crud->user->id)
                         ->orWhere('trans_expense_claims.hod_delegation_id', $this->crud->user->id);
         }
-        else{
-            $expenseClaim->whereNotNull('trans_expense_claims.hod_id');
-        }
-
         $expenseClaim =  $expenseClaim->first();
         if($expenseClaim == null){
             DB::rollback();
@@ -117,12 +119,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         return $expenseClaim;
     }
 
-    /**
-     * Define what happens when the List operation is loaded.
-     * 
-     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
-     * @return void
-     */
+
     protected function setupListOperation()
     {
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
@@ -229,7 +226,8 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 'type'  => 'model_function',
                 'function_name' => 'getDocumentLink',
                 'function_parameters' => ['expense-approver-hod'],
-                'limit' => 1000000
+                'limit' => 1000000,
+                'escaped' => false
             ],
             [
                 'label' => 'Remark',
@@ -451,6 +449,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 'bod_level',
                 'is_bp_approval as is_bp_approval',
                 'limit as limit',
+                'limit_daily',
                 'currency as currency',
                 'limit_business_approval as limit_business_approval',
                 'is_limit_person',
@@ -477,6 +476,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                     'mst_expense_types.is_traf as is_traf',
                     'mst_expense_types.is_bod as is_bod',
                     'bod_level',
+                    'limit_daily',
                     'mst_expense_types.is_bp_approval as is_bp_approval',
                     'mst_expense_types.limit as limit',
                     'mst_expense_types.currency as currency',
@@ -497,13 +497,20 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 $errors['expense_type_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_type')])];
             }
             else {
-                if($expenseType->currency == Config::USD){
+                $isLimitDaily = $expenseType->limit_daily;
+                if ($expenseType->currency == Config::USD) {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                    ->where('expense_type_id', $expenseType->expense_type_id)->sum('converted_cost');
-                }
-                else{
+                        ->where('expense_type_id', $expenseType->expense_type_id)
+                        ->when($isLimitDaily, function($query) use($request){
+                            $query->where('date', '=', Carbon::parse($request->date)->startOfDay()->format('Y-m-d'));
+                        })
+                        ->sum('converted_cost');
+                } else {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                    ->where('expense_type_id', $expenseType->expense_type_id)->sum('cost');
+                        ->when($isLimitDaily, function($query) use($request){
+                            $query->where('date', '=', Carbon::parse($request->date)->startOfDay()->format('Y-m-d'));
+                        })
+                        ->where('expense_type_id', $expenseType->expense_type_id)->sum('cost');
                 }
                 $totalCost = $request->cost + $currentCost;
 
@@ -514,8 +521,6 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 if ($isLimitPerson) {
                     $totalPerson = $request->total_person;
                     if(ctype_digit($totalPerson)){
-                        // $currentPerson = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                        // ->select('expense_type_id', $expenseType->expense_type_id)->sum('total_person');
                         if($limit != null){
                             $limit *= ($totalPerson /*+ $currentPerson */);
                             $totalCost = $request->cost;
@@ -534,7 +539,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                                 'validation.limit',
                                 [
                                     'attr1' => trans('validation.attributes.cost'),
-                                    'attr2' => trans('validation.attributes.limit'),
+                                    'attr2' => trans('validation.attributes.limit' . ($isLimitDaily ? '_daily' : '')),
                                     'value' => $expenseType->currency . ' ' .  formatNumber($limit),
                                 ]
                             )
@@ -665,6 +670,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                     'detail_level_id' => $user->level_code, 
                     'level_name' => $user->level_name, 
                     'limit' => $expenseType->limit, 
+                    'limit_daily' => $expenseType->limit_daily,
                     'expense_code_id' => $expenseType->expense_code_id, 
                     'account_number' => $expenseType->account_number, 
                     'description' => $expenseType->description, 
@@ -681,7 +687,6 @@ class ExpenseApproverHodDetailCrudController extends CrudController
 
             
             $expenseClaimDetail = new ExpenseClaimDetail;
-
             $expenseClaimDetail->expense_claim_id = $this->crud->expenseClaim->id;
             $expenseClaimDetail->expense_claim_type_id = $historyExpenseType->id;
             $expenseClaimDetail->date = $request->date;
@@ -696,7 +701,6 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->remark = $request->remark;
             $expenseClaimDetail->document = $request->document;
-
             $expenseClaimDetail->save();
 
             $this->crud->expenseClaim->value += $cost;
@@ -936,6 +940,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 'is_bod as is_bod',
                 'is_bp_approval as is_bp_approval',
                 'limit as limit',
+                'limit_daily',
                 'currency as currency',
                 'limit_business_approval as limit_business_approval',
                 'is_limit_person',
@@ -950,16 +955,22 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             }
             else {
                 $expenseType = $historyExpenseType;
-                if($expenseType->currency == Config::USD){
+                $isLimitDaily = $expenseType->limit_daily;
+                if ($expenseType->currency == Config::USD) {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                    ->where('expense_type_id', $expenseType->expense_type_id)
-                    ->where('id', '!=', $expenseClaimDetail->id)->sum('converted_cost');
-                }
-                else{
+                        ->where('expense_type_id', $expenseType->expense_type_id)
+                        ->when($isLimitDaily, function($query) use($expenseClaimDetail){
+                            $query->where('date', '=', Carbon::parse($expenseClaimDetail->date)->startOfDay()->format('Y-m-d'));
+                        })
+                        ->where('id', '!=', $expenseClaimDetail->id)->sum('converted_cost');
+                } else {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                    ->where('expense_type_id', $expenseType->expense_type_id)
-                    ->where('id', '!=', $expenseClaimDetail->id)
-                    ->sum('cost');
+                        ->where('expense_type_id', $expenseType->expense_type_id)
+                        ->where('id', '!=', $expenseClaimDetail->id)
+                        ->when($isLimitDaily, function($query) use($expenseClaimDetail){
+                            $query->where('date', '=', Carbon::parse($expenseClaimDetail->date)->startOfDay()->format('Y-m-d'));
+                        })
+                        ->sum('cost');
                 }
                 $totalCost = $request->cost + $currentCost;
 
@@ -990,7 +1001,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                                 'validation.limit',
                                 [
                                     'attr1' => trans('validation.attributes.cost'),
-                                    'attr2' => trans('validation.attributes.limit'),
+                                    'attr2' => trans('validation.attributes.limit' . ($isLimitDaily ? '_daily' : '')),
                                     'value' => $expenseType->currency . ' ' .  formatNumber($limit),
                                 ]
                             )
@@ -1142,16 +1153,11 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                             ->orderBy('order', 'asc')
                             ->first();
 
-            $delegation = MstDelegation::where('from_user_id', $goaApproval->goa_id)
-                    ->whereDate('start_date', '>=', $now)                                 
-                    ->whereDate('end_date', '<=', $now)
-                    ->first();
-
             $goaApprovalWillReplaces = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)->get();
             foreach ($goaApprovalWillReplaces as $key => $gawr) {
                 $delegation = MstDelegation::where('from_user_id', $gawr->goa_id)
-                        ->whereDate('start_date', '>=', $now)                                 
-                        ->whereDate('end_date', '<=', $now)
+                        ->whereDate('start_date', '<=', $now)                                 
+                        ->whereDate('end_date', '>=', $now)
                         ->first();
                 if (isset($delegation)) {
                     $setDelegation = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)

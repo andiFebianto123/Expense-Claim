@@ -21,7 +21,10 @@ return [
     'rejected' => 'rejected',
     'revised' => 'revised',
 
-    'user_dept_goa_not_found' => 'The head of department / goA from the requestor is not found.',
+    'user_dept_goa_not_found' => 'The head of department / GoA from the requestor is not found.',
+
+    // DELEGATION
+    'same_user_delegation_date' => 'The same user with has conflict delegation with start date = :startDate and end date = :endDate.',
 
 
     // USER REQUEST

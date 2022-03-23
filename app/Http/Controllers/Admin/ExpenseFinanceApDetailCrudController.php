@@ -175,7 +175,8 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 'type'  => 'model_function',
                 'function_name' => 'getDocumentLink',
                 'function_parameters' => ['expense-approver-hod'],
-                'limit' => 1000000
+                'limit' => 1000000,
+                'escaped' => false
             ],
             [
                 'label' => 'Remark',

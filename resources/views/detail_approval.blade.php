@@ -8,24 +8,24 @@
                     <p class="mb-0">HoD By :</p>
                     <ul class="mb-1 ml-3">
                         <li class="position-relative">
-                            <p class="mb-0">Name : <b>{{ $entry->hod->name ?? '-' }}</b>
+                            <p class="mb-0 py-2">Name : <b>{{ $entry->hod->name ?? '-' }}</b>
                             @if ($entry->hod_date != null && $entry->rejected_date == null && $entry->hod_delegation_id == null)
                                 <i class="position-absolute la la-check-circle text-success ml-2"
-                                    style="font-size: 24px"></i>
+                                    style="font-size: 18px"></i>
                             @elseif($entry->rejected_date != null && $entry->hod_delegation_id == null)
                                 <i class="position-absolute la la-close text-danger ml-2"
-                                style="font-size: 24px"></i>
+                                style="font-size: 18px"></i>
                             @endif
                             </p>
                             @if ($entry->hod_delegation_id != null)
-                                <p class="mb-0">
+                                <p class="mb-0 py-2">
                                     Delegation Name : <b>{{ $entry->hod_delegation->name ?? '-' }}</b>
                                     @if ($entry->hod_date != null && $entry->rejected_date == null)
                                         <i class="position-absolute la la-check-circle text-success ml-2"
-                                            style="font-size: 24px"></i>
+                                            style="font-size: 18px"></i>
                                     @elseif($entry->rejected_date != null)
                                             <i class="position-absolute la la-close text-danger ml-2"
-                                            style="font-size: 24px"></i>
+                                            style="font-size: 18px"></i>
                                     @endif
                                 </p>
                             @endif
@@ -42,24 +42,24 @@
                 <ul class="mb-1 ml-3">
                     @foreach ($goaApprovals as $item)
                         <li class="position-relative">
-                            <p class="mb-0">Name : <b>{{ $item->user_name }}</b>
+                            <p class="mb-0 py-2">Name : <b>{{ $item->user_name }}</b>
                                 @if ($item->status == 'Approved' && $item->goa_delegation_id == null)
                                     <i class="position-absolute la la-check-circle text-success ml-2"
-                                        style="font-size: 24px"></i>
+                                        style="font-size: 18px"></i>
                                 @elseif($item->status == 'Rejected' && $item->goa_delegation_id == null)
                                     <i class="position-absolute la la-close text-danger ml-2"
-                                    style="font-size: 24px"></i>
+                                    style="font-size: 18px"></i>
                                 @endif
                             </p>
                             @if ($item->goa_delegation_id  != null)
-                                <p class="mb-0">
+                                <p class="mb-0 py-2">
                                     Delegation Name : <b>{{ $item->user_delegation_name ?? '-' }}</b>
                                     @if ($item->status == 'Approved')
                                         <i class="position-absolute la la-check-circle text-success ml-2"
-                                            style="font-size: 24px"></i>
+                                            style="font-size: 18px"></i>
                                     @elseif($item->status == 'Rejected')
                                         <i class="position-absolute la la-close text-danger ml-2"
-                                        style="font-size: 24px"></i>
+                                        style="font-size: 18px"></i>
                                     @endif
                                 </p>
                             @endif

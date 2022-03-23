@@ -81,11 +81,11 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
         else{
             $this->crud->query->join('trans_goa_approvals','trans_goa_approvals.expense_claim_id' , '=' ,'trans_expense_claims.id')
             ->where(function($query){
-                $query->where('trans_expense_claims.goa_id', $this->crud->user->id)
+                $query->where('trans_goa_approvals.goa_id', $this->crud->user->id)
                 ->orWhere('trans_goa_approvals.goa_delegation_id', $this->crud->user->id);
             });
         }
-
+        $this->crud->enableDetailsRow();
         $this->crud->addButtonFromModelFunction('line', 'detailApproverGoaButton', 'detailApproverGoaButton', 'end');
         $this->crud->addButtonFromModelFunction('line', 'printReportExpense', 'printReportExpense', 'end');
 
@@ -108,6 +108,7 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
             [
                 'label' => 'Currency',
                 'name' => 'currency',
+                'visibleInTable' => false
             ],
             [
                 'label' => 'Request Date',
@@ -221,5 +222,24 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
             return $print->renderPdf();
 
         }
+    }
+
+    public function showDetailsRow($id)
+    {
+        $this->crud->hasAccessOrFail('list');
+
+        // get entry ID from Request (makes sure its the last ID for nested resources)
+        $id = $this->crud->getCurrentEntryId() ?? $id;
+
+        $this->data['entry'] = $this->crud->getEntry($id);
+        $this->data['crud'] = $this->crud;
+
+        $this->data['goaApprovals'] = TransGoaApproval::where('expense_claim_id', $this->data['entry']->id)
+        ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
+        ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+        ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+        ->orderBy('order')->get();  
+
+        return view('detail_approval', $this->data);
     }
 }

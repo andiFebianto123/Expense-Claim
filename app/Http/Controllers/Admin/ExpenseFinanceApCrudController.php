@@ -113,52 +113,52 @@ class ExpenseFinanceApCrudController extends CrudController
                     ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
-            [
-                'label' => 'Department',
-                'name' => 'department_id',
-                'type'      => 'select',
-                'entity'    => 'department',
-                'attribute' => 'name',
-                'model'     => Department::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
-                    ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'Approved By',
-                'name' => 'approval_id',
-                'type'      => 'select',
-                'entity'    => 'approval',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as a', 'a.id', '=', 'trans_expense_claims.approval_id')
-                    ->orderBy('a.name', $columnDirection)->select('trans_expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'Approved Date',
-                'name' => 'approval_date',
-                'type'  => 'date',
-            ],
-            [
-                'label' => 'GoA By',
-                'name' => 'goa_id',
-                'type'      => 'select',
-                'entity'    => 'goa',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as g', 'g.id', '=', 'trans_expense_claims.goa_id')
-                    ->orderBy('g.name', $columnDirection)->select('trans_expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'GoA Date',
-                'name' => 'goa_date',
-                'type'  => 'date',
-            ],
+            // [
+            //     'label' => 'Department',
+            //     'name' => 'department_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'department',
+            //     'attribute' => 'name',
+            //     'model'     => Department::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
+            //         ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'Approved By',
+            //     'name' => 'approval_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'approval',
+            //     'attribute' => 'name',
+            //     'model'     => User::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('users as a', 'a.id', '=', 'trans_expense_claims.approval_id')
+            //         ->orderBy('a.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'Approved Date',
+            //     'name' => 'approval_date',
+            //     'type'  => 'date',
+            // ],
+            // [
+            //     'label' => 'GoA By',
+            //     'name' => 'goa_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'goa',
+            //     'attribute' => 'name',
+            //     'model'     => User::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('users as g', 'g.id', '=', 'trans_expense_claims.goa_id')
+            //         ->orderBy('g.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'GoA Date',
+            //     'name' => 'goa_date',
+            //     'type'  => 'date',
+            // ],
             [
                 'label' => 'Fin AP By',
                 'name' => 'finance_id',

@@ -1366,7 +1366,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                             $transGoaApproval->status = 'Approved';
                             $transGoaApproval->save();
                             $skippedGoa++;
-                            $expenseClaim->current_trans_goa_id = $transGoaApproval->id;
+                            $expenseClaim->current_trans_goa_id = $transGoaApproval->goa_id;
                         }
                         else{
                             if(!$transGoaApproval->is_admin_delegation){
@@ -1377,7 +1377,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                             $transGoaApproval->start_approval_date = $now;
                             $transGoaApproval->status = "-";
                             $transGoaApproval->save();
-                            $expenseClaim->current_trans_goa_id = $transGoaApproval->id;
+                            $expenseClaim->current_trans_goa_id = $transGoaApproval->goa_id;
                             $needBreak = true;
                         }
                     }

@@ -35,7 +35,6 @@ class ExpenseFinanceApCrudController extends CrudController
     {
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
-        $this->crud->department = $this->crud->user->department->name ?? null;
 
         if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
             $this->crud->denyAccess('list');
@@ -57,8 +56,6 @@ class ExpenseFinanceApCrudController extends CrudController
         CRUD::setModel(ExpenseClaim::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap');
         CRUD::setEntityNameStrings('Expense Finance AP - Ongoing', 'Expense Finance AP - Ongoing');
-
-        
     }
 
     /**
@@ -69,9 +66,7 @@ class ExpenseFinanceApCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-
         $this->crud->enableBulkActions();
-
         $this->crud->addButtonFromView('top', 'upload_sap', 'upload_sap', 'end');
         $this->crud->addButtonFromView('top', 'download_journal_ap', 'download_journal_ap', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');

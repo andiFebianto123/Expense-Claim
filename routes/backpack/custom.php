@@ -73,6 +73,7 @@ Route::group([
             Route::post('detail/revise', [ExpenseApproverGoaDetailCrudController::class, 'revise']);
             Route::post('detail/reject', [ExpenseApproverGoaDetailCrudController::class, 'reject']);
             Route::get('detail/{id}/document', [ExpenseApproverGoaDetailCrudController::class, 'document']);
+            Route::get('print', 'ExpenseApproverGoaHistoryCrudController@printReport');
         });
         Route::crud('expense-approver-goa-history', 'ExpenseApproverGoaHistoryCrudController');
 

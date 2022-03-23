@@ -71,7 +71,6 @@ class ExpenseApproverGoaCrudController extends CrudController
         }
         
         $this->crud->addButtonFromModelFunction('line', 'detailApproverGoaButton', 'detailApproverGoaButton');
-
         CRUD::addColumns([
             [
                 'name'      => 'row_number',

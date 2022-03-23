@@ -1,6 +1,7 @@
 <?php
 namespace App\Exports;
 
+use Carbon\Carbon;
 use App\Models\ExpenseClaim;
 use App\Models\ExpenseClaimDetail;
 use Illuminate\Contracts\View\View;
@@ -95,6 +96,7 @@ class ApJournalExport implements FromView, WithEvents
         $dataRow = [];
         // tiap2 column ada 57
 
+        $dsd = '';
         $no = 1;
         $expenseName = [];
         $date = '';
@@ -111,17 +113,17 @@ class ApJournalExport implements FromView, WithEvents
                 }
                 $dataExpenseDetails = ExpenseClaimDetail::where('expense_claim_id', $dataExpense->id)->get();
                 if(count($dataExpenseDetails) > 0){
-                    foreach($dataExpenseDetails as $dataExpenseDetail){
-                        $expenseName[] = $dataExpenseDetail->expense_name;
+                    foreach($dataExpenseDetails as $key => $dataExpenseDetail){
+                        $expenseName[] = $dataExpenseDetail->expense_claim_type->expense_name;
                         $date = $dataExpenseDetail->date;
-                        $reference = $dataExpenseDetail->expense_number;
+                        $reference = $dataExpense->expense_number;
                         $currency = $dataExpenseDetail->currency;
                         $total_doc_curr_1_dc += $dataExpenseDetail->cost;
                         $row = [
                             'cocd' => '0100',
                             'doc_type' => 'KR',
                             'doc_no' => $no,
-                            'posting_date' => $this->replaceString('-', '', $dataExpenseDetail->date),
+                            'posting_date' => Carbon::now()->isoFormat('YYYYMMDD'),
                             'document_date' => $this->replaceString('-', '', $dataExpenseDetail->date),
                             'reference' => $dataExpense->expense_number,
                             'header_text' => null,
@@ -134,7 +136,7 @@ class ApJournalExport implements FromView, WithEvents
                             'posting_key' => 40,
                             'spesial_gl' => null,
                             'account' => null,
-                            'gl_account' => $dataExpenseDetail->account_number,
+                            'gl_account' => $dataExpenseDetail->expense_claim_type->account_number,
                             'tax_code' => null,
                             'doc_curr_1_dc' => $dataExpenseDetail->cost,
                             'doc_curr_2_pc' => null,
@@ -149,7 +151,7 @@ class ApJournalExport implements FromView, WithEvents
                             'quantity' => null,
                             'uom' => null,
                             'assignment' => 'Expense Claim',
-                            'line_item_text' => $dataExpenseDetail->expense_name,
+                            'line_item_text' => $dataExpenseDetail->expense_claim_type->expense_name,
                             'reference_key_1' => null,
                             'reference_key_2' => null,
                             'partner_bank' => null,
@@ -176,6 +178,7 @@ class ApJournalExport implements FromView, WithEvents
                             'witholding_tax_lc' => null
                         ];
                         array_push($dataRow, $row);
+        
                     } // end foreach for exclaim_details
 
                     // yang 31 dibawah ini
@@ -183,7 +186,7 @@ class ApJournalExport implements FromView, WithEvents
                         'cocd' => '0100',
                         'doc_type' => 'KR',
                         'doc_no' => $no,
-                        'posting_date' => $this->replaceString('-', '', $date),
+                        'posting_date' => Carbon::now()->isoFormat('YYYYMMDD'),
                         'document_date' => $this->replaceString('-', '', $date),
                         'reference' => $reference,
                         'header_text' => null,
@@ -244,8 +247,8 @@ class ApJournalExport implements FromView, WithEvents
                     $total_doc_curr_1_dc = 0;
                     $no++;
                     array_push($dataRow, $row);
-                    $dataExpense->status = ExpenseClaim::PROCEED;
-                    $dataExpense->save();
+                    //$dataExpense->status = ExpenseClaim::PROCEED;
+                    //$dataExpense->save();
                 }
             }
         }

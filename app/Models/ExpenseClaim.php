@@ -124,6 +124,10 @@ class ExpenseClaim extends Model
         return '<a href="' . backpack_url('expense-approver-goa/' . $this->id . '/detail') . '" class="btn btn-sm btn-link"><i class="la la-list"></i> Detail</a>';
     }
 
+    public function printReportExpense(){
+        return '<a href="' . backpack_url('expense-approver-goa/' . $this->id . '/print') . '" class="btn btn-sm btn-link"><i class="la la-print"></i> Report</a>';
+    }
+
     public function detailFinanceApButton()
     {
         return '<a href="' . backpack_url('expense-finance-ap/' . $this->id . '/detail') . '" class="btn btn-sm btn-link"><i class="la la-list"></i> Detail</a>';

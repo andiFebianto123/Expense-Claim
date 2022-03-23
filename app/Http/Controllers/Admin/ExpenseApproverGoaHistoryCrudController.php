@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Department;
+use App\Library\ReportClaim;
 use App\Models\ExpenseClaim;
 use App\Models\TransGoaApproval;
 use App\Models\ExpenseClaimDetail;
@@ -182,7 +183,7 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
                     array_push($detailExpenses, $ex);
                 }
             }
-            $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)->get();
+            $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)->groupBy('goa_id')->get();
             if(count($dataGoaDetails) > 0){
                 foreach($dataGoaDetails as $dataGoaDetail){
                     $dataGoa = [
@@ -191,7 +192,7 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
                     ];
                     array_push($goaHolders, $dataGoa);
                 }
-            }
+            } 
 
             $data['claim_number'] = $dataClaim->expense_number;
             $data['date_submited'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD/MM/YY');
@@ -210,11 +211,14 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
 
             $data['goa_holder'] = $goaHolders;
 
+            $data['print_date'] = Carbon::now()->isoFormat('DD-MMM-YY');
+
             // detail for expenses
             $data['detail_expenses'] = $detailExpenses;
-            $data['total_detail_expenses'] = $totalDetailExpenseCost;
+            $data['total_detail_expenses'] = $totalDetailExpenseCost; 
 
-            dd($data);
+            $print = new ReportClaim($data);
+            return $print->renderPdf();
 
         }
     }

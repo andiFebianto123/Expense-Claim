@@ -1242,9 +1242,26 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
             }
 
             $now = Carbon::now();
+            $currentTransGoaId = $this->crud->user->id;
+            $getExistDelegation = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                ->where('goa_delegation_id',  $currentTransGoaId)
+                ->where('goa_date', null)
+                ->first();
+            if (isset($getExistDelegation)) {
+                $currentTransGoaId = $getExistDelegation->goa_id;
+            }
+
+            $transGoaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                ->where('goa_id',  $currentTransGoaId)
+                ->first();
+
             $expenseClaim->status = ExpenseClaim::NEED_REVISION;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();
+
+            $transGoaApproval->goa_date = $now;
+            $transGoaApproval->status = ExpenseClaim::NEED_REVISION;
+            $transGoaApproval->save();
 
             DB::commit();
             \Alert::success(trans('custom.expense_claim_revise_success'))->flash();
@@ -1268,11 +1285,26 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
             }
 
             $now = Carbon::now();
-            $expenseClaim->rejected_id = $this->crud->user->id;
-            $expenseClaim->rejected_date = $now;
+            $currentTransGoaId = $this->crud->user->id;
+            $getExistDelegation = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                ->where('goa_delegation_id',  $currentTransGoaId)
+                ->where('goa_date', null)
+                ->first();
+            if (isset($getExistDelegation)) {
+                $currentTransGoaId = $getExistDelegation->goa_id;
+            }
+            
+            $transGoaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                ->where('goa_id',  $currentTransGoaId)
+                ->first();
+            
             $expenseClaim->status = ExpenseClaim::REJECTED_TWO;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();
+
+            $transGoaApproval->goa_date = $now;
+            $transGoaApproval->status = 'Rejected';
+            $transGoaApproval->save();
 
             DB::commit();
             \Alert::success(trans('custom.expense_claim_reject_success'))->flash();

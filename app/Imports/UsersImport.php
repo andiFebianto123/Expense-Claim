@@ -36,6 +36,8 @@ class UsersImport implements OnEachRow, WithHeadingRow
             return;
         }
 
+        $block = strtoupper($dataRow['block']);
+
         try{
             $user = User::where('bpid', $dataRow['vendor'] ?? null)->first();
             if($user == null){
@@ -48,7 +50,7 @@ class UsersImport implements OnEachRow, WithHeadingRow
             $user->name = $dataRow['name'];
             $user->bpcscode = $dataRow['bpcscode'];
             $user->last_imported_at = Carbon::now();
-            $user->is_active = ($dataRow['block'] == 'N') ? 1 : 0;
+            $user->is_active = ($block == 'N') ? 1 : 0;
             $user->save();
             $this->logMessages[] = [
                 'row' => $rowIndex, 

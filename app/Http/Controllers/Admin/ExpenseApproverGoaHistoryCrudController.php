@@ -80,7 +80,7 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
         else{
             $this->crud->query->join('trans_goa_approvals','trans_goa_approvals.expense_claim_id' , '=' ,'trans_expense_claims.id')
             ->where(function($query){
-                $query->where('trans_expense_claims.current_trans_goa_id', $this->crud->user->id)
+                $query->where('trans_expense_claims.goa_id', $this->crud->user->id)
                 ->orWhere('trans_goa_approvals.goa_delegation_id', $this->crud->user->id);
             });
         }

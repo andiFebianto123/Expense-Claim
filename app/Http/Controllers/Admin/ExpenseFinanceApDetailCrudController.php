@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseFinanceApDetailRequest;
+use App\Models\TransGoaApproval;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -40,7 +41,7 @@ class ExpenseFinanceApDetailCrudController extends CrudController
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
 
-        if($this->crud->role !== Role::SUPER_ADMIN && $this->crud->department !== Department::FINANCE){
+        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
             $this->crud->denyAccess('list');
          }
 
@@ -51,14 +52,18 @@ class ExpenseFinanceApDetailCrudController extends CrudController
         CRUD::setModel(ExpenseClaimDetail::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap/' . ($this->crud->headerId ?? '-') . '/detail');
         CRUD::setEntityNameStrings('Expense Finance AP - Detail', 'Expense Finance AP - Detail');
+
+        $this->crud->goaList = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+            ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
+            ->get(['mst_users.name', 'trans_goa_approvals.goa_date']);
     }
 
     public function getExpenseClaim($id){
         
         $expenseClaim = ExpenseClaim::where('id', $id)
         ->where(function($query){
-            $query->where('expense_claims.status', ExpenseClaim::NEED_PROCESSING)
-            ->orWhere('expense_claims.status', ExpenseClaim::PROCEED);
+            $query->where('trans_expense_claims.status', ExpenseClaim::FULLY_APPROVED)
+            ->orWhere('trans_expense_claims.status', ExpenseClaim::PROCEED);
         });
 
         $expenseClaim =  $expenseClaim->first();
@@ -93,34 +98,65 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 'type'  => 'date',
             ],
             [
-                'label' => 'Expense Type',
-                'name' => 'approval_card_id',
-                'type'      => 'select',
-                'entity'    => 'approvalCard',
-                'attribute' => 'name',
-                'model'     => ApprovalCard::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('approval_cards as a', 'a.id', '=', 'expense_claim_details.approval_card_id')
-                    ->orderBy('a.name', $columnDirection)->select('expense_claim_details.*');
+                'name'     => 'expense_type_id',
+                'label'    => 'Expense Type',
+                'type'     => 'select',
+                'entity'    => 'expense_type.mst_expense', // the method that defines the relationship in your Model
+                'attribute' => 'name', // foreign key attribute that is shown to user
+                'model'     => "App\Models\MstExpense", // foreign key model
+                'orderLogic' => function($query, $column, $columnDirection){
+                    return $query
+                    ->join('mst_expense_types', 'trans_expense_claim_details.expense_type_id', '=', 'mst_expense_types.id')
+                    ->join('mst_expenses', 'mst_expenses.id', '=', 'mst_expense_types.expense_id')
+                    ->orderBy('mst_expenses.name', $columnDirection)
+                    ->select('trans_expense_claim_details.*');
                 },
             ],
             [
-                'label' => 'Level',
-                'name' => 'level_id',
-                'type' => 'closure',
-                'orderable' => false,
-                'searchLogic' => false,
-                'function' => function($entry) {
-                    return $entry->level->name;
-                }
+                'name'     => 'expense_type_id',
+                'label'    => 'Level',
+                'type'     => 'select',
+                'entity'    => 'expense_type.level', // the method that defines the relationship in your Model
+                'attribute' => 'level_id', // foreign key attribute that is shown to user
+                'model'     => "App\Models\Level", // foreign key model
+                'key' => 'level_name',
+                'orderLogic' => function($query, $column, $columnDirection){
+                    return $query
+                    ->join('mst_expense_types', 'trans_expense_claim_details.expense_type_id', '=', 'mst_expense_types.id')
+                    ->join('mst_levels', 'mst_levels.id', '=', 'mst_expense_types.level_id')
+                    ->orderBy('mst_levels.level_id', $columnDirection)
+                    ->select('trans_expense_claim_details.*');
+                },
             ],
             [
                 'label' => 'Cost Center',
-                'name' => 'cost_center',
+                'name' => 'cost_center_id',
+                'type' => 'select',
+                'entity' => 'cost_center',
+                'model' => 'App\Models\CostCenter',
+                'attribute' => 'description',
+                'orderLogic' => function($query, $column, $columnDirection){
+                    return $query
+                    ->join('mst_cost_centers', 'trans_expense_claim_details.cost_center_id', '=', 'mst_cost_centers.id')
+                    ->orderBy('mst_cost_centers.description', $columnDirection)
+                    ->select('trans_expense_claim_details.*');
+                },
             ],
             [
-                'label' => 'Expense Code',
-                'name' => 'expense_code',
+                'name'     => 'expense_type_id',
+                'label'    => 'Expense Code',
+                'type'     => 'select',
+                'entity'    => 'expense_type.expense_code', // the method that defines the relationship in your Model
+                'attribute' => 'description', // foreign key attribute that is shown to user
+                'model'     => "App\Models\ExpenseCode", // foreign key model
+                'key' => 'expense_code',
+                'orderLogic' => function($query, $column, $columnDirection){
+                    return $query
+                    ->join('mst_expense_types', 'trans_expense_claim_details.expense_type_id', '=', 'mst_expense_types.id')
+                    ->join('mst_expense_codes', 'mst_expense_codes.id', '=', 'mst_expense_types.expense_code_id')
+                    ->orderBy('mst_expense_codes.description', $columnDirection)
+                    ->select('trans_expense_claim_details.*');
+                },
             ],
             [
                 'label' => 'Cost',
@@ -138,7 +174,7 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 'searchLogic' => false,
                 'type'  => 'model_function',
                 'function_name' => 'getDocumentLink',
-                'function_parameters' => ['expense-finance-ap'],
+                'function_parameters' => ['expense-approver-hod'],
                 'limit' => 1000000
             ],
             [

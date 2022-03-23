@@ -48,7 +48,7 @@ class ExpenseFinanceApCrudController extends CrudController
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
-                $query->where('trans_expense_claims.status', ExpenseClaim::NEED_PROCESSING);
+                $query->where('trans_expense_claims.status', ExpenseClaim::FULLY_APPROVED);
             });
         });
 

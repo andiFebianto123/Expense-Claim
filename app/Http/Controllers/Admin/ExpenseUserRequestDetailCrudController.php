@@ -496,6 +496,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     'bod_level',
                     'is_bp_approval as is_bp_approval',
                     'limit as limit',
+                    'limit_daily',
                     'currency as currency',
                     'limit_business_approval as limit_business_approval',
                     'is_limit_person',
@@ -524,6 +525,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         'bod_level',
                         'mst_expense_types.is_bp_approval as is_bp_approval',
                         'mst_expense_types.limit as limit',
+                        'limit_daily',
                         'mst_expense_types.currency as currency',
                         'mst_expense_types.limit_business_approval as limit_business_approval',
                         'is_limit_person',
@@ -540,11 +542,19 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             if ($expenseType == null) {
                 $errors['expense_type_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_type')])];
             } else {
+                $isLimitDaily = $expenseType->limit_daily;
                 if ($expenseType->currency == Config::USD) {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                        ->where('expense_type_id', $expenseType->expense_type_id)->sum('converted_cost');
+                        ->where('expense_type_id', $expenseType->expense_type_id)
+                        ->when($isLimitDaily, function($query) use($request){
+                            $query->where('date', '=', Carbon::parse($request->date)->startOfDay()->format('Y-m-d'));
+                        })
+                        ->sum('converted_cost');
                 } else {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                        ->when($isLimitDaily, function($query) use($request){
+                            $query->where('date', '=', Carbon::parse($request->date)->startOfDay()->format('Y-m-d'));
+                        })
                         ->where('expense_type_id', $expenseType->expense_type_id)->sum('cost');
                 }
                 $totalCost = $request->cost + $currentCost;
@@ -575,7 +585,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                                 'validation.limit',
                                 [
                                     'attr1' => trans('validation.attributes.cost'),
-                                    'attr2' => trans('validation.attributes.limit'),
+                                    'attr2' => trans('validation.attributes.limit' . ($isLimitDaily ? '_daily' : '')),
                                     'value' => $expenseType->currency . ' ' .  formatNumber($limit),
                                 ]
                             )
@@ -585,7 +595,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
                 $isBpApproval = $request->is_bp_approval ?? false;
                 if ($expenseType->is_bp_approval && $expenseType->limit_business_approval != null && $totalCost > $expenseType->limit_business_approval && !$isBpApproval) {
-                    $errors['cost'] = [
+                    $errors['cost'] = array_merge($errors['cost'] ?? [], [
                         trans(
                             'validation.limit_bp',
                             [
@@ -594,7 +604,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                                 'value' => formatNumber($expenseType->limit_business_approval),
                             ]
                         )
-                    ];
+                    ]);
                 }
 
                 if ($expenseType->is_traf && !$request->hasFile('document')) {
@@ -705,6 +715,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     'detail_level_id' => $user->level_code,
                     'level_name' => $user->level_name,
                     'limit' => $expenseType->limit,
+                    'limit_daily' => $expenseType->limit_daily,
                     'expense_code_id' => $expenseType->expense_code_id,
                     'account_number' => $expenseType->account_number,
                     'description' => $expenseType->description,
@@ -926,6 +937,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     'is_bod as is_bod',
                     'is_bp_approval as is_bp_approval',
                     'limit as limit',
+                    'limit_daily',
                     'currency as currency',
                     'limit_business_approval as limit_business_approval',
                     'is_limit_person',
@@ -939,14 +951,21 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $errors['expense_type_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_type')])];
             } else {
                 $expenseType = $historyExpenseType;
+                $isLimitDaily = $expenseType->limit_daily;
                 if ($expenseType->currency == Config::USD) {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
                         ->where('expense_type_id', $expenseType->expense_type_id)
+                        ->when($isLimitDaily, function($query) use($expenseClaimDetail){
+                            $query->where('date', '=', Carbon::parse($expenseClaimDetail->date)->startOfDay()->format('Y-m-d'));
+                        })
                         ->where('id', '!=', $expenseClaimDetail->id)->sum('converted_cost');
                 } else {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
                         ->where('expense_type_id', $expenseType->expense_type_id)
                         ->where('id', '!=', $expenseClaimDetail->id)
+                        ->when($isLimitDaily, function($query) use($expenseClaimDetail){
+                            $query->where('date', '=', Carbon::parse($expenseClaimDetail->date)->startOfDay()->format('Y-m-d'));
+                        })
                         ->sum('cost');
                 }
                 $totalCost = $request->cost + $currentCost;
@@ -977,7 +996,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                                 'validation.limit',
                                 [
                                     'attr1' => trans('validation.attributes.cost'),
-                                    'attr2' => trans('validation.attributes.limit'),
+                                    'attr2' => trans('validation.attributes.limit' . ($isLimitDaily ? '_daily' : '')),
                                     'value' => $expenseType->currency . ' ' .  formatNumber($limit),
                                 ]
                             )
@@ -987,7 +1006,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
                 $isBpApproval = $request->is_bp_approval ?? false;
                 if ($expenseType->is_bp_approval && $expenseType->limit_business_approval != null && $totalCost > $expenseType->limit_business_approval && !$isBpApproval) {
-                    $errors['cost'] = [
+                    $errors['cost'] = array_merge($errors['cost'] ?? [], [
                         trans(
                             'validation.limit_bp',
                             [
@@ -996,7 +1015,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                                 'value' => formatNumber($expenseType->limit_business_approval),
                             ]
                         )
-                    ];
+                    ]);
                 }
 
                 if ($expenseType->is_traf && !$request->hasFile('document') && $request->document_change) {

@@ -12,6 +12,7 @@ use App\Models\Department;
 use App\Models\ExpenseClaim;
 use Illuminate\Http\Request;
 use App\Models\MstDelegation;
+use App\Models\TransGoaApproval;
 use Illuminate\Support\Facades\DB;
 use Prologue\Alerts\Facades\Alert;
 use Illuminate\Database\Eloquent\Builder;
@@ -62,6 +63,8 @@ class ExpenseUserRequestCrudController extends CrudController
 
         $this->crud->goaUser = GoaHolder::select('user_id')->with('user:id,name')->get();
 
+        $this->crud->enableDetailsRow();
+
         $this->crud->cancelCondition = function ($entry) {
             return ($this->crud->role === Role::ADMIN &&
                 ($entry->status !== ExpenseClaim::REJECTED_ONE && $entry->status !== ExpenseClaim::REJECTED_TWO && $entry->status !== ExpenseClaim::CANCELED &&
@@ -89,6 +92,7 @@ class ExpenseUserRequestCrudController extends CrudController
             [
                 'label' => 'Currency',
                 'name' => 'currency',
+                'visibleInTable' => false
             ],
             [
                 'label' => 'Request Date',
@@ -261,5 +265,26 @@ class ExpenseUserRequestCrudController extends CrudController
             DB::rollback();
             throw $e;
         }
+    }
+
+    public function showDetailsRow($id)
+    {
+        $this->crud->hasAccessOrFail('list');
+
+        // get entry ID from Request (makes sure its the last ID for nested resources)
+        $id = $this->crud->getCurrentEntryId() ?? $id;
+
+        $this->data['entry'] = $this->crud->getEntry($id);
+        $this->data['crud'] = $this->crud;
+
+        $this->data['goaApprovals'] = TransGoaApproval::where('expense_claim_id', $this->data['entry']->id)
+        ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
+        ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+        ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+        ->orderBy('order')->get();  
+
+
+        // load the view from /resources/views/vendor/backpack/crud/ if it exists, otherwise load the one in the package
+        return view('detail_approval', $this->data);
     }
 }

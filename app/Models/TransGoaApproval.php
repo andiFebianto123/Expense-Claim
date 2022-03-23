@@ -5,6 +5,9 @@ namespace App\Models;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ExpenseClaim;
+use App\Models\GoaHolder;
+use App\Models\User;
 
 class TransGoaApproval extends Model
 {
@@ -15,6 +18,10 @@ class TransGoaApproval extends Model
     public function expenseClaim()
     {
         return $this->belongsTo(ExpenseClaim::class, 'expense_claim_id');
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class, 'goa_id');
     }
 
 

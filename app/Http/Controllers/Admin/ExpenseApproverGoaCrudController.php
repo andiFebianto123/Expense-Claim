@@ -70,7 +70,6 @@ class ExpenseApproverGoaCrudController extends CrudController
             ->select('trans_expense_claims.*', 'trans_goa_approvals.goa_delegation_id');
         }
         $this->crud->addButtonFromModelFunction('line', 'detailApproverGoaButton', 'detailApproverGoaButton');
-
         CRUD::addColumns([
             [
                 'name'      => 'row_number',

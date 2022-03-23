@@ -602,21 +602,21 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 )];
             }
 
-           
             if (count($errors) != 0) {
                 DB::rollback();
                 return $this->redirectStoreCrud($errors);
             }
 
-
             if($this->crud->expenseClaim->status != ExpenseClaim::DRAFT){
                 $upperLimit = $this->crud->expenseClaim->upper_limit;
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
-                if($upperLimit != null && $bottomLimit != null){
+                if ($bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value + $cost;
-                    if($newCost < $bottomLimit || $newCost > $upperLimit){
-                        $errors['message'] = array_merge($errors['message'] ?? [], [trans('custom.expense_claim_limit', 
-                        ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)])]);
+                    if ($newCost <= $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
+                        $errors['message'] = array_merge($errors['message'] ?? [], [trans(
+                            'custom.expense_claim_limit',
+                            ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)]
+                        )]);
                     }
                 }
                 $hasBodRespective = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
@@ -985,11 +985,13 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
             if($this->crud->expenseClaim->status != ExpenseClaim::DRAFT){
                 $upperLimit = $this->crud->expenseClaim->upper_limit;
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
-                if($upperLimit != null && $bottomLimit != null){
-                    $newCost = $this->crud->expenseClaim->value + ($cost - $prevCost);
-                    if($newCost < $bottomLimit || $newCost > $upperLimit){
-                        $errors['message'] = array_merge($errors['message'] ?? [], [trans('custom.expense_claim_limit', 
-                        ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)])]);
+                if ($bottomLimit != null) {
+                    $newCost = $this->crud->expenseClaim->value + $cost;
+                    if ($newCost <= $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
+                        $errors['message'] = array_merge($errors['message'] ?? [], [trans(
+                            'custom.expense_claim_limit',
+                            ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)]
+                        )]);
                     }
                 }
             }
@@ -1034,6 +1036,53 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
     }
 
 
+    public function destroy($header_id, $id){
+        $this->crud->hasAccessOrFail('delete');
+
+        DB::beginTransaction();
+        try {
+            $id = $this->crud->getCurrentEntryId() ?? $id;
+
+            $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)
+            ->where('expense_claim_id', $this->crud->expenseClaim->id)->first();
+            if($expenseClaimDetail == null){
+                DB::rollback();
+                return response()->json(['message' => trans('custom.model_not_found')], 404);
+            }
+
+            $cost = $expenseClaimDetail->cost;
+
+            if($this->crud->expenseClaim->status != ExpenseClaim::DRAFT){
+                $upperLimit = $this->crud->expenseClaim->upper_limit;
+                $bottomLimit = $this->crud->expenseClaim->bottom_limit;
+                if($upperLimit != null && $bottomLimit != null){
+                    $newCost = $this->crud->expenseClaim->value - $cost;
+                    if($newCost < $bottomLimit || $newCost > $upperLimit){
+                        DB::rollback();
+                        return response()->json(['message' => trans('custom.expense_claim_limit', 
+                        ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)])], 403);
+                    }
+                }
+            }
+            
+            $this->crud->expenseClaim->value -= $cost;
+            $this->crud->expenseClaim->save();
+
+            $response = $this->crud->delete($id);
+            DB::commit();
+            return $response;
+        } catch (Exception $e) {
+            DB::rollBack();
+            if($e instanceof QueryException){
+                if(isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451){
+                    return response()->json(['message' => trans('custom.model_has_relation')], 403);
+                }
+            }
+            throw $e;
+        }
+    }
+
+
     private function checkStatusForDetail($expenseClaim, $action){
         if($expenseClaim->current_trans_goa_id != $this->crud->user->id){
             return trans('custom.error_permission_message');
@@ -1043,6 +1092,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
         }
         return true;
     }
+
 
     private function checkStatusForApprover($expenseClaim, $action){
         if($expenseClaim->current_trans_goa_id != $this->crud->user->id){

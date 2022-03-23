@@ -113,12 +113,13 @@ class ApJournalExport implements FromView, WithEvents
                 }
                 $dataExpenseDetails = ExpenseClaimDetail::where('expense_claim_id', $dataExpense->id)->get();
                 if(count($dataExpenseDetails) > 0){
-                    foreach($dataExpenseDetails as $key => $dataExpenseDetail){
+                    foreach($dataExpenseDetails as $dataExpenseDetail){
                         $expenseName[] = $dataExpenseDetail->expense_claim_type->expense_name;
                         $date = $dataExpenseDetail->date;
                         $reference = $dataExpense->expense_number;
                         $currency = $dataExpenseDetail->currency;
                         $total_doc_curr_1_dc += $dataExpenseDetail->cost;
+                        $doc_curr_1_cost = ($currency == 'USD') ? number_format($dataExpenseDetail->cost, 2) : $dataExpenseDetail->cost;
                         $row = [
                             'cocd' => '0100',
                             'doc_type' => 'KR',
@@ -138,7 +139,7 @@ class ApJournalExport implements FromView, WithEvents
                             'account' => null,
                             'gl_account' => $dataExpenseDetail->expense_claim_type->account_number,
                             'tax_code' => null,
-                            'doc_curr_1_dc' => $dataExpenseDetail->cost,
+                            'doc_curr_1_dc' => $doc_curr_1_cost,
                             'doc_curr_2_pc' => null,
                             'local_curr' => null,
                             'tax_base' => null,
@@ -201,7 +202,7 @@ class ApJournalExport implements FromView, WithEvents
                         'account' => $dataExpense->request->bpid,
                         'gl_account' => null,
                         'tax_code' => null,
-                        'doc_curr_1_dc' => $total_doc_curr_1_dc,
+                        'doc_curr_1_dc' => ($currency == 'USD') ? number_format($total_doc_curr_1_dc, 2) : $total_doc_curr_1_dc,
                         'doc_curr_2_pc' => null,
                         'local_curr' => null,
                         'tax_base' => null,

@@ -15,21 +15,59 @@
                         <p>Department : <b>{{ $crud->expenseClaim->request->department->name ?? '-' }}</b></p>
                         <div class="mb-2">
                             <p class="mb-0">Hod By :</p>
-                            <ul class="mb-1 ml-3">
-                                <li>
-                                    Name : <b>{{ $crud->expenseClaim->hod->name ?? '-' }}</b>
-                                    <p>Hod Date : <b>{{ formatDate($crud->expenseClaim->hod_date) }}</b></p>
-                                </li>
-                            </ul>
+                                <ul class="mb-1 ml-3">
+                                    <li class="position-relative">
+                                        <p class="mb-0">Name : <b>{{ $crud->expenseClaim->hod->name ?? '-' }}</b>
+                                        @if ($crud->expenseClaim->hod_date != null && $crud->expenseClaim->rejected_date == null && $crud->expenseClaim->hod_delegation_id == null)
+                                            <i class="position-absolute la la-check-circle text-success ml-2"
+                                                style="font-size: 24px"></i>
+                                        @elseif($crud->expenseClaim->rejected_date != null && $crud->expenseClaim->hod_delegation_id == null)
+                                            <i class="position-absolute la la-close text-danger ml-2"
+                                            style="font-size: 24px"></i>
+                                        @endif
+                                        </p>
+                                        @if ($crud->expenseClaim->hod_delegation_id != null)
+                                            <p class="mb-0">
+                                                Delegation Name : <b>{{ $crud->expenseClaim->hod_delegation->name ?? '-' }}</b>
+                                                @if ($crud->expenseClaim->hod_date != null && $crud->expenseClaim->rejected_date == null)
+                                                    <i class="position-absolute la la-check-circle text-success ml-2"
+                                                        style="font-size: 24px"></i>
+                                                @elseif($crud->expenseClaim->rejected_date != null)
+                                                        <i class="position-absolute la la-close text-danger ml-2"
+                                                        style="font-size: 24px"></i>
+                                                @endif
+                                            </p>
+                                        @endif
+                                        <p>Hod Date : <b>{{ formatDate($crud->expenseClaim->hod_date) }}</b></p>
+                                    </li>
+                                </ul>
                         </div>
                         <div class="mb-2">
                             <p class="mb-0">GoA By : </p>
                             <ul class="mb-1 ml-3">
                                 @foreach ($crud->goaList as $item)
-                                    <li>
-                                        Name : <b>{{ $item->name }}</b>
-                                        <br>
-                                        GoA Date : <b>{{ formatDate($item->goa_date) }}</b>
+                                    <li class="position-relative">
+                                        <p class="mb-0">Name : <b>{{ $item->user_name }}</b>
+                                        @if ($item->status == 'Approved' && $item->goa_delegation_id == null)
+                                            <i class="position-absolute la la-check-circle text-success ml-2"
+                                                    style="font-size: 24px"></i>
+                                        @elseif($item->status == 'Rejected' && $item->goa_delegation_id == null)
+                                            <i class="position-absolute la la-close text-danger ml-2"
+                                                style="font-size: 24px"></i>
+                                        @endif
+                                        </p>
+                                        @if ($item->goa_delegation_id  != null)
+                                        <p class="mb-0"> Delegation Name : <b>{{ $item->user_delegation_name ?? '-' }}</b>
+                                            @if ($item->status == 'Approved')
+                                            <i class="position-absolute la la-check-circle text-success ml-2"
+                                                style="font-size: 24px"></i>
+                                            @elseif($item->status == 'Rejected')
+                                            <i class="position-absolute la la-close text-danger ml-2"
+                                                style="font-size: 24px"></i>
+                                            @endif
+                                        </p>
+                                        @endif
+                                        <p class="mb-0">GoA Date : <b>{{ formatDate($item->goa_date) }}</b></p>
                                     </li>
                                 @endforeach
                             </ul>

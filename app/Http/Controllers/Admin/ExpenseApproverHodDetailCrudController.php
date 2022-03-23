@@ -79,7 +79,10 @@ class ExpenseApproverHodDetailCrudController extends CrudController
 
         $this->crud->goaList = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
                 ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
-                ->get(['mst_users.name', 'trans_goa_approvals.goa_date']);
+                ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+                ->select('mst_users.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+                ->orderBy('order')
+                ->get();  
     }
 
     public function getExpenseClaim($id){
@@ -101,14 +104,13 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 });
             });
         });
-        if($this->crud->role === Role::HOD){
+        if (in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN])) {
+            $expenseClaim->whereNotNull('trans_expense_claims.hod_id');
+        }
+        else{
             $expenseClaim->where('trans_expense_claims.hod_id', $this->crud->user->id)
                         ->orWhere('trans_expense_claims.hod_delegation_id', $this->crud->user->id);
         }
-        else{
-            $expenseClaim->whereNotNull('trans_expense_claims.hod_id');
-        }
-
         $expenseClaim =  $expenseClaim->first();
         if($expenseClaim == null){
             DB::rollback();
@@ -117,12 +119,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         return $expenseClaim;
     }
 
-    /**
-     * Define what happens when the List operation is loaded.
-     * 
-     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
-     * @return void
-     */
+
     protected function setupListOperation()
     {
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);

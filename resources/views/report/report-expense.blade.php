@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Membuat Laporan PDF Dengan DOMPDF Laravel</title>
+	<title>Report Expense Claim Details</title>
 	<!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"> -->
 </head>
 <body>
@@ -204,10 +204,12 @@
 											<span>Requestor Name: {{ $data['name'] ?? '' }}</span><br/>
 											<span>Date: {{ $data['request_date'] ?? '' }}</span>
 										</td>
+										@if($data['head_department_name'] != '')
 										<td>
 											<span>Name: {{ $data['head_department_name'] ?? '' }}</span><br/>
 											<span>Date: {{ $data['head_department_approval_date'] ?? '' }}</span>
 										</td>
+										@endif
 									</tr>
 								</table>
 							</div>

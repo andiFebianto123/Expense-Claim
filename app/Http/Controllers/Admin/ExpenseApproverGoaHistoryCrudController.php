@@ -193,22 +193,22 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
                     ];
                     array_push($goaHolders, $dataGoa);
                 }
-            } 
+            }  
 
             $data['claim_number'] = $dataClaim->expense_number;
             $data['date_submited'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD/MM/YY');
             $data['name'] = $dataClaim->request->name;
             $data['bpid'] = $dataClaim->request->bpid;
             $data['expense_date_from'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
-            $data['expense_date_to'] = Carbon::parse($dataClaim->start_approval_date)->isoFormat('MMMM');
+            $data['expense_date_to'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
             $data['department'] = $dataClaim->request->department->name;
 
             $data['purpose_of_expense'] = implode(', ', $expensePurpose);
 
             $data['request_name'] = $dataClaim->request->name;
             $data['request_date'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD.MM.YYYY');
-            $data['head_department_name'] = $dataClaim->request->department->user->name;
-            $data['head_department_approval_date'] = Carbon::parse($dataClaim->start_approval_date)->isoFormat('DD.MM.YYYY');
+            $data['head_department_name'] = $dataClaim->hod->name ?? '';
+            $data['head_department_approval_date'] = ($dataClaim->hod_date != null) ? Carbon::parse($dataClaim->hod_date)->isoFormat('DD.MM.YYYY') : '';
 
             $data['goa_holder'] = $goaHolders;
 

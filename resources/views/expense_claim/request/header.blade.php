@@ -59,7 +59,7 @@
                                                 <i class="position-absolute la la-check-circle text-success ml-2"
                                                     style="font-size: 24px"></i>
                                             @elseif($item->status == 'Rejected' && $item->goa_delegation_id == null)
-                                                <i class="position-absolute las la-close text-danger ml-2"
+                                                <i class="position-absolute la la-close text-danger ml-2"
                                                 style="font-size: 24px"></i>
                                             @endif
                                         </p>
@@ -67,10 +67,10 @@
                                             <p class="mb-0">
                                                 Delegation Name : <b>{{ $item->user_delegation_name ?? '-' }}</b>
                                                 @if ($item->status == 'Approved')
-                                                    <i class="position-absolute las la-check-circle text-success ml-2"
+                                                    <i class="position-absolute la la-check-circle text-success ml-2"
                                                         style="font-size: 24px"></i>
                                                 @elseif($item->status == 'Rejected')
-                                                    <i class="position-absolute las la-close text-danger ml-2"
+                                                    <i class="position-absolute la la-close text-danger ml-2"
                                                     style="font-size: 24px"></i>
                                                 @endif
                                             </p>

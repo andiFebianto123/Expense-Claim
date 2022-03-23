@@ -1356,27 +1356,39 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             if(!$needApprovalHod){
                 $countGoa = count($transGoaApprovals);
                 $skippedGoa = 0;
+                $needBreak = false;
                 foreach($transGoaApprovals as $indexGoa => $transGoaApproval){
-                    if($transGoaApproval->goa_id == $expenseClaim->request_id){
-                        $transGoaApproval->goa_delegation_id = null;
-                        $transGoaApproval->goa_date = $now;
-                        $transGoaApproval->start_approval_date = $now;
-                        $transGoaApproval->status = 'Approved';
-                        $transGoaApproval->save();
-                        $skippedGoa++;
-                        $expenseClaim->current_trans_goa_id = $transGoaApproval->id;
+                    if(!$needBreak){
+                        if($transGoaApproval->goa_id == $expenseClaim->request_id){
+                            $transGoaApproval->goa_delegation_id = null;
+                            $transGoaApproval->goa_date = $now;
+                            $transGoaApproval->start_approval_date = $now;
+                            $transGoaApproval->status = 'Approved';
+                            $transGoaApproval->save();
+                            $skippedGoa++;
+                            $expenseClaim->current_trans_goa_id = $transGoaApproval->id;
+                        }
+                        else{
+                            if(!$transGoaApproval->is_admin_delegation){
+                                $transGoaApproval->goa_delegation_id = MstDelegation::where('start_date', '<=', $now->format('Y-m-d'))
+                                ->where('end_date', '>=', $now->format('Y-m-d'))->where('from_user_id', $transGoaApproval->goa_id)->select('to_user_id')->first()->to_user_id ?? null;
+                            }
+                            $transGoaApproval->goa_date = null;
+                            $transGoaApproval->start_approval_date = $now;
+                            $transGoaApproval->status = "-";
+                            $transGoaApproval->save();
+                            $expenseClaim->current_trans_goa_id = $transGoaApproval->id;
+                            $needBreak = true;
+                        }
                     }
                     else{
                         if(!$transGoaApproval->is_admin_delegation){
-                            $transGoaApproval->goa_delegation_id = MstDelegation::where('start_date', '<=', $now->format('Y-m-d'))
-                            ->where('end_date', '>=', $now->format('Y-m-d'))->where('from_user_id', $transGoaApproval->goa_id)->select('to_user_id')->first()->to_user_id ?? null;
+                            $transGoaApproval->goa_delegation_id = null;
                         }
                         $transGoaApproval->goa_date = null;
-                        $transGoaApproval->start_approval_date = $now;
+                        $transGoaApproval->start_approval_date = null;
                         $transGoaApproval->status = "-";
                         $transGoaApproval->save();
-                        $expenseClaim->current_trans_goa_id = $transGoaApproval->id;
-                        break;
                     }
                 }
                 if($skippedGoa == 0){

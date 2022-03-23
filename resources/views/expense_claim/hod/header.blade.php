@@ -134,7 +134,7 @@
         }).then((value) => {
             if (value) {
                 $.ajax({
-                    url: "{{backpack_url('expense-approver-goa/' . $crud->expenseClaim->id .  '/detail/approve')}}",
+                    url: "{{backpack_url('expense-approver-hod/' . $crud->expenseClaim->id .  '/detail/approve')}}",
                     type: 'POST',
                     data: {
                         remark: $('#new-remark').val()
@@ -179,7 +179,7 @@
     function reviseAction() {
         $('#modalRevise').modal('hide');
         $.ajax({
-            url: "{{backpack_url('expense-approver-goa/' . $crud->expenseClaim->id .  '/detail/revise')}}",
+            url: "{{backpack_url('expense-approver-hod/' . $crud->expenseClaim->id .  '/detail/revise')}}",
             type: 'POST',
             data: {
                 remark: $('#new-remark-revise').val()
@@ -221,7 +221,7 @@
     function rejectAction() {
         $('#modalReject').modal('hide');
         $.ajax({
-            url: "{{backpack_url('expense-approver-goa/' . $crud->expenseClaim->id .  '/detail/reject')}}",
+            url: "{{backpack_url('expense-approver-hod/' . $crud->expenseClaim->id .  '/detail/reject')}}",
             type: 'POST',
             data: {
                 remark: $('#new-remark-reject').val()

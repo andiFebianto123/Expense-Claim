@@ -501,7 +501,7 @@ class UserCrudController extends CrudController
         // $txt = "John Doe\n";
         // fwrite($myfile, $txt);
         // fclose($myfile);
-        $this->cobaBuatImportUser();
+        // $this->getFileCsv();
     }
     function cobaBuatImportUser(){
         $path = storage_path().'/app/data';
@@ -542,4 +542,5 @@ class UserCrudController extends CrudController
             }
         }
     }
+    
 }

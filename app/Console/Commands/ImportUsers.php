@@ -37,51 +37,50 @@ class ImportUsers extends Command
     {
         $path = storage_path().'/app/data';
         $files = File::files($path);
-        $getFile = null;
+        $getFiles = [];
         if(count($files) > 0){
             foreach($files as $file){
-                $pattern = "/^[A-Z]+([0-9]+)\-([0-9]+)\-([0-9]+)\.(CSV|csv)$/i";
+                $pattern = "/^V([0-9]+)\-([0-9]+)\-([0-9]+)\.(CSV|csv)$/i";
                 if(preg_match($pattern, $file->getFilename())){
                     // jika ada 1 file memiliki pola yang benar
-                    $getFile = $file;
-                    break;
+                    $getFiles[] = $file;
                 }
             }
         }
 
-        if($getFile){
-            // jika file ditemukan
-            register_shutdown_function(function ($path) {
-                if (file_exists($path)) {
-                    unlink($path);
-                }
-            }, storage_path('/app/data/' . $getFile->getFilename()));
+        if(count($getFiles) > 0){
+            foreach($getFiles as $key => $getFile){
+                DB::beginTransaction();
+                try {
+                    $path = storage_path('/app/data/' . $getFile->getFilename());
+                    $import = new UsersImport();
+                    $import->import($path);
 
-            DB::beginTransaction();
-            try {
-                 $import = new UsersImport();
-                 $import->import(storage_path('/app/data/' . $getFile->getFilename()));
+                    if(count($import->logMessages) > 0){
+                        $timeNow = Carbon::now();
+                        $i = $key+1;
+                        $logFileName = 'log_import_user_' . $timeNow->format('Ymd') . '_' . $timeNow->format('His') . '-' . $i .'.txt';
+                        $log = new GetLog($logFileName, 'w', $getFile->getFilename());
 
-                 if(count($import->logMessages) > 0){
-                    $timeNow = Carbon::now();
-                    $logFileName = 'log_import_user_' . $timeNow->format('Ymd') . '_' . $timeNow->format('His') . '.txt';
-                    $log = new GetLog($logFileName, 'w');
-
-                    foreach($import->logMessages as $logMessage){
-                        $log->getString(
-                            $logMessage['time'], 
-                            $logMessage['row'], 
-                            $logMessage['type'], 
-                            $logMessage['message']);
+                        foreach($import->logMessages as $logMessage){
+                            $log->getString(
+                                $logMessage['time'], 
+                                $logMessage['row'], 
+                                $logMessage['type'], 
+                                $logMessage['message']);
+                        }
+                        $log->close();
                     }
-                    $log->close();
+                    DB::commit();
+                    if (file_exists($path)) {
+                        unlink($path);
+                    }
+                    Log::info('Import users by successed run');
+                }catch(Exception $e){
+                    DB::rollback();
+                   Log::info('Import users by failed run to file : '.$getFile->getFilename());         
+                    throw $e;
                 }
-                DB::commit();
-                Log::info('Import users by successed run'); 
-            }catch(Exception $e){
-                DB::rollback();
-                Log::info('Import users by failed run');         
-                throw $e;
             }
         }else{
             Log::info('File users is not exists');

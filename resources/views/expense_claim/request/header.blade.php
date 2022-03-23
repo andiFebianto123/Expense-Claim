@@ -81,9 +81,6 @@
                             </ul>
                             @endif
                         </div>
-                        @if (isset($crud->expenseClaim->remark))
-                            <p>Revision Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
-                        @endif
                     </div>
                     <div class="col-md-6">
                         <p>Total Value : <b id="total-value">{{ formatNumber($crud->expenseClaim->value) }}</b>
@@ -92,6 +89,9 @@
                         <p>Status : <span
                                 class="rounded p-1 font-weight-bold text-white {{ App\Models\ExpenseClaim::mapColorStatus($crud->expenseClaim->status) }}">{{ $crud->expenseClaim->status }}</span>
                         </p>
+                        @if (isset($crud->expenseClaim->remark))
+                            <p>Revision Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
+                        @endif
                         @if ($crud->expenseClaim->rejected_id != null)
                             <p>Rejected By : <b>{{ $crud->expenseClaim->rejected->name ?? '-' }}</b></p>
                             <p>Rejected Date : <b>{{ formatDate($crud->expenseClaim->rejected_date) }}</b></p>

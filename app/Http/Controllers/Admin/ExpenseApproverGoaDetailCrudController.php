@@ -1198,8 +1198,8 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 $currentTransGoaId = $goaApprovalWillReplaces[0]->goa_id;
                 foreach ($goaApprovalWillReplaces as $key => $gawr) {
                     $delegation = MstDelegation::where('from_user_id', $gawr->goa_id)
-                        ->whereDate('start_date', '>=', $now)                                 
-                        ->whereDate('end_date', '<=', $now)
+                        ->whereDate('start_date', '<=', $now)                                 
+                        ->whereDate('end_date', '>=', $now)
                         ->first();
 
                     if (isset($delegation)) {

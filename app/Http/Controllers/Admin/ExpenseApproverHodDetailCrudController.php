@@ -1152,16 +1152,11 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                             ->orderBy('order', 'asc')
                             ->first();
 
-            $delegation = MstDelegation::where('from_user_id', $goaApproval->goa_id)
-                    ->whereDate('start_date', '>=', $now)                                 
-                    ->whereDate('end_date', '<=', $now)
-                    ->first();
-
             $goaApprovalWillReplaces = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)->get();
             foreach ($goaApprovalWillReplaces as $key => $gawr) {
                 $delegation = MstDelegation::where('from_user_id', $gawr->goa_id)
-                        ->whereDate('start_date', '>=', $now)                                 
-                        ->whereDate('end_date', '<=', $now)
+                        ->whereDate('start_date', '<=', $now)                                 
+                        ->whereDate('end_date', '>=', $now)
                         ->first();
                 if (isset($delegation)) {
                     $setDelegation = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)

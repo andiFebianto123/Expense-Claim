@@ -75,7 +75,7 @@ class DelegationCrudController extends CrudController
 
         CRUD::addField([
             'label'     => "From",
-            'type'      => 'select',
+            'type'      => 'select2',
             'name'      => 'from_user_id',
             'entity'    => 'from_user',
             'model'     => "App\Models\User",
@@ -84,13 +84,12 @@ class DelegationCrudController extends CrudController
 
         CRUD::addField([
             'label'     => "Delegation",
-            'type'      => 'select',
+            'type'      => 'select2',
             'name'      => 'to_user_id',
-            'entity'    => 'from_user',
+            'entity'    => 'to_user',
             'model'     => "App\Models\User",
             'attribute' => 'name',
         ]);
-
 
         CRUD::addField([
             'name'  => 'start_date',

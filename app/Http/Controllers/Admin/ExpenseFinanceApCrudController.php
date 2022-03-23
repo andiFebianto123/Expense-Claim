@@ -41,7 +41,7 @@ class ExpenseFinanceApCrudController extends CrudController
         }
 
         if (in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
-            $this->crud->allowAccess('upload');
+            // $this->crud->allowAccess('upload');
             $this->crud->allowAccess('download_journal_ap');
         }
 
@@ -67,7 +67,7 @@ class ExpenseFinanceApCrudController extends CrudController
     protected function setupListOperation()
     {
         $this->crud->enableBulkActions();
-        $this->crud->addButtonFromView('top', 'upload_sap', 'upload_sap', 'end');
+        // $this->crud->addButtonFromView('top', 'upload_sap', 'upload_sap', 'end');
         $this->crud->addButtonFromView('top', 'download_journal_ap', 'download_journal_ap', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
 
@@ -328,18 +328,17 @@ class ExpenseFinanceApCrudController extends CrudController
     }
 
 
-
-
     public function downloadApJournal(){
         $entries = null;
         if(isset(request()->entries)){
-            // dd(request()->entries);
             $entries = request()->entries;
         }
         $filename = 'ap-journal-'.date('YmdHis').'.xlsx';
         // $myFile =  Excel::download(new ApJournalExport(), $filename);
     
         $myFile =  Excel::raw(new ApJournalExport($entries), 'Xlsx');
+        ExpenseClaim::whereIn('id', $entries)
+            ->update(['status' => ExpenseClaim::PROCEED]);
     
         $response =  array(
             'name' => $filename,

@@ -155,6 +155,8 @@ return [
 
     'attributes' => [
         'user_id' => 'user',
+        'from_user_id' => 'from',
+        'to_user_id' => 'delegation',
         'head_department_id' => 'head of department',
         'head_of_department' => 'head of department',
         'department_id' => 'department ID',

@@ -31,7 +31,6 @@
                                 @endforeach
                             </ul>
                         </div>
-                        <p>Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
                     </div>
                     <div class="col-md-6">
                         <p>Total Value : <b
@@ -49,12 +48,12 @@
                             <p>Canceled By : <b>{{ $crud->expenseClaim->canceled->name ?? '-' }}</b></p>
                             <p>Canceled Date : <b>{{ formatDate($crud->expenseClaim->canceled_date) }}</b></p>
                         @endif
+                        @if ($crud->expenseClaim->status == null)
+                        <p>Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
+                        @endif
                     </div>
                 </div>
             </div>
-            @php
-                $classExpenseClaim = 'App\Models\ExpenseClaim';
-            @endphp
             @if ($crud->hasAction)
                 <div class="card-footer">
                     <button class="btn btn-success" id="approve-button"><i class="la la-check"></i>&nbsp;Approve</button>

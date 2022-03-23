@@ -36,19 +36,6 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
         if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::GOA_HOLDER])) {
             $this->crud->denyAccess('list');
         }
-        else
-        {
-            ExpenseClaim::addGlobalScope('user', function(Builder $builder){
-                $builder->where(function($query){
-                    if($this->crud->role === Role::GOA_HOLDER){
-                        $query->where('trans_expense_claims.current_trans_goa_id', $this->crud->user->id);
-                    }
-                    else{
-                        $query->whereNotNull('trans_expense_claims.current_trans_goa_id');
-                    }
-                });
-            });
-        }
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
@@ -85,6 +72,16 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
      */
     protected function setupListOperation()
     {
+        if(in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN])){
+            $this->crud->query->whereNotNull('trans_expense_claims.current_trans_goa_id');
+        }
+        else{
+            $this->crud->query->join('trans_goa_approvals','trans_goa_approvals.expense_claim_id' , '=' ,'trans_expense_claims.id')
+            ->where(function($query){
+                $query->where('trans_expense_claims.current_trans_goa_id', $this->crud->user->id)
+                ->orWhere('trans_goa_approvals.goa_delegation_id', $this->crud->user->id);
+            });
+        }
 
         $this->crud->addButtonFromModelFunction('line', 'detailApproverGoaButton', 'detailApproverGoaButton');
 

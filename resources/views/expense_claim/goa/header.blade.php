@@ -1,3 +1,6 @@
+@php
+    $classExpenseClaim = 'App\Models\ExpenseClaim';
+@endphp
 <div class="row">
     <div class="col-md-8">
         <div class="card">
@@ -31,7 +34,6 @@
                                 @endforeach
                             </ul>
                         </div>
-                        <p>Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
                     </div>
                     <div class="col-md-6">
                         <p>Total Value : <b
@@ -48,6 +50,9 @@
                         @if ($crud->expenseClaim->canceled_id != null)
                             <p>Canceled By : <b>{{ $crud->expenseClaim->canceled->name ?? '-' }}</b></p>
                             <p>Canceled Date : <b>{{ formatDate($crud->expenseClaim->canceled_date) }}</b></p>
+                        @endif
+                        @if ($crud->expenseClaim->status == $classExpenseClaim::NEED_REVISION || $crud->expenseClaim->status == $classExpenseClaim::NEED_REVISION)
+                        <p>Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
                         @endif
                     </div>
                 </div>

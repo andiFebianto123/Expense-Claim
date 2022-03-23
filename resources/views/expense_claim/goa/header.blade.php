@@ -49,7 +49,7 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                         <p>Canceled By : <b>{{ $crud->expenseClaim->canceled->name ?? '-' }}</b></p>
                         <p>Canceled Date : <b>{{ formatDate($crud->expenseClaim->canceled_date) }}</b></p>
                         @endif
-                        @if ($crud->expenseClaim->status == $classExpenseClaim::NEED_REVISION || $crud->expenseClaim->status == $classExpenseClaim::NEED_REVISION)
+                        @if ( in_array($crud->expenseClaim->status, [$classExpenseClaim::NEED_REVISION,$classExpenseClaim::REJECTED_ONE,$classExpenseClaim::REJECTED_TWO ]))
                         <p>Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
                         @endif
                     </div>

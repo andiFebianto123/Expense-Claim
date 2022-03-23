@@ -19,6 +19,7 @@ use App\Models\Config;
 use App\Models\CostCenter;
 use App\Models\ExpenseClaimType;
 use App\Models\ExpenseType;
+use App\Models\MstDelegation;
 use App\Models\TransGoaApproval;
 use App\Traits\RedirectCrud;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -1135,13 +1136,37 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 DB::rollback();
                 return response()->json(['message' =>  $checkStatus], 403);
             }
-
+            $now = Carbon::now();
+            $hodDelegationId = null;
             $goaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
                             ->orderBy('order', 'asc')
                             ->first();
 
-            $now = Carbon::now();
+            $delegation = MstDelegation::where('from_user_id', $goaApproval->goa_id)
+                    ->whereDate('start_date', '>=', $now)                                 
+                    ->whereDate('end_date', '<=', $now)
+                    ->first();
+
+            $goaApprovalWillReplaces = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)->get();
+            foreach ($goaApprovalWillReplaces as $key => $gawr) {
+                $delegation = MstDelegation::where('from_user_id', $gawr->goa_id)
+                        ->whereDate('start_date', '>=', $now)                                 
+                        ->whereDate('end_date', '<=', $now)
+                        ->first();
+                if (isset($delegation)) {
+                    $setDelegation = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                        ->where('goa_id', $gawr->goa_id)
+                        ->first();
+                    $setDelegation->goa_delegation_id = $delegation->to_user_id;
+                    $setDelegation->save();
+                    if ($gawr->order == 1) {
+                        $hodDelegationId = $delegation->to_user_id;;
+                    }
+                }
+            }
+
             $expenseClaim->hod_id = $this->crud->user->id;
+            $expenseClaim->hod_delegation_id = $hodDelegationId;
             $expenseClaim->hod_date = $now;
             $expenseClaim->current_trans_goa_id = $goaApproval->goa_id ?? null;
             $expenseClaim->status = ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;

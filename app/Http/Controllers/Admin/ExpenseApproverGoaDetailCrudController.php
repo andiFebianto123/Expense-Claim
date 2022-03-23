@@ -18,6 +18,7 @@ use App\Models\Config;
 use App\Models\CostCenter;
 use App\Models\ExpenseClaimType;
 use App\Models\ExpenseType;
+use App\Models\MstDelegation;
 use App\Models\TransGoaApproval;
 use App\Traits\RedirectCrud;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -1146,16 +1147,28 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 DB::rollback();
                 return response()->json(['message' =>  $checkStatus], 403);
             }
-
+            $now = Carbon::now();
             $goaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId);
-
             $transGoaApproval = $goaApproval->where('goa_id',  $this->crud->user->id)->first();
-
             $statusApproval = ExpenseClaim::FULLY_APPROVED;
             if ($goaApproval->count() > 1 && $transGoaApproval->order < $goaApproval->count()) {
                 $statusApproval = ExpenseClaim::PARTIAL_APPROVED;
+                $goaApprovalWillReplaces = $goaApproval->where('order','>=', $transGoaApproval->order)->get();
+                foreach ($goaApprovalWillReplaces as $key => $gawr) {
+                    $delegation = MstDelegation::where('from_user_id', $gawr->goa_id)
+                        ->whereDate('start_date', '>=', $now)                                 
+                        ->whereDate('end_date', '<=', $now)
+                        ->first();
+
+                    if (isset($delegation)) {
+                        $setDelegation = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                            ->where('goa_id', $gawr->goa_id)->first();
+                        $setDelegation->goa_delegation_id = $delegation->to_user_id;
+                        $setDelegation->save();
+                    }
+                }
+                
             }
-            $now = Carbon::now();
             $expenseClaim->current_trans_goa_id = $this->crud->user->id;
             $expenseClaim->status = $statusApproval;
             $expenseClaim->remark = $request->remark;

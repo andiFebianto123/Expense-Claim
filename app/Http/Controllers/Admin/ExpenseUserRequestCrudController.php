@@ -188,35 +188,13 @@ class ExpenseUserRequestCrudController extends CrudController
         $this->crud->hasAccessOrFail('request');
         DB::beginTransaction();
         try {
-            $user = User::where('id', $this->crud->user->id)->first();
-            $department = Department::join('mst_users', 'mst_departments.id', '=', 'mst_users.department_id')
-                ->where('mst_departments.id', $user->department_id)
-                ->select('mst_users.id as user_id', 'mst_departments.*')
-                ->first();
-
-            $hod = User::join('goa_holders', 'mst_users.goa_holder_id', '=', 'goa_holders.id')
-                ->where('mst_users.id', $department->user_id)
-                ->select(
-                    'goa_holders.limit as goa_limit',
-                    'mst_users.id as user_id',
-                    'goa_holders.name as goa_name',
-                )
-                ->first();
-
-            $hodDelegation = MstDelegation::where('from_user_id', $hod)
-                ->whereDate('start_date', '>=', date('Y-m-d'))
-                ->whereDate('end_date', '<=', date('Y-m-d'))
-                ->first();
 
             $expenseClaim = new ExpenseClaim;
 
             $expenseClaim->value = 0;
-            $expenseClaim->request_id = $user->id;
-            $expenseClaim->hod_id = $hod->user_id ?? null;
-            $expenseClaim->hod_delegation_id = empty($hodDelegation) ? null : $hodDelegation->id;
+            $expenseClaim->request_id = $this->crud->user->id;
             $expenseClaim->status = ExpenseClaim::DRAFT;
-            $expenseClaim->currency = '';
-            $expenseClaim->start_approval_date = Carbon::now();
+            $expenseClaim->currency = Config::IDR;
             $expenseClaim->is_admin_delegation = false;
 
             $expenseClaim->save();

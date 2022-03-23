@@ -66,7 +66,8 @@ class ExpenseApproverGoaCrudController extends CrudController
             ->where(function($query){
                 $query->where('trans_expense_claims.current_trans_goa_id', $this->crud->user->id)
                 ->orWhere('trans_goa_approvals.goa_delegation_id', $this->crud->user->id);
-            });
+            })
+            ->select('trans_expense_claims.*', 'trans_goa_approvals.goa_delegation_id');
         }
         
         $this->crud->addButtonFromModelFunction('line', 'detailApproverGoaButton', 'detailApproverGoaButton');

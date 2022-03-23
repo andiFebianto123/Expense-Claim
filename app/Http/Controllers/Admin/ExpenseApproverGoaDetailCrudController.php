@@ -65,7 +65,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
         $this->crud->setCreateView('expense_claim.goa.create');
         $this->crud->setUpdateView('expense_claim.goa.edit');
         $allowedStatus = in_array($this->crud->expenseClaim->status, [ExpenseClaim::REQUEST_FOR_APPROVAL_TWO,ExpenseClaim::PARTIAL_APPROVED] );
-        if ($allowedStatus && $this->crud->expenseClaim->hod_id == $this->crud->user->id){
+        if ($allowedStatus && $this->crud->expenseClaim->current_trans_goa_id == $this->crud->user->id){
             $this->crud->hasAction = true;
         }
 

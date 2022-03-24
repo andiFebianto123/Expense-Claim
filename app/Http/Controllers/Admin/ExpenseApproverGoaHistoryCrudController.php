@@ -87,7 +87,7 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
         }
         $this->crud->enableDetailsRow();
         $this->crud->addButtonFromModelFunction('line', 'detailApproverGoaButton', 'detailApproverGoaButton', 'end');
-        $this->crud->addButtonFromModelFunction('line', 'printReportExpense', 'printReportExpense', 'end');
+        // $this->crud->addButtonFromModelFunction('line', 'printReportExpense', 'printReportExpense', 'end');
 
         CRUD::addColumns([
             [

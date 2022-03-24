@@ -73,7 +73,7 @@ Route::group([
             Route::post('detail/revise', [ExpenseApproverGoaDetailCrudController::class, 'revise']);
             Route::post('detail/reject', [ExpenseApproverGoaDetailCrudController::class, 'reject']);
             Route::get('detail/{id}/document', [ExpenseApproverGoaDetailCrudController::class, 'document']);
-            Route::get('print', 'ExpenseApproverGoaHistoryCrudController@printReport');
+            // Route::get('print', 'ExpenseApproverGoaHistoryCrudController@printReport');
         });
         Route::crud('expense-approver-goa-history', 'ExpenseApproverGoaHistoryCrudController');
 
@@ -84,8 +84,8 @@ Route::group([
         Route::prefix('expense-finance-ap/{header_id}')->group(function () {
             Route::crud('detail', 'ExpenseFinanceApDetailCrudController');
             Route::get('detail/{id}/document', [ExpenseFinanceApDetailCrudController::class, 'document']);
+            Route::get('print', 'ExpenseFinanceApHistoryCrudController@printReport');
         });
-
         Route::crud('expense-finance-ap-history', 'ExpenseFinanceApHistoryCrudController');
     });
 

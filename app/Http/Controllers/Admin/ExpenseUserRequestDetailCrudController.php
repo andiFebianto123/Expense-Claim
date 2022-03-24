@@ -370,6 +370,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
         $this->crud->userExpenseTypes = $this->getUserExpenseTypes();
 
+        $user = User::where('id', $this->crud->expenseClaim->request_id)->first();
+
         CRUD::addField([
             'name' => 'expense_type_id',
             'label' => 'Expense Type',
@@ -398,7 +400,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             'type'        => 'select2_from_array',
             'options'     => CostCenter::select('id', 'description')->get()->pluck('description', 'id'),
             'allows_null' => false,
-            'default' => CostCenter::where('id', $this->crud->expenseClaim->request_id)->select('id')->first()->id ?? null
+            'default' => (User::where('id', $this->crud->expenseClaim->request_id)->first()->cost_center_id ?? null)
         ]);
 
         CRUD::addField([

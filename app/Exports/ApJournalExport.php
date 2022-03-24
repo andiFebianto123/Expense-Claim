@@ -117,7 +117,7 @@ class ApJournalExport implements FromView, WithEvents
                 $dataExpenseDetails = ExpenseClaimDetail::where('expense_claim_id', $dataExpense->id)->get();
                 if(count($dataExpenseDetails) > 0){
                     foreach($dataExpenseDetails as $dataExpenseDetail){
-                        $expenseName[] = $dataExpenseDetail->expense_claim_type->expense_name . 'kjkjkjk';
+                        $expenseName[] = $dataExpenseDetail->expense_claim_type->expense_name;
                         $date = $dataExpenseDetail->date;
                         $reference = $dataExpense->expense_number;
                         $currency = $dataExpenseDetail->currency;
@@ -155,7 +155,7 @@ class ApJournalExport implements FromView, WithEvents
                             'quantity' => null,
                             'uom' => null,
                             'assignment' => 'Expense Claim',
-                            'line_item_text' => \Illuminate\Support\Str::limit($dataExpenseDetail->expense_claim_type->expense_name, 35),
+                            'line_item_text' => \Illuminate\Support\Str::limit($dataExpenseDetail->expense_claim_type->expense_name, 35, ''),
                             'reference_key_1' => null,
                             'reference_key_2' => null,
                             'partner_bank' => null,
@@ -218,7 +218,7 @@ class ApJournalExport implements FromView, WithEvents
                         'quantity' => null,
                         'uom' => null,
                         'assignment' => 'Expense Claim',
-                        'line_item_text' => \Illuminate\Support\Str::limit($this->mergeText($expenseName, ', '), 35),
+                        'line_item_text' => \Illuminate\Support\Str::limit($this->mergeText($expenseName, ', '), 35, ''),
                         'reference_key_1' => null,
                         'reference_key_2' => null,
                         'partner_bank' => null,

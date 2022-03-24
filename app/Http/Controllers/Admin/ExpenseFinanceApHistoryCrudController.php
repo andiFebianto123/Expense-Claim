@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Support\Str;
 use Exception;
 use Carbon\Carbon;
 use App\Models\Role;

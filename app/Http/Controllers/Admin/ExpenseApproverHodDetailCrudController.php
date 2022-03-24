@@ -1213,16 +1213,6 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 Mail::to($goaOrDelegationEmail)->send(new RequestForApproverMail($dataMailApprover));
             }
 
-            // maill for requestor
-            $dataMailRequestor['approverName'] = $this->crud->user->name;
-            $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
-            $dataMailRequestor['status'] = ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
-            $dataMailRequestor['approverDate'] = $now;
-            $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
-            if (isset($expenseClaim->request->email)) {
-                Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
-            }
-
             DB::commit();
             \Alert::success(trans('custom.expense_claim_approve_success'))->flash();
             return response()->json(['redirect_url' => backpack_url('expense-approver-hod/' . $expenseClaim->id .  '/detail')]);

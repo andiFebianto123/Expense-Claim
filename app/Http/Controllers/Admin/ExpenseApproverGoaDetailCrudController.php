@@ -1265,17 +1265,19 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                     Mail::to($goaOrDelegationEmail)->send(new RequestForApproverMail($dataMailApprover));
                 }
             }
-            
-            // mail for requestor
-            $dataMailRequestor['approverName'] = $this->crud->user->name;
-            $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
-            $dataMailRequestor['status'] = $statusApproval;
-            $dataMailRequestor['approverDate'] = $now;
-            $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
-            if (isset($expenseClaim->request->email)) {
-                Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
-            }
 
+            if ($statusApproval == ExpenseClaim::FULLY_APPROVED) {
+                // mail for requestor
+                $dataMailRequestor['approverName'] = $this->crud->user->name;
+                $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
+                $dataMailRequestor['status'] = $statusApproval;
+                $dataMailRequestor['approverDate'] = $now;
+                $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
+                if (isset($expenseClaim->request->email)) {
+                    Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
+                }
+            }
+            
             DB::commit();
             \Alert::success(trans('custom.expense_claim_approve_success'))->flash();
             return response()->json(['redirect_url' => backpack_url('expense-approver-goa/' . $expenseClaim->id .  '/detail')]);

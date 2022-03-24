@@ -1,5 +1,5 @@
 @if ($crud->hasAccess('delete') && ((isset($crud->deleteCondition) && call_user_func_array($crud->deleteCondition, array($entry))) || !isset($crud->deleteCondition)))
-	<a href="javascript:void(0)" onclick="deleteEntry(this)" data-route="{{ url($crud->route.'/'.$entry->getKey()) }}" class="btn btn-sm btn-link" data-button-type="delete"><i class="la la-trash"></i> {{ trans('backpack::crud.delete') }}</a>
+	<button href="javascript:void(0)" onclick="deleteEntry(this)" data-route="{{ url($crud->route.'/'.$entry->getKey()) }}" class="btn btn-sm btn-link" data-button-type="delete"><i class="la la-trash"></i> {{ trans('backpack::crud.delete') }}</button>
 @endif
 
 {{-- Button Javascript --}}

@@ -71,8 +71,11 @@ class ExpenseFinanceApCrudController extends CrudController
      */
     protected function setupListOperation()
     {
+        $countFullyApproved = ExpenseClaim::where('status', ExpenseClaim::FULLY_APPROVED)->count();
+        if ($countFullyApproved > 0) {
+            $this->crud->enableBulkActions();
+        }
         $this->crud->enableDetailsRow();
-        $this->crud->enableBulkActions();
         $this->crud->addButtonFromView('top', 'download_journal_ap', 'download_journal_ap', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
 

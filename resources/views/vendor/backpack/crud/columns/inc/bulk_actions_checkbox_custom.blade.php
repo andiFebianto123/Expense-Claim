@@ -3,7 +3,7 @@
         <input type="checkbox" class="crud_bulk_actions_general_checkbox">
     </span>
 @else
-    @if($entry->status != \App\Models\ExpenseClaim::PROCEED)
+    @if($entry->status == \App\Models\ExpenseClaim::FULLY_APPROVED)
         <span class="crud_bulk_actions_checkbox">
             <input type="checkbox" class="crud_bulk_actions_line_checkbox" data-primary-key-value="{{ $entry->getKey() }}">
         </span>
@@ -97,5 +97,9 @@
         crud.addFunctionToDataTablesDrawEventQueue('enableOrDisableBulkButtons');
         </script>
         @endLoadOnce
+    @else
+    <span class="crud_bulk_actions_checkbox">
+        <span style="width: 16px;"></span>
+    </span>
     @endif
 @endif

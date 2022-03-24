@@ -104,7 +104,7 @@
 						</td>
 					</tr>
 					<tr>
-						<td colspan="4" style="border: '{{ $borderStyleTd }}' padding-left:4px;">
+						<td colspan="3" style="border: '{{ $borderStyleTd }}' padding-left:4px;">
 							<div style="padding-left:4px;"><strong>Total Expense</strong></div>
 						</td>
 						<td style="border: '{{ $borderStyleTd }}'">

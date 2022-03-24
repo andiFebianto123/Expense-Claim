@@ -155,6 +155,7 @@ class DelegationCrudController extends CrudController
             'entity'    => 'to_user',
             'model'     => "App\Models\User",
             'attribute' => 'name',
+            'hint' => '<b>Delegation must have role HoD / GoA.</b>'
         ]);
 
         CRUD::addField([

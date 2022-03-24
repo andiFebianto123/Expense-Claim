@@ -181,7 +181,7 @@ return [
         'role_id' => 'role',
         'roles' => 'roles',
         'cost_center_id' => 'cost center',
-        'goa_holder_id' => 'goA holder',
+        'goa_holder_id' => 'GoA holder',
 
         'expense_id' => 'expense type',
         'expense_code_id' => 'expense code',

@@ -52,8 +52,23 @@ class ConfigCrudController extends CrudController
     {
         CRUD::column('key')->limit(255);
         // CRUD::column('type');
-        CRUD::column('value')->limit(500)
-        ->orderable(false)->searchLogic(false);
+
+        CRUD::addColumn([
+            'label'     => 'Value', // Table column heading
+            'type'      => 'closure',
+            'orderable' => false,
+            'searchLogic' => false,
+            'function' => function($entry){
+                if($entry->type == 'password'){
+                    return '*****';
+                }
+                else if($entry->type == 'date'){
+                    return Carbon::parse($entry->value)->format('d M Y');
+                }
+                return $entry->value;
+            },
+            'limit' => 500
+        ]);
 
         /**
          * Columns can be defined using the fluent syntax or array syntax:
@@ -108,16 +123,24 @@ class ConfigCrudController extends CrudController
         $this->data['id'] = $id;
 
         if($this->data['entry']->type == 'float'){
-            $this->crud->addField(['name' => 'value' , 'type' => 'number', 'decimal' => 4]);
+            $this->crud->addField(['name' => 'value' , 'type' => 'number', 'decimal' => 4, 
+            'wrapper' => ['class' => 'form-group col-md-12 required']]);
         }
         else if($this->data['entry']->type == 'date'){
             $this->crud->addField(['name' => 'value' , 'type' => 'fixed_date_picker', 
             'date_picker_options' => [
-                'format' => 'yyyy-mm-dd',
-            ]]);
+                'format' => 'dd M yyyy',
+            ],
+            'wrapper' => ['class' => 'form-group col-md-12 required']
+            ]);
         }   
+        else if($this->data['entry']->type == 'password'){
+            $this->crud->addField(['name' => 'value', 'type' => 'password', 
+            'wrapper' => ['class' => 'form-group col-md-12 required']]);
+        }
         else{
-            $this->crud->addField(['name' => 'value']);
+            $this->crud->addField(['name' => 'value', 
+            'wrapper' => ['class' => 'form-group col-md-12 required']]);
         }
 
         $this->crud->setOperationSetting('fields', $this->crud->getUpdateFields());

@@ -42,11 +42,15 @@
 					</tr>
 					<tr><td></td></tr>
 					<tr>
-						<th style="border: '{{ $borderStyleTd }}'">Account Description</td>
-						<th style="border: '{{ $borderStyleTd }}'">Expense Code</td>
-						<th style="border: '{{ $borderStyleTd }}'">Cost Center desc.</td>
-						<th style="border: '{{ $borderStyleTd }}'">Cost Center</td>
-						<th style="border: '{{ $borderStyleTd }}'">Total Cost</td>
+						<td style="border: '{{ $borderStyleTd }}' vertical-align:left;"><strong>&nbsp;Account Description</strong></td>
+						<th style="border: '{{ $borderStyleTd }}'">
+							Expense Code
+						</th>
+						<td style="border: '{{ $borderStyleTd }}' vertical-align:left;">
+							<strong>&nbsp;Cost Center Desc.</strong>
+						</td>
+						<th style="border: '{{ $borderStyleTd }}'">Cost Center</th>
+						<td style="border: '{{ $borderStyleTd }}' vertical-align:right;"><strong>&nbsp;Total Cost</strong></td>
 					</tr>
 					@foreach($data['detail_expenses'] as $detailExpense)
 						<tr style="">
@@ -72,8 +76,7 @@
 							</td>
 							<td style="border: '{{ $borderStyleTd }}' ">
 								<div style="height: 16px; text-align: right; padding-left: 2px;">
-									<div style="float:left;">Rp.</div>
-									<div style="float:right; text-align:right; padding-right:2px;">
+									<div style="float:right; text-align:right; padding-right:2px;">Rp. 
 										{{ number_format($detailExpense['total'],0,",",".") ?? '-' }}
 									</div>
 									<div style="clear:both;"></div>
@@ -108,8 +111,7 @@
 							<div style="padding-left:4px;"><strong>Total Expense</strong></div>
 						</td>
 						<td colspan="2" style="border: '{{ $borderStyleTd }}'">
-								<div style="float:right;">Rp.</div>
-								<div style="float:right; text-align:right; padding-right:2px;">
+								<div style="float:right; text-align:right; width:50%; padding-right:2px;">Rp.
 									{{ number_format($data['total_detail_expenses'],0,",",".") ?? '-' }}
 								</div>
 								<div style="clear:both;"></div>
@@ -120,9 +122,8 @@
 							<div style="padding-left:4px;"><strong>Due Company (advance more than total expense)</div></strong>
 						</td>
 						<td colspan="2" style="border: '{{ $borderStyleTd }}'">
-							<div style="float:right;">Rp.</div>
 								<div style="float:right; text-align:right; padding-right:2px;">
-									-
+								Rp. -
 								</div>
 								<div style="clear:both;"></div>
 						</td>

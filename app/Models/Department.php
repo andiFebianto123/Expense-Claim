@@ -7,11 +7,14 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class Department extends Model
 {
-    use HasFactory, CrudTrait;
-
+    use HasFactory, CrudTrait, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
     protected $table = 'mst_departments';
     protected $fillable = ['department_id', 'name', 'is_none', 'user_id'];
 

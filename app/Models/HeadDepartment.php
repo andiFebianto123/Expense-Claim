@@ -8,10 +8,15 @@ use App\Models\GoaHolder;
 use App\Models\ApprovalUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class HeadDepartment extends Model
 {
-    use HasFactory;
+    use HasFactory, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
+
     protected $fillable = ['department_id', 'user_id'];
     public function department(){
         return $this->belongsTo(Department::class, 'department_id');

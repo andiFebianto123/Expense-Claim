@@ -4,11 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class Role extends Model
 {
     use \Backpack\CRUD\app\Models\Traits\CrudTrait;
-    use HasFactory;
+    use HasFactory, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
 
     protected $table = 'mst_roles';
     protected $fillable = ['name'];

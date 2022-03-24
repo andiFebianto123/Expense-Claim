@@ -6,11 +6,16 @@ use App\Models\User;
 use App\Models\HeadDepartment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class GoaHolder extends Model
 {
     use \Backpack\CRUD\app\Models\Traits\CrudTrait;
-    use HasFactory;
+    use HasFactory, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
+
     protected $fillable = [
         'user_id',
         'name',

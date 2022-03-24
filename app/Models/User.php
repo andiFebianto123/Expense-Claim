@@ -15,10 +15,14 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, CrudTrait;
+    use HasApiTokens, HasFactory, Notifiable, CrudTrait, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
 
     protected $table = 'mst_users';
 

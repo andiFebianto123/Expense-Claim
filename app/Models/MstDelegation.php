@@ -5,10 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use \Backpack\CRUD\app\Models\Traits\CrudTrait;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class MstDelegation extends Model
 {
-    use HasFactory, CrudTrait;
+    use HasFactory, CrudTrait, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
+
     protected $table = 'mst_delegations';
     protected $fillable = ['from_user_id', 'to_user_id', 'start_date', 'end_date', 'remark'];
 

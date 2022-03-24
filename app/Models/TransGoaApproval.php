@@ -8,10 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\ExpenseClaim;
 use App\Models\GoaHolder;
 use App\Models\User;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class TransGoaApproval extends Model
 {
-    use HasFactory, CrudTrait;
+    use HasFactory, CrudTrait, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
+
     protected $table = 'trans_goa_approvals';
     protected $fillable = ['expense_claim_id', 'goa_id', 'goa_delegation_id', 'is_admin_delegation', 'start_approval_date', 'goa_date', 'status', 'order'];
 

@@ -9,10 +9,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use \Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class ExpenseType extends Model
 {
-    use HasFactory, CrudTrait;
+    use HasFactory, CrudTrait, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
+
     protected $table = 'mst_expense_types';
     protected $fillable = ['expense_id', 'level_id', 'limit', 'limit_daily', 'expense_code_id', 'is_bod', 'is_traf', 'is_bp_approval', 'bod_level', 'limit_business_approval', 'currency', 'remark'];
 

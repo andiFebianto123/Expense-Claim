@@ -126,6 +126,7 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                     buttons: ["{!! trans('backpack::crud.cancel') !!}", "{!! trans('custom.submit') !!}"],
                 }).then((value) => {
                     if (value) {
+                        $('button').prop('disabled', true);
                         $.ajax({
                             url: "{{ backpack_url('expense-user-request/' . $crud->expenseClaim->id . '/detail/submit') }}",
                             type: 'POST',
@@ -133,6 +134,7 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                                 window.location.href = result.redirect_url;
                             },
                             error: function(result) {
+                                $('button').prop('disabled', false);
                                 // Show an alert with the result
                                 var defaultText = "{!! trans('custom.submit_confirmation_not_message') !!}";
                                 if (result.status != 500 && result.responseJSON !=

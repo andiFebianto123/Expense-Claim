@@ -8,6 +8,7 @@ use App\Http\Requests\RoleRequest;
 use Illuminate\Database\QueryException;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class RoleCrudController

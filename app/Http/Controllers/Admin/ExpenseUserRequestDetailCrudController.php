@@ -25,7 +25,10 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseUserRequestDetailRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use App\Http\Requests\ExpenseUserRequestUpdateDetailRequest;
+use App\Mail\RequestForApproverMail;
+use App\Mail\StatusForRequestorMail;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Class ExpenseUserRequestDetailCrudController
@@ -1376,6 +1379,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $countGoa = count($transGoaApprovals);
                 $skippedGoa = 0;
                 $needBreak = false;
+                $goaDelegationId = null;
                 foreach($transGoaApprovals as $indexGoa => $transGoaApproval){
                     if(!$needBreak){
                         if($transGoaApproval->goa_id == $expenseClaim->request_id){
@@ -1392,6 +1396,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                                 $transGoaApproval->goa_delegation_id = MstDelegation::where('start_date', '<=', $now->format('Y-m-d'))
                                 ->where('end_date', '>=', $now->format('Y-m-d'))->where('from_user_id', $transGoaApproval->goa_id)->select('to_user_id')->first()->to_user_id ?? null;
                             }
+                            $goaDelegationId = $transGoaApproval->goa_delegation_id;
                             $transGoaApproval->goa_date = null;
                             $transGoaApproval->start_approval_date = $now;
                             $transGoaApproval->status = "-";
@@ -1424,10 +1429,55 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 else{
                     $status = ExpenseClaim::PARTIAL_APPROVED;
                 }
+
+                if ($status != ExpenseClaim::FULLY_APPROVED) {
+                    if ($goaDelegationId != null) {
+                        $user = User::where('id', $goaDelegationId)->first();
+                    }else{
+                        $user = User::where('id', $expenseClaim->current_trans_goa_id)->first();
+                    }
+
+                    $goaOrDelegationName = $user->name ?? null;
+                    $goaOrDelegationEmail = $user->email ?? null;
+
+                    $dataMailApprover['approverName'] = $goaOrDelegationName;
+                    $dataMailApprover['requestorName'] = $expenseClaim->request->name;
+                    $dataMailApprover['requestorDate'] = $now;
+                    $dataMailApprover['urlRedirect'] = url('expense-approver-goa/'.$this->crud->headerId.'/detail');
+                    if (isset($goaOrDelegationEmail)) {
+                        Mail::to($goaOrDelegationEmail)->send(new RequestForApproverMail($dataMailApprover));
+                    }
+                }else{
+                    $dataMailRequestor['approverName'] = $this->crud->user->name;
+                    $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
+                    $dataMailRequestor['status'] = $status;
+                    $dataMailRequestor['approverDate'] = $now;
+                    $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
+                    if (isset($expenseClaim->request->email)) {
+                        Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));        
+                    }
+                }
+
             }
             else{
                 $status = ExpenseClaim::REQUEST_FOR_APPROVAL;
                 $expenseClaim->current_trans_goa_id = null;
+                if ($expenseClaim->hod_delegation_id != null) {
+                    $user = User::where('id', $expenseClaim->hod_delegation_id)->first();
+                }else{
+                    $user = User::where('id', $expenseClaim->hod_id)->first();
+                }
+                $hodOrDelegationName = $user->name ?? null;
+                $hodOrDelegationEmail = $user->email ?? null;
+
+                $dataMailApprover['approverName'] = $hodOrDelegationName;
+                $dataMailApprover['requestorName'] = $expenseClaim->request->name;
+                $dataMailApprover['requestorDate'] = $now;
+                $dataMailApprover['urlRedirect'] = url('expense-approver-hod/'.$this->crud->headerId.'/detail');
+                if (isset($hodOrDelegationEmail)) {
+                    Mail::to($hodOrDelegationEmail)->send(new RequestForApproverMail($dataMailApprover));
+                }
+    
             }
 
             $expenseClaim->status = $status;

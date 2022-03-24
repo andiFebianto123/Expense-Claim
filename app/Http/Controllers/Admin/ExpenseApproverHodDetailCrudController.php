@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseApproverHodDetailRequest;
 use App\Http\Requests\ExpenseApproverHodRequest;
+use App\Mail\RequestForApproverMail;
+use App\Mail\StatusForRequestorMail;
 use App\Models\Config;
 use App\Models\CostCenter;
 use App\Models\ExpenseClaimType;
@@ -25,6 +27,7 @@ use App\Traits\RedirectCrud;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 use Doctrine\DBAL\Query\QueryException;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Class ExpenseApproverHodDetailCrudController
@@ -1147,12 +1150,18 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 return response()->json(['message' =>  $checkStatus], 403);
             }
             $now = Carbon::now();
-            $hodDelegationId = null;
             $goaApproval = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                            ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
+                            ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
                             ->orderBy('order', 'asc')
+                            ->select('mst_users.email as goa_email', 'user_delegation.email as goa_delegation_email',
+                            'mst_users.name as goa_name', 'user_delegation.name as goa_delegation_name', 
+                            'goa_id','goa_date', 'goa_delegation_id', 'status',)
                             ->first();
-
+            $goaOrDelegationEmail = $goaApproval->goa_email;
+            $goaOrDelegationName = $goaApproval->goa_name;
             $goaApprovalWillReplaces = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)->get();
+            $arrDelegationId = [];
             foreach ($goaApprovalWillReplaces as $key => $gawr) {
                 $delegation = MstDelegation::where('from_user_id', $gawr->goa_id)
                         ->whereDate('start_date', '<=', $now)                                 
@@ -1164,7 +1173,13 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                         ->first();
                     $setDelegation->goa_delegation_id = $delegation->to_user_id;
                     $setDelegation->save();
+                    $arrDelegationId[] = $delegation->to_user_id;
                 }
+            }
+            if (count($arrDelegationId) > 0) {
+                $user = User::where('id', $arrDelegationId[0])->first();
+                $goaOrDelegationEmail = $user->email;
+                $goaOrDelegationName = $user->name;    
             }
 
             $expenseClaim->hod_id = $this->crud->user->id;
@@ -1173,6 +1188,25 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             $expenseClaim->status = ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();
+
+            // mail for approver
+            $dataMailApprover['approverName'] = $goaOrDelegationName;
+            $dataMailApprover['requestorName'] = $expenseClaim->request->name;
+            $dataMailApprover['requestorDate'] = $now;
+            $dataMailApprover['urlRedirect'] = url('expense-approver-goa/'.$this->crud->headerId.'/detail');
+            if (isset($goaOrDelegationEmail)) {
+                Mail::to($goaOrDelegationEmail)->send(new RequestForApproverMail($dataMailApprover));
+            }
+
+            // maill for requestor
+            $dataMailRequestor['approverName'] = $this->crud->user->name;
+            $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
+            $dataMailRequestor['status'] = ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
+            $dataMailRequestor['approverDate'] = $now;
+            $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
+            if (isset($expenseClaim->request->email)) {
+                Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
+            }
 
             DB::commit();
             \Alert::success(trans('custom.expense_claim_approve_success'))->flash();
@@ -1199,6 +1233,15 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             $expenseClaim->status = ExpenseClaim::NEED_REVISION;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();
+
+            $dataMailRequestor['approverName'] = $this->crud->user->name;
+            $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
+            $dataMailRequestor['status'] = ExpenseClaim::NEED_REVISION;
+            $dataMailRequestor['approverDate'] = $now;
+            $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
+            if (isset($expenseClaim->request->email)) {
+                Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
+            }
 
             DB::commit();
             \Alert::success(trans('custom.expense_claim_revise_success'))->flash();
@@ -1227,6 +1270,15 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             $expenseClaim->status = ExpenseClaim::REJECTED_ONE;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();
+
+            $dataMailRequestor['approverName'] = $this->crud->user->name;
+            $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
+            $dataMailRequestor['status'] = ExpenseClaim::REJECTED_ONE;
+            $dataMailRequestor['approverDate'] = $now;
+            $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
+            if (isset($expenseClaim->request->email)) {
+                Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
+            }
 
             DB::commit();
             \Alert::success(trans('custom.expense_claim_reject_success'))->flash();

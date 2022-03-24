@@ -1164,14 +1164,10 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                         ->first();
                     $setDelegation->goa_delegation_id = $delegation->to_user_id;
                     $setDelegation->save();
-                    if ($gawr->order == 1) {
-                        $hodDelegationId = $delegation->to_user_id;;
-                    }
                 }
             }
 
             $expenseClaim->hod_id = $this->crud->user->id;
-            $expenseClaim->hod_delegation_id = $hodDelegationId;
             $expenseClaim->hod_date = $now;
             $expenseClaim->current_trans_goa_id = $goaApproval->goa_id ?? null;
             $expenseClaim->status = ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;

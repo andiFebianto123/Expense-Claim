@@ -338,7 +338,11 @@ class ExpenseFinanceApCrudController extends CrudController
     
         $myFile =  Excel::raw(new ApJournalExport($entries), 'Xlsx');
         ExpenseClaim::whereIn('id', $entries)
-            ->update(['status' => ExpenseClaim::PROCEED]);
+            ->update([
+                'finance_id' =>  $this->crud->user->id,
+                'finance_date' => Carbon::now(),
+                'status' => ExpenseClaim::PROCEED,
+            ]);
     
         $response =  array(
             'name' => $filename,

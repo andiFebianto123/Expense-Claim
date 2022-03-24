@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Export\ApJournalExport as ExportApJournalExport;
-use App\Exports\ApJournalExport;
 use Exception;
 use Carbon\Carbon;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Department;
 use App\Models\ExpenseClaim;
+use App\Exports\ApJournalExport;
+use App\Models\TransGoaApproval;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseFinanceApRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
+use App\Export\ApJournalExport as ExportApJournalExport;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
 /**
@@ -71,6 +72,8 @@ class ExpenseFinanceApCrudController extends CrudController
         $this->crud->addButtonFromView('top', 'download_journal_ap', 'download_journal_ap', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
 
+        $this->crud->enableDetailsRow();
+
         CRUD::addColumns([
             [
                 'name'      => 'row_number',
@@ -90,6 +93,7 @@ class ExpenseFinanceApCrudController extends CrudController
             [
                 'label' => 'Currency',
                 'name' => 'currency',
+                'visibleInTable' => false
             ],
             [
                 'label' => 'Request Date',
@@ -104,8 +108,8 @@ class ExpenseFinanceApCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as r', 'r.id', '=', 'trans_expense_claims.request_id')
-                    ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
+                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             // [
@@ -162,8 +166,8 @@ class ExpenseFinanceApCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as f', 'f.id', '=', 'trans_expense_claims.goa_id')
-                    ->orderBy('f.name', $columnDirection)->select('trans_expense_claims.*');
+                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.finance_id')
+                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -345,5 +349,24 @@ class ExpenseFinanceApCrudController extends CrudController
             'file' => "data:application/vnd.ms-excel;base64,".base64_encode($myFile)
          );
          return response()->json($response);
+    }
+
+    public function showDetailsRow($id)
+    {
+        $this->crud->hasAccessOrFail('list');
+
+        // get entry ID from Request (makes sure its the last ID for nested resources)
+        $id = $this->crud->getCurrentEntryId() ?? $id;
+
+        $this->data['entry'] = $this->crud->getEntry($id);
+        $this->data['crud'] = $this->crud;
+
+        $this->data['goaApprovals'] = TransGoaApproval::where('expense_claim_id', $this->data['entry']->id)
+        ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
+        ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+        ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+        ->orderBy('order')->get();  
+
+        return view('detail_approval', $this->data);
     }
 }

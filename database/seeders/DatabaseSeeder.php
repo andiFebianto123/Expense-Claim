@@ -194,6 +194,7 @@ class DatabaseSeeder extends Seeder
             'level_id' => Level::where('level_id', 'D7')->first()->id,
             'department_id' => Department::where('department_id', 'NONE')->first()->id,
             'role_id' => Role::where('name', Role::ADMIN)->first()->id,
+            'roles' => Role::where('name', Role::ADMIN)->get()->pluck('id')->toArray(),
             'is_active' => true,
             'password' => bcrypt('qwerty'),
             'cost_center_id' => CostCenter::first()->id
@@ -208,6 +209,12 @@ class DatabaseSeeder extends Seeder
             if (count($userRole) >= 2) {
                 $userRole = $userRole[count($userRole) - 1];
             }
+            else {
+                $userRole = $userRole[0] ?? null;
+            }
+
+            $allRoles = explode(', ', $user['Role']);
+            $allRolesId = Role::whereIn('name', $allRoles)->select('id')->get()->pluck('id')->toArray();
 
             $level = Level::where('level_id', $user['Level'])->first();
             $role = Role::where('name', $userRole)->first();
@@ -230,6 +237,7 @@ class DatabaseSeeder extends Seeder
                     'level_id' => $level->id,
                     'department_id' => $department->id ?? null,
                     'role_id' => $role->id,
+                    'roles' => $allRolesId,
                     'is_active' => true,
                     'password' => bcrypt('qwerty'),
                     'cost_center_id' => $costCenter->id

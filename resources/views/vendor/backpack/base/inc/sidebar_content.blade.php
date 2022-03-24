@@ -6,19 +6,19 @@
     $role = $user->role->name ?? null;
     
     $classRole = 'App\Models\Role';
-    $allowAll = in_array($role, [$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY]);
+    $allowAll = allowedRole([$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY]);
 
-    $allowMaster = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
-    $allowHod= in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::HOD]);
-    $allowGoa = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::GOA_HOLDER]);
-    $allowFinance = in_array($role, [$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::FINANCE_AP]);
+    $allowMaster = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
+    $allowHod = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::HOD]);
+    $allowGoa = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::GOA_HOLDER]);
+    $allowFinance = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::FINANCE_AP]);
 @endphp
 
 @php
     $hasFoundMenuMaster = false;
 @endphp
 @foreach ((new App\Helpers\Sidebar())->generate() as $key => $menu)
-    @if(in_array($role, $menu['access']))
+    @if(allowedRole($menu['access']))
         @if (!$hasFoundMenuMaster)
             @php
                 $hasFoundMenuMaster = true;

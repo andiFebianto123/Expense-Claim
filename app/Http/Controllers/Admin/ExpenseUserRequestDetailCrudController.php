@@ -72,7 +72,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->crud->setUpdateView('expense_claim.request.edit');
 
         $this->crud->isDraftOrRevision = ($this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::NEED_REVISION)
-        && ($this->crud->user->id == $this->crud->expenseClaim->request_id || ($this->crud->role == Role::SECRETARY && $this->crud->expenseClaim->secretary_id == $this->crud->user->id));
+        && ($this->crud->user->id == $this->crud->expenseClaim->request_id || (allowedRole([Role::SECRETARY]) && $this->crud->expenseClaim->secretary_id == $this->crud->user->id));
 
         if (!$this->crud->isDraftOrRevision) {
             $this->crud->denyAccess(['create', 'edit', 'delete']);
@@ -82,10 +82,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
     public function getExpenseClaim($id)
     {
         $expenseClaim = ExpenseClaim::where('id', $id);
-        if ($this->crud->role != Role::ADMIN) {
+        if (!allowedRole([Role::ADMIN])) {
             $expenseClaim->where(function ($query) {
                 $query->where('request_id', $this->crud->user->id);
-                if ($this->crud->role == Role::SECRETARY) {
+                if (allowedRole([Role::SECRETARY])) {
                     $query->orWhere('secretary_id', $this->crud->user->id);
                 }
             });

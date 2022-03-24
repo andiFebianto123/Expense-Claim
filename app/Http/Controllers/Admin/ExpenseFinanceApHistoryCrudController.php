@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Support\Str;
 use Exception;
 use Carbon\Carbon;
 use App\Models\Role;
@@ -33,6 +34,7 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
      */
     public function setup()
     {
+        dd(Str::limit("cobacoba", 4, ''));
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
 

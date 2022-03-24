@@ -23,9 +23,9 @@
 	</style>
     <div class="root" style="width: 100%;">
 		<div id="title-left" style="float:left; width:50%;">
-			<img src="{{ asset('images/logo-taisho-report.png') }}" alt="" style="width: 500px; height: 30px;"/>
+			<img src="{{ public_path('images/logo-taisho-report2.png') }}" alt="" style="width: 430px;"/>
 		</div>
-		<div id="title-right" style="float:right; width:50%; text-align: bottom;">
+		<div id="title-right" style="float:right; width:50%; padding-top:15px;">
 			<span><strong>{{ $title ?? "TRAVEL AND ENTERTAINMENT EXPENSE REPORT" }}<strong></span>
 		</div>
 		<div style="clear:both;"></div>

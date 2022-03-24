@@ -169,6 +169,7 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
             buttons: ["{!! trans('backpack::crud.cancel') !!}", "{!! trans('custom.approve') !!}"],
         }).then((value) => {
             if (value) {
+                $('button').prop('disabled', true);
                 $.ajax({
                     url: "{{backpack_url('expense-approver-goa/' . $crud->expenseClaim->id .  '/detail/approve')}}",
                     type: 'POST',
@@ -179,6 +180,7 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                         window.location.href = result.redirect_url;
                     },
                     error: function(result) {
+                        $('button').prop('disabled', false);
                         clearErrorForm()
                         // Show an alert with the result
                         var defaultText = "{!! trans('custom.approve_confirmation_not_message') !!}";
@@ -214,6 +216,7 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
 
     function reviseAction() {
         $('#modalRevise').modal('hide');
+        $('button').prop('disabled', true);
         $.ajax({
             url: "{{backpack_url('expense-approver-goa/' . $crud->expenseClaim->id .  '/detail/revise')}}",
             type: 'POST',
@@ -224,6 +227,7 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                 window.location.href = result.redirect_url;
             },
             error: function(result) {
+                $('button').prop('disabled', false);
                 clearErrorForm()
                 var defaultText = "{!! trans('custom.revise_confirmation_not_message') !!}";
                 if (result.status == 422) {
@@ -255,6 +259,7 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
     }
 
     function rejectAction() {
+        $('button').prop('disabled', true);
         $('#modalReject').modal('hide');
         $.ajax({
             url: "{{backpack_url('expense-approver-goa/' . $crud->expenseClaim->id .  '/detail/reject')}}",
@@ -266,6 +271,7 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                 window.location.href = result.redirect_url;
             },
             error: function(result) {
+                $('button').prop('disabled', false);
                 clearErrorForm()
                 // Show an alert with the result
                 var defaultText = "{!! trans('custom.reject_confirmation_not_message') !!}";

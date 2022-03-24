@@ -58,6 +58,9 @@ class ApJournalExport implements FromView, WithEvents
                         } else if($lengthOfWords > 20){
                             $dynamicWidth = $lengthOfWords*2;
                         }
+                        if($col == 'AG'){
+                            $dynamicWidth += 10;
+                        }
                         $event->sheet->getColumnDimension($col)->setWidth($dynamicWidth);
                     }
                     $i++;
@@ -114,7 +117,7 @@ class ApJournalExport implements FromView, WithEvents
                 $dataExpenseDetails = ExpenseClaimDetail::where('expense_claim_id', $dataExpense->id)->get();
                 if(count($dataExpenseDetails) > 0){
                     foreach($dataExpenseDetails as $dataExpenseDetail){
-                        $expenseName[] = $dataExpenseDetail->expense_claim_type->expense_name;
+                        $expenseName[] = $dataExpenseDetail->expense_claim_type->expense_name . 'kjkjkjk';
                         $date = $dataExpenseDetail->date;
                         $reference = $dataExpense->expense_number;
                         $currency = $dataExpenseDetail->currency;
@@ -152,7 +155,7 @@ class ApJournalExport implements FromView, WithEvents
                             'quantity' => null,
                             'uom' => null,
                             'assignment' => 'Expense Claim',
-                            'line_item_text' => $dataExpenseDetail->expense_claim_type->expense_name,
+                            'line_item_text' => \Illuminate\Support\Str::limit($dataExpenseDetail->expense_claim_type->expense_name, 35),
                             'reference_key_1' => null,
                             'reference_key_2' => null,
                             'partner_bank' => null,
@@ -215,7 +218,7 @@ class ApJournalExport implements FromView, WithEvents
                         'quantity' => null,
                         'uom' => null,
                         'assignment' => 'Expense Claim',
-                        'line_item_text' => $this->mergeText($expenseName, ', '),
+                        'line_item_text' => \Illuminate\Support\Str::limit($this->mergeText($expenseName, ', '), 35),
                         'reference_key_1' => null,
                         'reference_key_2' => null,
                         'partner_bank' => null,
@@ -248,8 +251,8 @@ class ApJournalExport implements FromView, WithEvents
                     $total_doc_curr_1_dc = 0;
                     $no++;
                     array_push($dataRow, $row);
-                    //$dataExpense->status = ExpenseClaim::PROCEED;
-                    //$dataExpense->save();
+                    $dataExpense->status = ExpenseClaim::PROCEED;
+                    $dataExpense->save();
                 }
             }
         }

@@ -10,6 +10,14 @@ class Sidebar
     return
     [
         [
+            'label' => 'Config',
+            'access' => [Role::ADMIN],
+            'icon' => 'la-cog',
+            'key' => 'config',
+            'url' => backpack_url('config'),
+            'childrens' => [],
+        ],
+        [
             'label' => 'Role',
             'access' => [Role::ADMIN],
             'icon' => 'la-key',

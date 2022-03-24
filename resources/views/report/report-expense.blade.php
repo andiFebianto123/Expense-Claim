@@ -107,8 +107,8 @@
 						<td colspan="3" style="border: '{{ $borderStyleTd }}' padding-left:4px;">
 							<div style="padding-left:4px;"><strong>Total Expense</strong></div>
 						</td>
-						<td style="border: '{{ $borderStyleTd }}'">
-								<div style="float:left;">Rp.</div>
+						<td colspan="2" style="border: '{{ $borderStyleTd }}'">
+								<div style="float:right;">Rp.</div>
 								<div style="float:right; text-align:right; padding-right:2px;">
 									{{ number_format($data['total_detail_expenses'],0,",",".") ?? '-' }}
 								</div>
@@ -116,11 +116,15 @@
 						</td>
 					</tr>
 					<tr>
-						<td colspan="4" style="border: '{{ $borderStyleTd }}' ">
+						<td colspan="3" style="border: '{{ $borderStyleTd }}' ">
 							<div style="padding-left:4px;"><strong>Due Company (advance more than total expense)</div></strong>
 						</td>
-						<td style="border: '{{ $borderStyleTd }}'">
-							Rp. -
+						<td colspan="2" style="border: '{{ $borderStyleTd }}'">
+							<div style="float:right;">Rp.</div>
+								<div style="float:right; text-align:right; padding-right:2px;">
+									-
+								</div>
+								<div style="clear:both;"></div>
 						</td>
 					</tr>
 				</table>

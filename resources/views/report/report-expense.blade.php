@@ -25,7 +25,7 @@
 		<div id="title-left" style="float:left; width:50%;">
 			<img src="{{ public_path('images/logo-taisho-report2.png') }}" alt="" style="width: 430px;"/>
 		</div>
-		<div id="title-right" style="float:right; width:50%; padding-top:15px;">
+		<div id="title-right" style="float:right; width:50%; padding-top:17px;">
 			<span><strong>{{ $title ?? "TRAVEL AND ENTERTAINMENT EXPENSE REPORT" }}<strong></span>
 		</div>
 		<div style="clear:both;"></div>
@@ -48,27 +48,27 @@
 					@foreach($data['detail_expenses'] as $detailExpense)
 						<tr style="">
 							<td style="border: '{{ $borderStyleTd }}' ">
-								<div style="height: 15px;">
+								<div style="height: 15px; padding-left: 4px;">
 									{{ $detailExpense['account_description'] }}
 								</div>
 							</td>
 							<td style="border: '{{ $borderStyleTd }}' ">
 								<div style="height: 15px;">
-									{{ $detailExpense['expense_code'] }}
+									<center>{{ $detailExpense['expense_code'] }}</center>
 								</div>
 							</td>
 							<td style="border: '{{ $borderStyleTd }}' ">
-								<div style="height: 15px;">
+								<div style="height: 15px; padding-left: 4px;">
 									{{ $detailExpense['description'] }}
 								</div>
 							</td>
 							<td style="border: '{{ $borderStyleTd }}' ">
 								<div style="height: 15px;">
-									{{ $detailExpense['cost_center'] }}
+									<center>{{ $detailExpense['cost_center'] }}</center>
 								</div>
 							</td>
 							<td style="border: '{{ $borderStyleTd }}' ">
-								<div style="height: 15px;">
+								<div style="height: 15px; text-align: right; padding-right: 4px;">
 									{{ $detailExpense['total'] }}
 								</div>
 							</td>
@@ -97,8 +97,8 @@
 						</td>
 					</tr>
 					<tr>
-						<td colspan="4" style="border: '{{ $borderStyleTd }}' ">
-							<strong>Total Expense</strong>
+						<td colspan="4" style="border: '{{ $borderStyleTd }}' padding-left:4px;">
+							<div style="padding-left:4px;"><strong>Total Expense</strong></div>
 						</td>
 						<td style="border: '{{ $borderStyleTd }}'">
 							Rp. {{ $data['total_detail_expenses'] ?? '-' }}
@@ -106,7 +106,7 @@
 					</tr>
 					<tr>
 						<td colspan="4" style="border: '{{ $borderStyleTd }}' ">
-							Due Company (advance Mmorere than total expense)
+							<div style="padding-left:4px;">Due Company (advance Mmorere than total expense)</div>
 						</td>
 						<td style="border: '{{ $borderStyleTd }}'">
 							Rp. -
@@ -118,18 +118,18 @@
 				<table style="width: 100%; border-collapse: collapse;">
 					<tr>
 						<td style="border: {{ $borderStyleTd }} width: 20%;">
-							Claim Number
+							&nbsp;Claim Number
 						</td>
 						<td colspan="4" style="border: '{{ $borderStyleTd }}'">
-							{{ $data['claim_number'] ?? '' }}
+							&nbsp;{{ $data['claim_number'] ?? '' }}
 						</td>
 					</tr>
 					<tr>
 						<td style="border: {{ $borderStyleTd }} width: 20%;">
-							Date Submited
+							<div style="padding-left:2px;">Date Submited</div>
 						</td>
 						<td colspan="4" style="border: '{{ $borderStyleTd }}'">
-							{{ $data['date_submited'] ?? '' }}
+							<div style="padding-left:2px;">{{ $data['date_submited'] ?? '' }}</div>
 						</td>
 					</tr>
 					<tr>
@@ -140,22 +140,24 @@
 					</tr>
 					<tr>
 						<td style="border: '{{ $borderStyleTd }}'">
-							<strong>Name</strong>
+							<strong>&nbsp;Name</strong>
 						</td>
-						<td style="border: {{ $borderStyleTd }} width: 30%;">{{ $data['name'] ?? '' }}</td>
-						<td colspan="2" style="border: '{{ $borderStyleTd }}'"><strong>BP ID</strong></td>
-						<td style="border: '{{ $borderStyleTd }}'">{{ $data['bpid'] ?? '' }}</td>
+						<td style="border: {{ $borderStyleTd }} width: 35%;">
+							<div style="padding-left: 2px;">&nbsp;{{ $data['name'] ?? '' }}</div>
+						</td>
+						<td colspan="2" style="border: '{{ $borderStyleTd }}'"><strong>&nbsp;BP ID</strong></td>
+						<td style="border: '{{ $borderStyleTd }}'">&nbsp;{{ $data['bpid'] ?? '' }}</td>
 					</tr>
 					<tr>
-						<td style="border: '{{ $borderStyleTd }}'">Expense Date</td>
-						<td style="border: '{{ $borderStyleTd }}'">From</td>
-						<td style="border: '{{ $borderStyleTd }}'">{{ $data['expense_date_from'] ?? '' }}</td>
-						<td style="border: {{ $borderStyleTd }} width: 5%;">to</td>
-						<td style="border: '{{ $borderStyleTd }}' border-right: none;">{{ $data['expense_date_to'] ?? '' }}</td>
+						<td style="border: '{{ $borderStyleTd }}'">&nbsp;Expense Date</td>
+						<td style="border: '{{ $borderStyleTd }}'">&nbsp;From</td>
+						<td style="border: '{{ $borderStyleTd }}'">&nbsp;{{ $data['expense_date_from'] ?? '' }}</td>
+						<td style="border: {{ $borderStyleTd }} width: 5%;">&nbsp;to</td>
+						<td style="border: '{{ $borderStyleTd }}' border-right: none;">&nbsp;{{ $data['expense_date_to'] ?? '' }}</td>
 					</tr>
 					<tr>
 						<td rowspan="4" colspan="2" style="border: {{ $borderStyleTd }}">
-							Department : {{ $data['department'] ?? '' }}
+							&nbsp;Department : {{ $data['department'] ?? '' }}
 						</td>
 						<td colspan="3" style="border: {{ $borderStyleTd }}">
 								<div style="height: 15px; visible: 'hidden';">
@@ -183,7 +185,7 @@
 					<tr>
 						<td colspan="5" style="border: {{ $borderStyleTd }}">
 							<div style="visible: 'hidden';">
-								Purpose of Expense : {{ $data['purpose_of_expense'] ?? '' }}
+								&nbsp;Purpose of Expense : {{ $data['purpose_of_expense'] ?? '' }}
 							</div>
 						</td>
 					</tr>
@@ -265,8 +267,8 @@
 			<div style="clear:both;"></div>
 		</div>
 		<div style="float:left; width:50%;">
-			<div style="width: 96%; height:80px; border: {{ $borderStyleTd }} margin-top: 15px;">
-				<small><i>This space if for reviewer(s) note</i></small>
+			<div style="width: 96%; height:80px; border: {{ $borderStyleTd }} margin-top: 15px; padding-top:4px;">
+				<small>&nbsp;<i>This space if for reviewer(s) note</i></small>
 			</div>
 		</div>
 		<div style="float: right; width: 50%;">

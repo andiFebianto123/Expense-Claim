@@ -177,6 +177,7 @@ return [
         App\Providers\HelperServiceProvider::class,
         // Barryvdh\DomPDF\ServiceProvider::class,
         Maatwebsite\Excel\ExcelServiceProvider::class,
+        Venturecraft\Revisionable\RevisionableServiceProvider::class,
     ],
 
     /*

@@ -18,7 +18,8 @@
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",
         "maatwebsite/excel": "^3.1",
-        "psr/simple-cache": "^1.0"
+        "psr/simple-cache": "^1.0",
+        "venturecraft/revisionable": "1.*"
     },
     "require-dev": {
         "backpack/generators": "^3.1",

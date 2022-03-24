@@ -5,10 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class ExpenseClaimType extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
+
     protected $table = 'trans_expense_claim_types';
 
     protected $fillable = [

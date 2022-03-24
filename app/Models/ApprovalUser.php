@@ -7,10 +7,14 @@ use App\Models\HeadDepartment;
 use App\Models\GoaHolder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class ApprovalUser extends Model
 {
-    use HasFactory;
+    use HasFactory, Revision, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
     public function user(){
         return $this->belongsTo(User::class, 'user_id');
     }

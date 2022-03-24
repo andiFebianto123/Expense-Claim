@@ -6,10 +6,14 @@ use App\Models\Department;
 use Illuminate\Database\Eloquent\Model;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use \Venturecraft\Revisionable\RevisionableTrait;
 
 class ExpenseClaim extends Model
 {
-    use HasFactory, CrudTrait;
+    use HasFactory, CrudTrait, RevisionableTrait;
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
+    protected $revisionForceDeleteEnabled = true;
 
     protected $table = 'trans_expense_claims';
 

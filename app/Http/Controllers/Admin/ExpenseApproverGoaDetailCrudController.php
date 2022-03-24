@@ -56,7 +56,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
         $this->crud->headerId = \Route::current()->parameter('header_id');
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
 
-        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::GOA_HOLDER])) {
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::GOA_HOLDER])) {
             $this->crud->denyAccess(['list', 'update']);
         }
 
@@ -109,7 +109,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 });
             });
         });
-        if (in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN])) {
+        if (allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
             $expenseClaim->whereNotNull('trans_expense_claims.current_trans_goa_id');
         }else{
             $expenseClaim->join('trans_goa_approvals','trans_goa_approvals.expense_claim_id' , '=' ,'trans_expense_claims.id')
@@ -243,6 +243,21 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 'escaped' => false
             ],
             [
+                'label' => 'Converted Cost',
+                'name' => 'converted_cost',
+                'type' => 'number'
+            ],
+            [
+                'label' => 'Converted Currency',
+                'name' => 'converted_currency',
+                'type' => 'text'
+            ],
+            [
+                'label' => 'Exchange Value',
+                'name' => 'exchange_value',
+                'type' => 'number',
+            ],
+            [
                 'label' => 'Remark',
                 'name' => 'remark',
                 'limit' => 255,
@@ -362,7 +377,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
             'type'        => 'select2_from_array',
             'options'     => CostCenter::select('id', 'description')->get()->pluck('description', 'id'),
             'allows_null' => false,
-            'default' => CostCenter::where('id', $this->crud->expenseClaim->request_id)->select('id')->first()->id ?? null
+            'default' => (User::where('id', $this->crud->expenseClaim->request_id)->first()->cost_center_id ?? null)
         ]);
 
         CRUD::addField([

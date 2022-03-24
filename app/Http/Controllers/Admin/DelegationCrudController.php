@@ -26,7 +26,7 @@ class DelegationCrudController extends CrudController
     public function setup()
     {
         $roleName = backpack_user()->role->name;
-        if(!in_array($roleName, [Role::ADMIN, Role::GOA_HOLDER, Role::HOD, Role::SECRETARY])){
+        if(!allowedRole([Role::ADMIN, Role::GOA_HOLDER, Role::HOD, Role::SECRETARY])){
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
         }
         CRUD::setModel(\App\Models\MstDelegation::class);

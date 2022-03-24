@@ -75,7 +75,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->crud->setUpdateView('expense_claim.request.edit');
 
         $this->crud->isDraftOrRevision = ($this->crud->expenseClaim->status == ExpenseClaim::DRAFT || $this->crud->expenseClaim->status == ExpenseClaim::NEED_REVISION)
-        && ($this->crud->user->id == $this->crud->expenseClaim->request_id || ($this->crud->role == Role::SECRETARY && $this->crud->expenseClaim->secretary_id == $this->crud->user->id));
+        && ($this->crud->user->id == $this->crud->expenseClaim->request_id || (allowedRole([Role::SECRETARY]) && $this->crud->expenseClaim->secretary_id == $this->crud->user->id));
 
         if (!$this->crud->isDraftOrRevision) {
             $this->crud->denyAccess(['create', 'edit', 'delete']);
@@ -85,10 +85,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
     public function getExpenseClaim($id)
     {
         $expenseClaim = ExpenseClaim::where('id', $id);
-        if ($this->crud->role != Role::ADMIN) {
+        if (!allowedRole([Role::ADMIN])) {
             $expenseClaim->where(function ($query) {
                 $query->where('request_id', $this->crud->user->id);
-                if ($this->crud->role == Role::SECRETARY) {
+                if (allowedRole([Role::SECRETARY])) {
                     $query->orWhere('secretary_id', $this->crud->user->id);
                 }
             });
@@ -205,6 +205,17 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'type' => 'text'
             ],
             [
+                'label' => 'Document',
+                'name' => 'document',
+                'orderable' => false,
+                'searchLogic' => false,
+                'type'  => 'model_function',
+                'function_name' => 'getDocumentLink',
+                'function_parameters' => ['expense-user-request'],
+                'limit' => 1000000,
+                'escaped' => false
+            ],
+            [
                 'label' => 'Converted Cost',
                 'name' => 'converted_cost',
                 'type' => 'number'
@@ -218,17 +229,6 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'label' => 'Exchange Value',
                 'name' => 'exchange_value',
                 'type' => 'number',
-            ],
-            [
-                'label' => 'Document',
-                'name' => 'document',
-                'orderable' => false,
-                'searchLogic' => false,
-                'type'  => 'model_function',
-                'function_name' => 'getDocumentLink',
-                'function_parameters' => ['expense-user-request'],
-                'limit' => 1000000,
-                'escaped' => false
             ],
             [
                 'label' => 'Remark',
@@ -373,6 +373,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
         $this->crud->userExpenseTypes = $this->getUserExpenseTypes();
 
+        $user = User::where('id', $this->crud->expenseClaim->request_id)->first();
+
         CRUD::addField([
             'name' => 'expense_type_id',
             'label' => 'Expense Type',
@@ -401,7 +403,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             'type'        => 'select2_from_array',
             'options'     => CostCenter::select('id', 'description')->get()->pluck('description', 'id'),
             'allows_null' => false,
-            'default' => CostCenter::where('id', $this->crud->expenseClaim->request_id)->select('id')->first()->id ?? null
+            'default' => (User::where('id', $this->crud->expenseClaim->request_id)->first()->cost_center_id ?? null)
         ]);
 
         CRUD::addField([

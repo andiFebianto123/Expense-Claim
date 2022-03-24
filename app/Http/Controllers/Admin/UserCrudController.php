@@ -45,7 +45,7 @@ class UserCrudController extends CrudController
     public function setup()
     {
         $roleName = backpack_user()->role->name;
-        if(!in_array($roleName, [Role::ADMIN])){
+        if(!allowedRole([Role::ADMIN])){
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
         }
         CRUD::setModel(\App\Models\User::class);
@@ -69,12 +69,27 @@ class UserCrudController extends CrudController
         CRUD::column('email')->limit($limit);
         CRUD::column('bpid')->label('BPID')->limit($limit);
         CRUD::column('bpcscode')->label('BPCSCODE')->limit($limit);
-        CRUD::column('role_id')->label('Role')->type('select')->entity('role')
-        ->limit($limit)
-        ->attribute('name')->orderLogic(function ($query, $column, $columnDirection) {
-            return $query->leftJoin('role as r', 'r.id', '=', 'users.role_id')
-            ->orderBy('r.name', $columnDirection)->select('users.*');
-        });
+        CRUD::addColumn([
+            'label'     => 'Roles', // Table column heading
+            'type'      => 'closure',
+            'orderable' => false,
+            'searchLogic' => false,
+            'function' => function($entry){
+                $roles = $entry->roles;
+                $roles = Role::whereIn('id', ($roles ?? []))->select('name')->get()->pluck('name');
+                return $roles->join(', ');
+            },
+            'wrapper' => [
+                'element' => 'span',
+                'class' => 'text-wrap'
+            ]
+        ]);
+        // CRUD::column('role_id')->label('Role')->type('select')->entity('role')
+        // ->limit($limit)
+        // ->attribute('name')->orderLogic(function ($query, $column, $columnDirection) {
+        //     return $query->leftJoin('role as r', 'r.id', '=', 'users.role_id')
+        //     ->orderBy('r.name', $columnDirection)->select('users.*');
+        // });
         CRUD::addColumn([
             'label'     => "Level",
             'type'      => 'select',
@@ -218,15 +233,31 @@ class UserCrudController extends CrudController
             'type'  => 'password'
         ]);
 
-        CRUD::field('level_id')->allows_null(true)->type('relationship');
+        CRUD::field('level_id')->allows_null(true)->type('select2_from_array')
+        ->options(Level::select('id', 'name')->get()->pluck('name', 'id')->toArray());
         ;
-        CRUD::field('role_id')->allows_null(true)->type('relationship');
+        // CRUD::field('role_id')->allows_null(true)->type('relationship');
+
+        CRUD::addField([
+            'label'     => "Roles",
+            'type'      => 'select2_from_array',
+            'name'      => 'roles',
+            'options' => Role::select('id', 'name')->get()->pluck('name', 'id')->toArray(),
+            'attribute' => 'name',
+            'allows_multiple' => true,
+            'wrapper'   => [ 
+                'class'      => 'form-group col-md-12'
+            ],
+        ]);
 
         CRUD::field('cost_center_id')->label('Cost Center')->type('select2_from_array')
         ->allows_null(true)
         ->options(CostCenter::select('id', 'description')->get()->pluck('description', 'id'));
 
-        CRUD::field('department_id')->type('relationship')->label('Head of Department');
+        CRUD::field('department_id')
+        ->type('select2_from_array')
+        ->options(Department::select('id', 'name')->get()->pluck('name', 'id')->toArray())
+        ->label('Head of Department');
 
         CRUD::field('goa_holder_id')->label('GoA Holder')->type('select2_from_array')
         ->allows_null(true)
@@ -283,12 +314,12 @@ class UserCrudController extends CrudController
                 }
             }
 
-            if($request->filled('role_id')){
-                $role = Role::where('id', $request->role_id)->first();
-                if($role == null){
-                    $errors['role_id'] = trans('validation.exists', ["attribute" => trans('validation.attributes.role_id')]);
-                }
-            }
+            // if($request->filled('role_id')){
+            //     $role = Role::where('id', $request->role_id)->first();
+            //     if($role == null){
+            //         $errors['role_id'] = trans('validation.exists', ["attribute" => trans('validation.attributes.role_id')]);
+            //     }
+            // }
 
             if($request->filled('cost_center_id')){
                 $cost_center = CostCenter::where('id', $request->cost_center_id)->first();
@@ -311,6 +342,24 @@ class UserCrudController extends CrudController
                 }
             }
 
+            $uniqueRoles = [];
+            if($request->filled('roles') && is_array($request->roles)){
+                $index = 0;
+                foreach($request->roles as $indexRoles => $roleId){
+                    $role = Role::where('id', $roleId)->exists();
+                    if(!$role){
+                        if(!isset($errors['roles'])){
+                            $errors['roles'] = [];
+                        }
+                        $errors['roles'][] = trans('validation.in', ['attribute' => trans('validation.attributes.roles') . ' ' . ($index + 1)]);
+                    }
+                    else{
+                        $uniqueRoles[$roleId] = true;
+                    }
+                    $index++;
+                }
+            }
+
             if (count($errors) != 0) {
                 DB::rollback();
                 return $this->redirectStoreCrud($errors);
@@ -319,6 +368,7 @@ class UserCrudController extends CrudController
 
             // insert item in the db
             // $this->crud->getStrippedSaveRequest()
+            $this->crud->getRequest()->merge(['roles' => array_keys($uniqueRoles)]);
             $item = $this->crud->create($this->crud->getStrippedSaveRequest($request));
             $this->data['entry'] = $this->crud->entry = $item;
 
@@ -392,12 +442,12 @@ class UserCrudController extends CrudController
                 }
             }
 
-            if($request->filled('role_id')){
-                $role = Role::where('id', $request->role_id)->first();
-                if($role == null){
-                    $errors['role_id'] = trans('validation.exists', ["attribute" => trans('validation.attributes.role_id')]);
-                }
-            }
+            // if($request->filled('role_id')){
+            //     $role = Role::where('id', $request->role_id)->first();
+            //     if($role == null){
+            //         $errors['role_id'] = trans('validation.exists', ["attribute" => trans('validation.attributes.role_id')]);
+            //     }
+            // }
 
             if($request->filled('cost_center_id')){
                 $cost_center = CostCenter::where('id', $request->cost_center_id)->first();
@@ -418,7 +468,26 @@ class UserCrudController extends CrudController
                 if($goaholder == null){
                     $errors['goa_holder_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.goa_holder_id')]);
                 }
-            }         
+            }     
+            
+            $uniqueRoles = [];
+            if($request->filled('roles') && is_array($request->roles)){
+                $index = 0;
+                foreach($request->roles as $indexRoles => $roleId){
+                    $role = Role::where('id', $roleId)->exists();
+                    if(!$role){
+                        if(!isset($errors['roles'])){
+                            $errors['roles'] = [];
+                        }
+                        $errors['roles'][] = trans('validation.in', ['attribute' => trans('validation.attributes.roles') . ' ' . ($index + 1)]);
+                    }
+                    else{
+                        $uniqueRoles[$roleId] = true;
+                    }
+                    $index++;
+                }
+            }
+
 
             if (count($errors) != 0) {
                 DB::rollback();
@@ -433,6 +502,7 @@ class UserCrudController extends CrudController
 
             // $this->crud->getStrippedSaveRequest()
             // update the row in the db
+            $this->crud->getRequest()->merge(['roles' => array_keys($uniqueRoles)]);
             $item = $this->crud->update($request->get($this->crud->model->getKeyName()), 
             $this->crud->getStrippedSaveRequest($request));
             $this->data['entry'] = $this->crud->entry = $item;

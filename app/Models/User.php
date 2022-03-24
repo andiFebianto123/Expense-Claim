@@ -37,6 +37,7 @@ class User extends Authenticatable
         'level_id',
         'password',
         'role_id',
+        'roles',
         'cost_center_id',
         'department_id',
         'goa_holder_id',
@@ -62,6 +63,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'roles' => 'array'
     ];
 
     const USER_ID_SUPER_ADMIN = '00000000';

@@ -41,7 +41,7 @@ class ExpenseFinanceApDetailCrudController extends CrudController
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
 
-        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
             $this->crud->denyAccess('list');
          }
 
@@ -179,6 +179,21 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 'function_parameters' => ['expense-approver-hod'],
                 'limit' => 1000000,
                 'escaped' => false
+            ],
+            [
+                'label' => 'Converted Cost',
+                'name' => 'converted_cost',
+                'type' => 'number'
+            ],
+            [
+                'label' => 'Converted Currency',
+                'name' => 'converted_currency',
+                'type' => 'text'
+            ],
+            [
+                'label' => 'Exchange Value',
+                'name' => 'exchange_value',
+                'type' => 'number',
             ],
             [
                 'label' => 'Remark',

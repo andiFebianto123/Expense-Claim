@@ -50,6 +50,7 @@ Route::group([
             Route::crud('detail', 'ExpenseUserRequestDetailCrudController');
             Route::post('detail/submit', [ExpenseUserRequestDetailCrudController::class, 'submit']);
             Route::get('detail/{id}/document', [ExpenseUserRequestDetailCrudController::class, 'document']);
+            Route::get('print', 'ExpenseUserRequestHistoryCrudController@printReport');
         });
         Route::crud('expense-user-request-history', 'ExpenseUserRequestHistoryCrudController');
         Route::delete('expense-user-request-history/{id}/cancel', [ExpenseUserRequestHistoryCrudController::class, 'cancel']);
@@ -84,7 +85,6 @@ Route::group([
         Route::prefix('expense-finance-ap/{header_id}')->group(function () {
             Route::crud('detail', 'ExpenseFinanceApDetailCrudController');
             Route::get('detail/{id}/document', [ExpenseFinanceApDetailCrudController::class, 'document']);
-            Route::get('print', 'ExpenseFinanceApHistoryCrudController@printReport');
         });
         Route::crud('expense-finance-ap-history', 'ExpenseFinanceApHistoryCrudController');
     });

@@ -179,6 +179,7 @@ return [
         'is_active' => 'active',
         'level_id' => 'level',
         'role_id' => 'role',
+        'roles' => 'roles',
         'cost_center_id' => 'cost center',
         'goa_holder_id' => 'goA holder',
 

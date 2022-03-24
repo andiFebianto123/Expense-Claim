@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Department;
 use App\Models\ExpenseClaim;
+use App\Models\TransGoaApproval;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Backpack\CRUD\app\Http\Controllers\CrudController;

@@ -1,3 +1,6 @@
+@php
+$classExpenseClaim = 'App\Models\ExpenseClaim';
+@endphp
 <div class="row">
     @php
         $classExpenseClaim = 'App\Models\ExpenseClaim';
@@ -89,9 +92,6 @@
                         <p>Status : <span
                                 class="rounded p-1 font-weight-bold text-white {{ App\Models\ExpenseClaim::mapColorStatus($crud->expenseClaim->status) }}">{{ $crud->expenseClaim->status }}</span>
                         </p>
-                        @if (isset($crud->expenseClaim->remark))
-                            <p>Revision Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
-                        @endif
                         @if ($crud->expenseClaim->rejected_id != null)
                             <p>Rejected By : <b>{{ $crud->expenseClaim->rejected->name ?? '-' }}</b></p>
                             <p>Rejected Date : <b>{{ formatDate($crud->expenseClaim->rejected_date) }}</b></p>
@@ -99,6 +99,9 @@
                         @if ($crud->expenseClaim->canceled_id != null)
                             <p>Canceled By : <b>{{ $crud->expenseClaim->canceled->name ?? '-' }}</b></p>
                             <p>Canceled Date : <b>{{ formatDate($crud->expenseClaim->canceled_date) }}</b></p>
+                        @endif
+                        @if ( in_array($crud->expenseClaim->status, [$classExpenseClaim::NEED_REVISION,$classExpenseClaim::REJECTED_ONE,$classExpenseClaim::REJECTED_TWO ]))
+                        <p> Remark : {{ $crud->expenseClaim->remark ?? '-' }}</p>
                         @endif
                     </div>
                 </div>

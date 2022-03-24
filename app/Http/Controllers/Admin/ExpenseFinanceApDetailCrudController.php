@@ -53,9 +53,12 @@ class ExpenseFinanceApDetailCrudController extends CrudController
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap/' . ($this->crud->headerId ?? '-') . '/detail');
         CRUD::setEntityNameStrings('Expense Finance AP - Detail', 'Expense Finance AP - Detail');
 
+       
         $this->crud->goaList = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
-            ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
-            ->get(['mst_users.name', 'trans_goa_approvals.goa_date']);
+                ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
+                ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+                ->select('mst_users.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+                ->orderBy('order')->get(); 
     }
 
     public function getExpenseClaim($id){

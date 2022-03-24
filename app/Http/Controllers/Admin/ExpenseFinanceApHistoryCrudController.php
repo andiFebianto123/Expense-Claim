@@ -34,7 +34,6 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
      */
     public function setup()
     {
-        dd(Str::limit("cobacoba", 4, ''));
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
 

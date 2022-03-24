@@ -67,12 +67,10 @@ class ExpenseFinanceApCrudController extends CrudController
      */
     protected function setupListOperation()
     {
+        $this->crud->enableDetailsRow();
         $this->crud->enableBulkActions();
-        // $this->crud->addButtonFromView('top', 'upload_sap', 'upload_sap', 'end');
         $this->crud->addButtonFromView('top', 'download_journal_ap', 'download_journal_ap', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
-
-        $this->crud->enableDetailsRow();
 
         CRUD::addColumns([
             [

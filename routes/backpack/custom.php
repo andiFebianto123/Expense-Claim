@@ -87,6 +87,7 @@ Route::group([
             Route::get('detail/{id}/document', [ExpenseFinanceApDetailCrudController::class, 'document']);
         });
         Route::crud('expense-finance-ap-history', 'ExpenseFinanceApHistoryCrudController');
+        Route::post('expense-finance-ap-history/download-ap-journal', 'ExpenseFinanceApHistoryCrudController@downloadApJournal');
     });
 
     Route::crud('role', 'RoleCrudController');

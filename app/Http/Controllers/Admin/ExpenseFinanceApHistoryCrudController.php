@@ -2,21 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Support\Str;
-use Exception;
-use Carbon\Carbon;
+use App\Exports\ApJournalExport;
+use App\Exports\ApJournalHistoryExport;
 use App\Models\Role;
 use App\Models\User;
-use App\Models\Department;
-use App\Library\ReportClaim;
 use App\Models\ExpenseClaim;
 use App\Models\TransGoaApproval;
-use App\Models\ExpenseClaimDetail;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
-use App\Http\Requests\ExpenseFinanceApHistoryRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * Class ExpenseFinanceApHistoryCrudController
@@ -41,6 +36,10 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             $this->crud->denyAccess('list');
         }
 
+        if (allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
+            $this->crud->allowAccess('download_journal_ap_history');
+        }
+
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
                 $query->where('trans_expense_claims.status', ExpenseClaim::PROCEED);
@@ -60,11 +59,10 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-
-        $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
-
-
+        $this->crud->enableBulkActions();
         $this->crud->enableDetailsRow();
+        $this->crud->addButtonFromView('top', 'download_journal_ap_history', 'download_journal_ap_history', 'end');
+        $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
 
         CRUD::addColumns([
             [
@@ -262,11 +260,28 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         $this->data['crud'] = $this->crud;
 
         $this->data['goaApprovals'] = TransGoaApproval::where('expense_claim_id', $this->data['entry']->id)
-        ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
-        ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
-        ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
-        ->orderBy('order')->get();  
+            ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
+            ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+            ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+            ->orderBy('order')
+            ->get();  
 
         return view('detail_approval', $this->data);
+    }
+
+
+    public function downloadApJournal(){
+        $entries = null;
+        if(isset(request()->entries)){
+            $entries = request()->entries;
+        }
+        $filename = 'ap-journal-'.date('YmdHis').'.xlsx';    
+        $myFile =  Excel::raw(new ApJournalHistoryExport($entries), 'Xlsx');
+        
+        $response =  array(
+            'name' => $filename,
+            'file' => "data:application/vnd.ms-excel;base64,".base64_encode($myFile)
+         );
+         return response()->json($response);
     }
 }

@@ -117,7 +117,7 @@ class ApJournalExport implements FromView, WithEvents
                 $dataExpenseDetails = ExpenseClaimDetail::where('expense_claim_id', $dataExpense->id)->get();
                 if(count($dataExpenseDetails) > 0){
                     foreach($dataExpenseDetails as $dataExpenseDetail){
-                        $expenseName[] = $dataExpenseDetail->expense_claim_type->expense_name . 'kjkjkjk';
+                        $expenseName[] = $dataExpenseDetail->expense_claim_type->expense_name;
                         $date = $dataExpenseDetail->date;
                         $reference = $dataExpense->expense_number;
                         $currency = $dataExpenseDetail->currency;

@@ -41,7 +41,7 @@ class ExpenseFinanceApDetailCrudController extends CrudController
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
 
-        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
             $this->crud->denyAccess('list');
          }
 

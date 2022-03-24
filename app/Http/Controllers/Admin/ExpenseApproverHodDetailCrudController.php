@@ -53,7 +53,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         $this->crud->headerId = \Route::current()->parameter('header_id');
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
 
-        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::HOD])) {
+        if (!allowedRole( [Role::SUPER_ADMIN, Role::ADMIN, Role::HOD])) {
             $this->crud->denyAccess(['create', 'edit', 'delete']);
         }
 
@@ -104,7 +104,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 });
             });
         });
-        if (in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN])) {
+        if (allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
             $expenseClaim->whereNotNull('trans_expense_claims.hod_id');
         }
         else{
@@ -349,7 +349,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             'type'        => 'select2_from_array',
             'options'     => CostCenter::select('id', 'description')->get()->pluck('description', 'id'),
             'allows_null' => false,
-            'default' => CostCenter::where('id', $this->crud->expenseClaim->request_id)->select('id')->first()->id ?? null
+            'default' => (User::where('id', $this->crud->expenseClaim->request_id)->first()->cost_center_id ?? null)
         ]);
 
         CRUD::addField([

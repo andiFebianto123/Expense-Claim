@@ -11,7 +11,7 @@ if (!function_exists('formatNumber')) {
         if ($negative == '-') {
             $number = substr($number, 1);
         }
-        $broken_number = explode(/*$decimal*/ '.', $number);
+        $broken_number = explode( /*$decimal*/'.', $number);
         $broken_number_length = strlen($broken_number[0]) - 1;
         $formatted_number = '';
         while ($broken_number_length >= 0) {
@@ -53,16 +53,40 @@ if (!function_exists('formatDate')) {
         if ($dateString === null || strlen($dateString) == 0) {
             return '-';
         }
-        if($fromFormat === null){
+        if ($fromFormat === null) {
             $dateCarbon = Carbon\Carbon::parse($dateString);
-        }
-        else{
+        } else {
             $dateCarbon = Carbon\Carbon::createFromFormat($fromFormat, $dateString);
         }
         $method = 'format';
-        if($useTranslate){
+        if ($useTranslate) {
             $method = 'translatedFormat';
         }
         return $dateCarbon->{$method}($toFormat);
+    }
+}
+
+if (!function_exists('allowedRole')) {
+    function allowedRole($allowedRoles = [])
+    {
+
+        $arrRoleId = backpack_user()->roles;
+         
+        $colRoles = App\Models\Role::whereIn('id', ($arrRoleId ?? []))->get();
+
+        $arrRoleName = [];
+
+        foreach ($colRoles as $key => $colRole) {
+
+            $arrRoleName[] = $colRole->name;
+
+        }
+
+        $intersect = array_intersect($arrRoleName, $allowedRoles);
+
+        $countMatches = count($intersect);
+
+        return $countMatches != 0;
+
     }
 }

@@ -34,14 +34,14 @@ class ExpenseApproverHodCrudController extends CrudController
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
 
-        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::HOD])) {
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::HOD])) {
             $this->crud->denyAccess('list');
         }
         else
         {
             ExpenseClaim::addGlobalScope('user', function(Builder $builder){
                 $builder->where(function($query){
-                    if(in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN])){
+                    if(allowedRole([Role::SUPER_ADMIN, Role::ADMIN])){
                         $query->whereNotNull('trans_expense_claims.hod_id');
                     }
                     else{

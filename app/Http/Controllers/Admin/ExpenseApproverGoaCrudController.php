@@ -34,7 +34,7 @@ class ExpenseApproverGoaCrudController extends CrudController
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
 
-        if (!in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN, Role::GOA_HOLDER])) {
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::GOA_HOLDER])) {
             $this->crud->denyAccess('list');
         }
 
@@ -58,7 +58,7 @@ class ExpenseApproverGoaCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        if(in_array($this->crud->role, [Role::SUPER_ADMIN, Role::ADMIN])){
+        if(allowedRole([Role::SUPER_ADMIN, Role::ADMIN])){
             $this->crud->query->whereNotNull('trans_expense_claims.current_trans_goa_id');
         }
         else{

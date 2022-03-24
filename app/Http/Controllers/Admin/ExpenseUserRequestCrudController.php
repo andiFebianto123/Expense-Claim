@@ -30,16 +30,16 @@ class ExpenseUserRequestCrudController extends CrudController
         $this->crud->role = $this->crud->user->role->name ?? null;
         $this->crud->allowAccess(['request', 'cancel']);
 
-        if ($this->crud->role != Role::ADMIN) {
+        if (!allowedRole([Role::ADMIN])) {
             ExpenseClaim::addGlobalScope('request_id', function (Builder $builder) {
                 $builder->where('request_id', $this->crud->user->id);
-                if ($this->crud->role == Role::SECRETARY) {
+                if (allowedRole([Role::SECRETARY])) {
                     $builder->orWhere('secretary_id', $this->crud->user->id);
                 }
             });
         }
 
-        if ($this->crud->role == Role::SECRETARY) {
+        if (allowedRole([Role::SECRETARY])) {
             $this->crud->allowAccess('request_goa');
         }
 
@@ -66,7 +66,7 @@ class ExpenseUserRequestCrudController extends CrudController
         $this->crud->enableDetailsRow();
 
         $this->crud->cancelCondition = function ($entry) {
-            return ($this->crud->role === Role::ADMIN &&
+            return (allowedRole([Role::ADMIN]) &&
                 ($entry->status !== ExpenseClaim::REJECTED_ONE && $entry->status !== ExpenseClaim::REJECTED_TWO && $entry->status !== ExpenseClaim::CANCELED &&
                     $entry->status !== ExpenseClaim::FULLY_APPROVED && $entry->status !== ExpenseClaim::PROCEED)) || $entry->status == ExpenseClaim::DRAFT;
         };
@@ -251,7 +251,7 @@ class ExpenseUserRequestCrudController extends CrudController
                 DB::rollback();
                 return response()->json(['message' => trans('custom.model_not_found')], 404);
             }
-            if (($this->crud->role !== Role::ADMIN && $model->status !== ExpenseClaim::DRAFT) || ($this->crud->role === Role::ADMIN && ($model->status === ExpenseClaim::REJECTED_ONE || $model->status === ExpenseClaim::REJECTED_TWO || $model->status === ExpenseClaim::CANCELED || $model->status === ExpenseClaim::FULLY_APPROVED || $model->status === ExpenseClaim::PROCEED))) {
+            if ((!allowedRole([Role::ADMIN]) && $model->status !== ExpenseClaim::DRAFT) || (allowedRole([Role::ADMIN]) && ($model->status === ExpenseClaim::REJECTED_ONE || $model->status === ExpenseClaim::REJECTED_TWO || $model->status === ExpenseClaim::CANCELED || $model->status === ExpenseClaim::FULLY_APPROVED || $model->status === ExpenseClaim::PROCEED))) {
                 DB::rollback();
                 return response()->json(['message' => trans('custom.expense_claim_cant_status', ['status' => $model->status, 'action' => trans('custom.canceled')])], 403);
             }

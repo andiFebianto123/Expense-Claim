@@ -181,6 +181,21 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 'escaped' => false
             ],
             [
+                'label' => 'Converted Cost',
+                'name' => 'converted_cost',
+                'type' => 'number'
+            ],
+            [
+                'label' => 'Converted Currency',
+                'name' => 'converted_currency',
+                'type' => 'text'
+            ],
+            [
+                'label' => 'Exchange Value',
+                'name' => 'exchange_value',
+                'type' => 'number',
+            ],
+            [
                 'label' => 'Remark',
                 'name' => 'remark',
                 'limit' => 255,

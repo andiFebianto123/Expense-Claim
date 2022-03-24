@@ -202,6 +202,17 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'type' => 'text'
             ],
             [
+                'label' => 'Document',
+                'name' => 'document',
+                'orderable' => false,
+                'searchLogic' => false,
+                'type'  => 'model_function',
+                'function_name' => 'getDocumentLink',
+                'function_parameters' => ['expense-user-request'],
+                'limit' => 1000000,
+                'escaped' => false
+            ],
+            [
                 'label' => 'Converted Cost',
                 'name' => 'converted_cost',
                 'type' => 'number'
@@ -215,17 +226,6 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'label' => 'Exchange Value',
                 'name' => 'exchange_value',
                 'type' => 'number',
-            ],
-            [
-                'label' => 'Document',
-                'name' => 'document',
-                'orderable' => false,
-                'searchLogic' => false,
-                'type'  => 'model_function',
-                'function_name' => 'getDocumentLink',
-                'function_parameters' => ['expense-user-request'],
-                'limit' => 1000000,
-                'escaped' => false
             ],
             [
                 'label' => 'Remark',

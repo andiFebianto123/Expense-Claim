@@ -48,7 +48,11 @@ class ExpenseFinanceApCrudController extends CrudController
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
-                $query->where('trans_expense_claims.status', ExpenseClaim::FULLY_APPROVED);
+                $query->where('trans_expense_claims.status', ExpenseClaim::FULLY_APPROVED)
+                    ->orWhere(function($query){
+                        $query->where('trans_expense_claims.status', ExpenseClaim::NEED_REVISION)
+                        ->whereNotNull('trans_expense_claims.finance_id');
+                    });
             });
         });
 
@@ -156,23 +160,23 @@ class ExpenseFinanceApCrudController extends CrudController
             //     'name' => 'goa_date',
             //     'type'  => 'date',
             // ],
-            [
-                'label' => 'Fin AP By',
-                'name' => 'finance_id',
-                'type'      => 'select',
-                'entity'    => 'finance',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.finance_id')
-                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'Fin AP Date',
-                'name' => 'finance_date',
-                'type'  => 'date',
-            ],
+            // [
+            //     'label' => 'Fin AP By',
+            //     'name' => 'finance_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'finance',
+            //     'attribute' => 'name',
+            //     'model'     => User::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.finance_id')
+            //             ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'Fin AP Date',
+            //     'name' => 'finance_date',
+            //     'type'  => 'date',
+            // ],
             [
                 'label' => 'Status',
                 'name' => 'status',

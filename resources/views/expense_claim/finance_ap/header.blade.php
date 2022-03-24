@@ -95,6 +95,88 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                     </div>
                 </div>
             </div>
+            @if ($crud->hasAction)
+            <div class="card-footer">
+                <button class="btn btn-info" data-toggle="modal" data-target="#modalRevise">
+                    <i class="la la-pencil"></i>&nbsp;Revise
+                </button>
+            </div>
+            @endif
         </div>
     </div>
 </div>
+@push('after_scripts')
+<!-- Modal -->
+<div class="modal fade" id="modalRevise" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Revise Expense</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <label for="">Write your reason here : </label>
+                <textarea name="" class="form-control" id="new-remark-revise" cols="30" rows="5"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="revise-button">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="{{ asset('js/loadingTaisho.js') }}"></script>
+<script>
+
+    function reviseAction() {
+        $('#modalRevise').modal('hide');
+        showProgress()
+        $.ajax({
+            url: "{{backpack_url('expense-finance-ap/' . $crud->expenseClaim->id .  '/detail/revise')}}",
+            type: 'POST',
+            data: {
+                remark: $('#new-remark-revise').val()
+            },
+            success: function(result) {
+                window.location.href = result.redirect_url;
+            },
+            error: function(result) {
+                hideProgress()
+                var defaultText = "{!! trans('custom.revise_confirmation_not_message') !!}";
+                if (result.status == 422) {
+                    var message = '';
+                    var tempMessage = result.responseJSON.errors;
+                    for (var key in tempMessage) {
+                        message = '';
+                        tempMessage[key].forEach(element => {
+                            message += '<div class="invalid-feedback d-block">' + element + '</div>';
+                        });
+                        $('[name=' + key + ']').addClass('is-invalid');
+                        var parents = $('[name=' + key + ']').parents('div.form-group');
+                        parents.addClass('text-danger');
+                        parents.append(message);
+                    }
+                    return;
+                } else if (result.status != 500 && result.responseJSON != null && result.responseJSON.message != null && result.responseJSON.message.length != 0) {
+                    defaultText = result.responseJSON.message;
+                }
+                swal({
+                    title: "{!! trans('custom.revise_confirmation_not_title') !!}",
+                    text: defaultText,
+                    icon: "error",
+                    timer: 4000,
+                    buttons: false,
+                });
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        $('#revise-button').click(function() {
+            reviseAction();
+        });
+    });
+</script>
+@endpush

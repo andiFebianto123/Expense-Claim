@@ -15,9 +15,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseFinanceApDetailRequest;
+use App\Mail\StatusForRequestorMail;
+use App\Models\TransApRevision;
 use App\Models\TransGoaApproval;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Class ExpenseFinanceApDetailCrudController
@@ -38,8 +41,10 @@ class ExpenseFinanceApDetailCrudController extends CrudController
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
         $this->crud->department = $this->crud->user->department->name ?? null;
+        $this->crud->hasAction = false;
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
+        $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
 
         if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
             $this->crud->denyAccess('list');
@@ -52,7 +57,10 @@ class ExpenseFinanceApDetailCrudController extends CrudController
         CRUD::setModel(ExpenseClaimDetail::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap/' . ($this->crud->headerId ?? '-') . '/detail');
         CRUD::setEntityNameStrings('Expense Finance AP - Detail', 'Expense Finance AP - Detail');
-
+        $allowedStatus = in_array($this->crud->expenseClaim->status, [ExpenseClaim::FULLY_APPROVED]);
+        if ($allowedStatus && allowedRole([Role::FINANCE_AP])){
+            $this->crud->hasAction = true;
+        }
        
         $this->crud->goaList = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
                 ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
@@ -66,7 +74,8 @@ class ExpenseFinanceApDetailCrudController extends CrudController
         $expenseClaim = ExpenseClaim::where('id', $id)
         ->where(function($query){
             $query->where('trans_expense_claims.status', ExpenseClaim::FULLY_APPROVED)
-            ->orWhere('trans_expense_claims.status', ExpenseClaim::PROCEED);
+            ->orWhere('trans_expense_claims.status', ExpenseClaim::PROCEED)
+            ->orWhere('trans_expense_claims.status', ExpenseClaim::NEED_REVISION);
         });
 
         $expenseClaim =  $expenseClaim->first();
@@ -294,5 +303,62 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 'Cache-Control' => 'no-cache, must-revalidate'
             ]);
         }
+    }
+
+
+    public function revise($header_id, Request $request){
+        $request->validate(['remark' => 'nullable|max:255']);
+        DB::beginTransaction();
+        try{
+            $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+            $checkStatus = $this->checkStatusForApprover($expenseClaim, 'revised');
+            if($checkStatus !== true){
+                DB::rollback();
+                return response()->json(['message' =>  $checkStatus], 403);
+            }
+
+            $now = Carbon::now();
+            $expenseClaim->status = ExpenseClaim::NEED_REVISION;
+            $expenseClaim->finance_id = $this->crud->user->id;
+            $expenseClaim->remark = $request->remark;
+            $expenseClaim->save();
+
+            $insertApRevision = new TransApRevision();
+            $insertApRevision->expense_claim_id = $expenseClaim->id;
+            $insertApRevision->ap_finance_id = $this->crud->user->id;
+            $insertApRevision->ap_finance_date = $now;
+            $insertApRevision->status = ExpenseClaim::NEED_REVISION;
+            $insertApRevision->save();
+
+            $dataMailRequestor['approverName'] = $this->crud->user->name;
+            $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
+            $dataMailRequestor['status'] = ExpenseClaim::NEED_REVISION;
+            $dataMailRequestor['approverDate'] = $now;
+            $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
+
+            // if (isset($expenseClaim->request->email)) {
+            //     Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
+            // }
+
+            DB::commit();
+            \Alert::success(trans('custom.expense_claim_revise_success'))->flash();
+            return response()->json(['redirect_url' => backpack_url('expense-finance-ap/' . $expenseClaim->id .  '/detail')]);
+        }
+        catch(Exception $e){
+            DB::rollback();
+            throw $e;
+        }
+    }
+
+
+    private function checkStatusForApprover($expenseClaim, $action){
+        $allowedStatus = in_array($expenseClaim->status, [ExpenseClaim::FULLY_APPROVED]);
+        if(!allowedRole([Role::FINANCE_AP])){
+            return trans('custom.error_permission_message');
+        }
+        if(!$allowedStatus) {
+            return trans('custom.expense_claim_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.' . $action)]);
+        }
+        return true;
     }
 }

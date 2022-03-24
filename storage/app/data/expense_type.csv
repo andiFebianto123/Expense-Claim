@@ -1,5 +1,5 @@
 "Expense Type","Level","LevelName","Limit","Currency","Expense Code","Expense Code Name","TRAFApproval","BoDApproval","BusinessPurposesApproval","Remark"
-"Telephone","D7","Director","  999,999,999 ","IDR","6141106","Telephone ","","","Yes","If Exceed IDR 720 ribu ,need to High - light the business purpose"
+"Telephone","D7","Director","  3,000,000 ","IDR","6141106","Telephone ","","","Yes","If Exceed IDR 720 ribu ,need to High - light the business purpose"
 "Telephone","NSP","National Sales & Promotion (Senior Manager)","  700,000 ","IDR","6141106","Telephone ","","","",""
 "Telephone","KAM","Key Account Manager ","  500,000 ","IDR","6141106","Telephone ","","","",""
 "Telephone","RSM","Regional Sales Manager ","  400,000 ","IDR","6141106","Telephone ","","","",""

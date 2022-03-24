@@ -231,6 +231,14 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'type' => 'number',
             ],
             [
+                'label' => 'Total Person',
+                'name' => 'total_person'
+            ],
+            [
+                'label' => 'Total Day',
+                'name' => 'total_day'
+            ],
+            [
                 'label' => 'Remark',
                 'name' => 'remark',
                 'limit' => 255,
@@ -342,6 +350,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'mst_expense_types.is_traf as traf',
                 'mst_expense_types.limit as limit',
                 'mst_expense_types.is_bp_approval as bp_approval',
+                'mst_expense_types.limit_daily',
                 'mst_expense_types.is_limit_person as limit_person',
                 'mst_levels.level_id as level',
                 'mst_expenses.name as expense_name',
@@ -357,6 +366,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'is_traf as traf',
                 'limit',
                 'is_bp_approval as bp_approval',
+                'limit_daily',
                 'is_limit_person as limit_person',
                 'detail_level_id as level',
                 'expense_name'
@@ -433,6 +443,19 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             'wrapper' => [
                 'class' => 'form-group col-md-12 required'
             ]
+        ]);
+
+        CRUD::addField([
+            'name' => 'total_day',
+            'type' => 'number',
+            'label' => 'Total Day',
+            'attributes' => [
+                'id' => 'totalDay',
+            ],
+            'wrapper' => [
+                'class' => 'form-group col-md-12 required'
+            ],
+            'default' => 1
         ]);
 
         CRUD::addField([
@@ -547,17 +570,56 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             if ($expenseType == null) {
                 $errors['expense_type_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_type')])];
             } else {
+                $limit = $expenseType->limit;
+
                 $isLimitDaily = $expenseType->limit_daily;
+
+                $errorLimitDaily = false;
+                if ($isLimitDaily) {
+                    $totalDay = $request->total_day;
+                    if (ctype_digit($totalDay)) {
+                        $requestDate = Carbon::parse($request->date)->startOfDay();
+                        $requestEndDate = $requestDate->copy()->addDay($totalDay - 1);
+                        $otherRequest = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                        ->where('expense_type_id', $expenseType->expense_type_id)
+                        ->where(function ($query) use($requestDate, $requestEndDate){
+                            $query->where(function ($innerQuery) use($requestDate, $requestEndDate){
+                                $innerQuery->where('date', '<=', $requestDate)
+                                    ->where('end_date', '>=', $requestEndDate);
+                            })->orWhere(function ($innerQuery) use($requestDate, $requestEndDate){
+                                $innerQuery->where('date', '>=', $requestDate)
+                                    ->where('end_date', '<=', $requestEndDate);
+                            })->orWhere(function ($innerQuery) use($requestDate, $requestEndDate){
+                                $innerQuery->where('date', '<=', $requestEndDate)
+                                    ->where('end_date', '>=', $requestEndDate);
+                            });
+                        })
+                        ->where('total_day', ($totalDay > 1 ? '>=' : '>') , 1)->first();
+                        if($otherRequest != null){
+                            $errorLimitDaily = true;
+                            $errors['expense_type_id'] = [trans('custom.expense_type_limit_daily', ['startDate' => Carbon::parse($otherRequest->date)->format('d M Y'), 
+                            'endDate' => Carbon::parse($otherRequest->end_date)->format('d M Y'), 'attribute' => trans('validation.attributes.expense_type')])];
+                        }
+                        else if ($limit != null) {
+                            $limit *= $totalDay;
+                        }
+                    } else {
+                        $errorLimitDaily = true;
+                        $errors['total_day'] = [trans('validation.integer', ['attribute' => trans('validation.attributes.total_day')])];
+                    }
+                }
+
+
                 if ($expenseType->currency == Config::USD) {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
                         ->where('expense_type_id', $expenseType->expense_type_id)
-                        ->when($isLimitDaily, function($query) use($request){
+                        ->when($isLimitDaily && !$errorLimitDaily, function($query) use($request){
                             $query->where('date', '=', Carbon::parse($request->date)->startOfDay()->format('Y-m-d'));
                         })
                         ->sum('converted_cost');
                 } else {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                        ->when($isLimitDaily, function($query) use($request){
+                        ->when($isLimitDaily && !$errorLimitDaily, function($query) use($request){
                             $query->where('date', '=', Carbon::parse($request->date)->startOfDay()->format('Y-m-d'));
                         })
                         ->where('expense_type_id', $expenseType->expense_type_id)->sum('cost');
@@ -565,7 +627,6 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $totalCost = $request->cost + $currentCost;
 
                 $isLimitPerson = $expenseType->is_limit_person;
-                $limit = $expenseType->limit;
 
                 $errorLimitPerson = false;
                 if ($isLimitPerson) {
@@ -583,7 +644,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     }
                 }
 
-                if (!$errorLimitPerson) {
+                if (!$errorLimitPerson && !$errorLimitDaily) {
                     if ($limit != null && $totalCost > $limit) {
                         $errors['cost'] = [
                             trans(
@@ -744,6 +805,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->cost_center_id = $costCenter->id;
             $expenseClaimDetail->expense_type_id = $expenseType->expense_type_id;
             $expenseClaimDetail->total_person = $isLimitPerson ? $totalPerson : null;
+            $expenseClaimDetail->total_day = $isLimitDaily ? $totalDay : null;
+            $expenseClaimDetail->end_date = $isLimitDaily ? $requestEndDate : null;
             $expenseClaimDetail->is_bp_approval = $expenseType->is_bp_approval ? $isBpApproval : false;
             $expenseClaimDetail->currency = $currency;
             $expenseClaimDetail->exchange_value = $exchangeValue;
@@ -843,6 +906,20 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'class' => 'form-group col-md-12 required'
             ]
         ]);
+
+        CRUD::addField([
+            'name' => 'total_day',
+            'type' => 'number',
+            'label' => 'Total Day',
+            'attributes' => [
+                'id' => 'totalDay',
+            ],
+            'wrapper' => [
+                'class' => 'form-group col-md-12 required'
+            ],
+            'default' => 1
+        ]);
+
 
         CRUD::addField([
             'name' => 'is_bp_approval',
@@ -956,11 +1033,48 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $errors['expense_type_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_type')])];
             } else {
                 $expenseType = $historyExpenseType;
+                $limit = $expenseType->limit;
                 $isLimitDaily = $expenseType->limit_daily;
+
+                $errorLimitDaily = false;
+                if ($isLimitDaily) {
+                    $totalDay = $request->total_day;
+                    if (ctype_digit($totalDay)) {
+                        $requestDate = Carbon::parse($expenseClaimDetail->date)->startOfDay();
+                        $requestEndDate = $requestDate->copy()->addDay($totalDay - 1);
+                        $otherRequest = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                        ->where('expense_type_id', $expenseType->expense_type_id)
+                        ->where(function ($query) use($requestDate, $requestEndDate){
+                            $query->where(function ($innerQuery) use($requestDate, $requestEndDate){
+                                $innerQuery->where('date', '<=', $requestDate)
+                                    ->where('end_date', '>=', $requestEndDate);
+                            })->orWhere(function ($innerQuery) use($requestDate, $requestEndDate){
+                                $innerQuery->where('date', '>=', $requestDate)
+                                    ->where('end_date', '<=', $requestEndDate);
+                            })->orWhere(function ($innerQuery) use($requestDate, $requestEndDate){
+                                $innerQuery->where('date', '<=', $requestEndDate)
+                                    ->where('end_date', '>=', $requestEndDate);
+                            });
+                        })
+                        ->where('total_day', ($totalDay > 1 ? '>=' : '>') , 1)->where('id', '!=', $id)->first();
+                        if($otherRequest != null){
+                            $errorLimitDaily = true;
+                            $errors['expense_name'] = [trans('custom.expense_type_limit_daily', ['startDate' => Carbon::parse($otherRequest->date)->format('d M Y'), 
+                            'endDate' => Carbon::parse($otherRequest->end_date)->format('d M Y'), 'attribute' => trans('validation.attributes.expense_type')])];
+                        }
+                        else if ($limit != null) {
+                            $limit *= $totalDay;
+                        }
+                    } else {
+                        $errorLimitDaily = true;
+                        $errors['total_day'] = [trans('validation.integer', ['attribute' => trans('validation.attributes.total_day')])];
+                    }
+                }
+
                 if ($expenseType->currency == Config::USD) {
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
                         ->where('expense_type_id', $expenseType->expense_type_id)
-                        ->when($isLimitDaily, function($query) use($expenseClaimDetail){
+                        ->when($isLimitDaily && !$errorLimitDaily, function($query) use($expenseClaimDetail){
                             $query->where('date', '=', Carbon::parse($expenseClaimDetail->date)->startOfDay()->format('Y-m-d'));
                         })
                         ->where('id', '!=', $expenseClaimDetail->id)->sum('converted_cost');
@@ -968,7 +1082,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
                         ->where('expense_type_id', $expenseType->expense_type_id)
                         ->where('id', '!=', $expenseClaimDetail->id)
-                        ->when($isLimitDaily, function($query) use($expenseClaimDetail){
+                        ->when($isLimitDaily && !$errorLimitDaily, function($query) use($expenseClaimDetail){
                             $query->where('date', '=', Carbon::parse($expenseClaimDetail->date)->startOfDay()->format('Y-m-d'));
                         })
                         ->sum('cost');
@@ -976,7 +1090,6 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $totalCost = $request->cost + $currentCost;
 
                 $isLimitPerson = $expenseType->is_limit_person;
-                $limit = $expenseType->limit;
 
                 $errorLimitPerson = false;
                 if ($isLimitPerson) {
@@ -994,7 +1107,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     }
                 }
 
-                if (!$errorLimitPerson) {
+                if (!$errorLimitPerson && !$errorLimitDaily) {
                     if ($limit != null && $totalCost > $limit) {
                         $errors['cost'] = [
                             trans(
@@ -1086,6 +1199,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->cost_center_id = $costCenter->id;
             $expenseClaimDetail->expense_type_id = $expenseType->expense_type_id;
             $expenseClaimDetail->total_person = $isLimitPerson ? $totalPerson : null;
+            $expenseClaimDetail->total_day = $isLimitDaily ? $totalDay : null;
+            $expenseClaimDetail->end_date = $isLimitDaily ? $requestEndDate : null;
             $expenseClaimDetail->is_bp_approval = $expenseType->is_bp_approval ? $isBpApproval : false;
             $expenseClaimDetail->currency = $currency;
             $expenseClaimDetail->exchange_value = $exchangeValue;

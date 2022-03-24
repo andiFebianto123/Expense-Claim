@@ -205,6 +205,14 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 'type' => 'number',
             ],
             [
+                'label' => 'Total Person',
+                'name' => 'total_person'
+            ],
+            [
+                'label' => 'Total Day',
+                'name' => 'total_day'
+            ],
+            [
                 'label' => 'Remark',
                 'name' => 'remark',
                 'limit' => 255,

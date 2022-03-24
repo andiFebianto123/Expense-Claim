@@ -24,12 +24,13 @@ return [
     'user_dept_goa_not_found' => 'The head of department / GoA from the requestor is not found.',
 
     // DELEGATION
-    'same_user_delegation_date' => 'The same user with has conflict delegation with start date = :startDate and end date = :endDate.',
+    'same_user_delegation_date' => 'The same user has conflict delegation with start date = :startDate and end date = :endDate.',
 
 
     // USER REQUEST
     'goa_user_not_found' => 'The user for GoA approval is not found.',
     'expense_claim_cant_status' => 'The expense claim status is :status and cannot be :action.',
+    'expense_type_limit_daily' => 'The selected :attribute has conflict request with start date = :startDate and end date = :endDate.',
 
     // USER REQUEST DETAIL
     'submit_confirm' => 'Are you sure you want to submit this item?',

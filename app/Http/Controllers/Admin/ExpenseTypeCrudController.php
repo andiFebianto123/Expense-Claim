@@ -439,6 +439,13 @@ class ExpenseTypeCrudController extends CrudController
                 $errors['is_bp_approval'] = [trans('custom.business_purposes_restrict_level', ['level' => 'D7'])];
             }
 
+            if($request->is_limit_person && $request->limit_daily){
+                $errors['is_limit_person'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.is_limit_person'), 
+                'attr2' => trans('validation.attributes.limit_daily')])];
+                $errors['limit_daily'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.limit_daily'), 
+                'attr2' => trans('validation.attributes.is_limit_person')])];
+            }
+
 
             $uniqueDepartments = [];
             if($request->filled('department_id') && is_array($request->department_id)){
@@ -585,6 +592,14 @@ class ExpenseTypeCrudController extends CrudController
             if($level != null && ($level->level_id ?? null) != 'D7' && $request->is_bp_approval == '1'){
                 $errors['is_bp_approval'] = [trans('custom.business_purposes_restrict_level', ['level' => 'D7'])];
             }
+
+            if($request->is_limit_person && $request->limit_daily){
+                $errors['is_limit_person'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.is_limit_person'), 
+                'attr2' => trans('validation.attributes.limit_daily')])];
+                $errors['limit_daily'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.limit_daily'), 
+                'attr2' => trans('validation.attributes.is_limit_person')])];
+            }
+
 
             $uniqueDepartments = [];
             if($request->filled('department_id') && is_array($request->department_id)){

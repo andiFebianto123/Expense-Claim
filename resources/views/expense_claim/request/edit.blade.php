@@ -119,7 +119,6 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
      var expenseTypes = @json($expenseTypes);
      var selectedExpenseTypeId = parseInt($('#expenseTypeId').val());
      var currentItem = null;
-     console.log(selectedExpenseTypeId);
 
      selectExpenseType(selectedExpenseTypeId)
 
@@ -131,7 +130,6 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
          var index = expenseTypes.findIndex(item => item.expense_type_id.toString() === selectedId.toString());
          if(index !== -1){
              currentItem = expenseTypes[index];
-             console.log(currentItem);
              item = currentItem;
              if(item.traf){
                  $('#documentFile').parents('div.form-group').addClass('required-custom');
@@ -141,6 +139,7 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
              }
              if (item.expense_type_id === selectedId) {
                  $('#currencyId').val(item.currency);
+                 console.log(item);
                  var multiply = 1;
                  if(item.limit_person){
                      if(cleaveElmtCache['total_person'] !== null && cleaveElmtCache['total_person'] !== undefined){
@@ -154,6 +153,18 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
                          multiply = 0;
                      }
                  }
+                 else if(item.limit_daily){
+                    if(cleaveElmtCache['total_day'] !== null && cleaveElmtCache['total_day'] !== undefined){
+                        multiply = cleaveElmtCache['total_day'].getRawValue();
+                        
+                    }
+                    else{
+                        multiply = $('input[name="total_day"]').val();
+                    }
+                    if(multiply === null || multiply === undefined){
+                        multiply = 0;
+                    }
+                }
                  if(item.limit === null || item.limit === undefined){
                      $('#limitId').val('-');
                  }
@@ -176,6 +187,14 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
                  }
                  $('#totalPerson').parents('div.form-group').addClass('d-none');
              }
+             if (item.limit_daily) {
+                $('#totalDay').parents('div.form-group').removeClass('d-none');
+            } else {
+                if(cleaveElmtCache['total_day'] !== null && cleaveElmtCache['total_day'] !== undefined){
+                    cleaveElmtCache['total_day'].setRawValue('');
+                }
+                $('#totalDay').parents('div.form-group').addClass('d-none');
+            }
          }
      }
 
@@ -189,6 +208,16 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
              }
          }
      });
+     $('#totalDay').parents('.form-group').find('input[type="hidden"]').on('change', function(){
+        if(currentItem != null && currentItem.limit_daily){
+            if(currentItem.limit === null || currentItem.limit === undefined){
+                $('#limitId').val('-');
+            }
+            else{
+                $('#limitId').val(numberWithCommas(currentItem.limit * (this.value.length == 0 ? 0 : this.value)));
+            }
+        }
+    });
      $('#documentFile').parent().append('<input type="hidden" name="document_change" id="documentChange" value="0">');
      $('#documentFile').parents('div.form-group').find(".file_clear_button").click(function(){
         $('#documentChange').val("1");

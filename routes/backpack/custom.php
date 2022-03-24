@@ -100,4 +100,5 @@ Route::group([
     Route::crud('delegation', 'DelegationCrudController');
     Route::crud('expense', 'ExpenseCrudController');
     Route::crud('expense-code', 'ExpenseCodeCrudController');
+    Route::crud('config', 'ConfigCrudController');
 }); // this should be the absolute last line of this file

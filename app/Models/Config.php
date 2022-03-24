@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Config extends Model
 {
+    use \Backpack\CRUD\app\Models\Traits\CrudTrait;
     use HasFactory;
     protected $table = 'mst_configs';
     protected $fillable = ['key', 'type', 'value'];

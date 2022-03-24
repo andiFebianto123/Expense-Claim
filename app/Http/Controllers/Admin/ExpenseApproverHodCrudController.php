@@ -114,22 +114,22 @@ class ExpenseApproverHodCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as r', 'r.id', '=', 'trans_expense_claims.request_id')
-                    ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
+                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
-            [
-                'label' => 'Department',
-                'name' => 'department_id',
-                'type'      => 'select',
-                'entity'    => 'department',
-                'attribute' => 'name',
-                'model'     => Department::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('mst_departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
-                    ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
-                },
-            ],
+            // [
+            //     'label' => 'Department',
+            //     'name' => 'department_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'department',
+            //     'attribute' => 'name',
+            //     'model'     => Department::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('mst_departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
+            //         ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
             [
                 'label' => 'Status',
                 'name' => 'status',

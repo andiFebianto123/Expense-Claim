@@ -64,6 +64,8 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         $this->crud->addButtonFromModelFunction('line', 'printReportExpense', 'printReportExpense', 'end');
 
 
+        $this->crud->enableDetailsRow();
+
         CRUD::addColumns([
             [
                 'name'      => 'row_number',
@@ -83,6 +85,7 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             [
                 'label' => 'Currency',
                 'name' => 'currency',
+                'visibleInTable' => false
             ],
             [
                 'label' => 'Request Date',
@@ -97,8 +100,8 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as r', 'r.id', '=', 'trans_expense_claims.request_id')
-                    ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
+                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             // [
@@ -155,8 +158,8 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as f', 'f.id', '=', 'trans_expense_claims.goa_id')
-                    ->orderBy('f.name', $columnDirection)->select('trans_expense_claims.*');
+                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.finance_id')
+                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -246,5 +249,24 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             return $print->renderPdf();
 
         }
+    }
+    
+    public function showDetailsRow($id)
+    {
+        $this->crud->hasAccessOrFail('list');
+
+        // get entry ID from Request (makes sure its the last ID for nested resources)
+        $id = $this->crud->getCurrentEntryId() ?? $id;
+
+        $this->data['entry'] = $this->crud->getEntry($id);
+        $this->data['crud'] = $this->crud;
+
+        $this->data['goaApprovals'] = TransGoaApproval::where('expense_claim_id', $this->data['entry']->id)
+        ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
+        ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+        ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+        ->orderBy('order')->get();  
+
+        return view('detail_approval', $this->data);
     }
 }

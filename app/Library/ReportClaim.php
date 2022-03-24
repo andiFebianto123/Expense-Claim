@@ -11,21 +11,31 @@ class ReportClaim {
     private $rowEmptyExpenseTable = 19;
     private $rowEmptyExpenseTableReport = 5;
 
-
-    private function calculateProcessToReport(){
-        if($this->rowEmptyExpenseTable > ReportClaim::DEFAULT_ROW_EMPTY_EXPENSE_TABLE){
-            $appendRowToReport = $this->rowEmptyExpenseTable - ReportClaim::DEFAULT_ROW_EMPTY_EXPENSE_TABLE;
-            $row = ReportClaim::DEFAULT_ROW_EMPTY_EXPENSE_TABLE_REPORT + $appendRowToReport;
-            $this->rowEmptyExpenseTableReport = $row;
-        }
-
+    public function __construct($data = []){
+        $this->data = $data;
+        $this->processBeforePrint();
     }
-    public function renderPdf($namePdf = 'hello.pdf'){
-        $this->calculateProcessToReport();
+
+    private function processBeforePrint(){
+        if(isset($this->data)){
+            $jumlahDetailExpense = count($this->data['detail_expenses']);
+            if($jumlahDetailExpense > 0 && $jumlahDetailExpense <= self::DEFAULT_ROW_EMPTY_EXPENSE_TABLE){
+                $this->rowEmptyExpenseTable -= $jumlahDetailExpense;
+            }else{
+                $selisih = $jumlahDetailExpense - self::DEFAULT_ROW_EMPTY_EXPENSE_TABLE;
+                $this->rowEmptyExpenseTable += $selisih;
+                $this->rowEmptyExpenseTableReport += $selisih;
+            }
+        }
+    }
+
+    
+    public function renderPdf($namePdf = 'hello.pdf'){ 
         $pdf = PDF::loadview('report.report-expense', [
             'title' => $this->title,
             'rowEmptyExpenseTable' => $this->rowEmptyExpenseTable,
             'rowEmptyExpenseTableReport' => $this->rowEmptyExpenseTableReport,
+            'data' => $this->data,
         ])
         ->setPaper('a4', 'landscape');
         return $pdf->stream();

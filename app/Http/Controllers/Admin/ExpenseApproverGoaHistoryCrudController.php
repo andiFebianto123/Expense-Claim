@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Department;
+use App\Library\ReportClaim;
 use App\Models\ExpenseClaim;
 use App\Models\TransGoaApproval;
 use App\Models\ExpenseClaimDetail;
@@ -122,22 +123,22 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as r', 'r.id', '=', 'trans_expense_claims.request_id')
-                    ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
+                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
-            [
-                'label' => 'Department',
-                'name' => 'department_id',
-                'type'      => 'select',
-                'entity'    => 'department',
-                'attribute' => 'name',
-                'model'     => Department::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('mst_departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
-                    ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
-                },
-            ],
+            // [
+            //     'label' => 'Department',
+            //     'name' => 'department_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'department',
+            //     'attribute' => 'name',
+            //     'model'     => Department::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('mst_departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
+            //         ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
             [
                 'label' => 'Status',
                 'name' => 'status',
@@ -183,7 +184,7 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
                     array_push($detailExpenses, $ex);
                 }
             }
-            $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)->get();
+            $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)->groupBy('goa_id')->get();
             if(count($dataGoaDetails) > 0){
                 foreach($dataGoaDetails as $dataGoaDetail){
                     $dataGoa = [
@@ -192,30 +193,33 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
                     ];
                     array_push($goaHolders, $dataGoa);
                 }
-            }
+            }  
 
             $data['claim_number'] = $dataClaim->expense_number;
             $data['date_submited'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD/MM/YY');
             $data['name'] = $dataClaim->request->name;
             $data['bpid'] = $dataClaim->request->bpid;
             $data['expense_date_from'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
-            $data['expense_date_to'] = Carbon::parse($dataClaim->start_approval_date)->isoFormat('MMMM');
+            $data['expense_date_to'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
             $data['department'] = $dataClaim->request->department->name;
 
             $data['purpose_of_expense'] = implode(', ', $expensePurpose);
 
             $data['request_name'] = $dataClaim->request->name;
             $data['request_date'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD.MM.YYYY');
-            $data['head_department_name'] = $dataClaim->request->department->user->name;
-            $data['head_department_approval_date'] = Carbon::parse($dataClaim->start_approval_date)->isoFormat('DD.MM.YYYY');
+            $data['head_department_name'] = $dataClaim->hod->name ?? '';
+            $data['head_department_approval_date'] = ($dataClaim->hod_date != null) ? Carbon::parse($dataClaim->hod_date)->isoFormat('DD.MM.YYYY') : '';
 
             $data['goa_holder'] = $goaHolders;
 
+            $data['print_date'] = Carbon::now()->isoFormat('DD-MMM-YY');
+
             // detail for expenses
             $data['detail_expenses'] = $detailExpenses;
-            $data['total_detail_expenses'] = $totalDetailExpenseCost;
+            $data['total_detail_expenses'] = $totalDetailExpenseCost; 
 
-            dd($data);
+            $print = new ReportClaim($data);
+            return $print->renderPdf();
 
         }
     }

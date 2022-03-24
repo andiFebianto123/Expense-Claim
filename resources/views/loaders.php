@@ -1,4 +1,4 @@
-<div class="position-absolute" style="top:50%;left:50%; transform: translate(-50%, -50%)">
+<div class="position-absolute" style="top:50%;left:50%; transform: translate(-50%, -50%); vertical-align:middle;">
 <div class="sk-fading-circle">
     <div class="sk-circle1 sk-circle"></div>
     <div class="sk-circle2 sk-circle"></div>

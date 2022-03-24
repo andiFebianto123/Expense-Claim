@@ -153,7 +153,7 @@
         </div>
     </div>
 </div>
-
+<script src="{{ asset('js/loadingTaisho.js') }}"></script>
 <script>
     function clearErrorForm() {
         var parent = $('#card-approver');
@@ -171,7 +171,7 @@
             buttons: ["{!! trans('backpack::crud.cancel') !!}", "{!! trans('custom.approve') !!}"],
         }).then((value) => {
             if (value) {
-                $('button').prop('disabled', true);
+                showProgress();
                 $.ajax({
                     url: "{{backpack_url('expense-approver-hod/' . $crud->expenseClaim->id .  '/detail/approve')}}",
                     type: 'POST',
@@ -182,7 +182,7 @@
                         window.location.href = result.redirect_url;
                     },
                     error: function(result) {
-                        $('button').prop('disabled', false);
+                        hideProgress();
                         clearErrorForm()
                         // Show an alert with the result
                         var defaultText = "{!! trans('custom.approve_confirmation_not_message') !!}";
@@ -218,7 +218,7 @@
 
     function reviseAction() {
         $('#modalRevise').modal('hide');
-        $('button').prop('disabled', true);
+        showProgress();
         $.ajax({
             url: "{{backpack_url('expense-approver-hod/' . $crud->expenseClaim->id .  '/detail/revise')}}",
             type: 'POST',
@@ -229,7 +229,7 @@
                 window.location.href = result.redirect_url;
             },
             error: function(result) {
-                $('button').prop('disabled', false);
+                hideProgress()
                 clearErrorForm()
                 var defaultText = "{!! trans('custom.revise_confirmation_not_message') !!}";
                 if (result.status == 422) {
@@ -262,7 +262,7 @@
 
     function rejectAction() {
         $('#modalReject').modal('hide');
-        $('button').prop('disabled', true);
+        showProgress()
         $.ajax({
             url: "{{backpack_url('expense-approver-hod/' . $crud->expenseClaim->id .  '/detail/reject')}}",
             type: 'POST',
@@ -273,7 +273,7 @@
                 window.location.href = result.redirect_url;
             },
             error: function(result) {
-                $('button').prop('disabled', false);
+                hideProgress()
                 clearErrorForm()
                 // Show an alert with the result
                 var defaultText = "{!! trans('custom.reject_confirmation_not_message') !!}";

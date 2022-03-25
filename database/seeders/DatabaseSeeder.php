@@ -193,6 +193,7 @@ class DatabaseSeeder extends Seeder
             'bpid' =>  User::USER_ID_SUPER_ADMIN,
             'level_id' => Level::where('level_id', 'D7')->first()->id,
             'department_id' => Department::where('department_id', 'NONE')->first()->id,
+            'real_department_id' => Department::where('department_id', 'NONE')->first()->id,
             'role_id' => Role::where('name', Role::ADMIN)->first()->id,
             'roles' => Role::where('name', Role::ADMIN)->get()->pluck('id')->toArray(),
             'is_active' => true,
@@ -220,6 +221,8 @@ class DatabaseSeeder extends Seeder
             $role = Role::where('name', $userRole)->first();
             $department = Department::where('name', $user['Head of Department'])->first();
 
+            $realDepartment = Department::where('name', ($user['Department'] ?? null))->first();
+
             $costCenter = CostCenter::where('cost_center_id', $user['Cost Center'])->first();
             $bpidExist = User::where('bpid',  $user['BPID'])->first();
 
@@ -236,6 +239,7 @@ class DatabaseSeeder extends Seeder
                     'bpid' =>  $bpIdPass ? $user['BPID'] : null,
                     'level_id' => $level->id,
                     'department_id' => $department->id ?? null,
+                    'real_department_id' => $realDepartment->id ?? null,
                     'role_id' => $role->id,
                     'roles' => $allRolesId,
                     'is_active' => true,

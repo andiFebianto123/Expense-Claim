@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ExpenseApproverGoaDetailCrudController;
 use App\Http\Controllers\Admin\ExpenseApproverHodDetailCrudController;
 use App\Http\Controllers\Admin\ExpenseUserRequestDetailCrudController;
 use App\Http\Controllers\Admin\ExpenseUserRequestHistoryCrudController;
+use Illuminate\Support\Facades\Route;
 
 // --------------------------
 // Custom Backpack Routes
@@ -94,6 +95,7 @@ Route::group([
     Route::crud('role', 'RoleCrudController');
     Route::crud('level', 'LevelCrudController');
     Route::crud('user', 'UserCrudController');
+    Route::get('user/report-excel', 'UserCrudController@reportExcel');
     Route::get('user/report', 'UserCrudController@printReportExpense');
     Route::crud('goa-holder', 'GoaHolderCrudController');
     Route::crud('department', 'DepartmentCrudController');

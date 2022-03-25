@@ -376,7 +376,6 @@ class ExpenseTypeCrudController extends CrudController
             ],
         ]);
 
-
         CRUD::addField([
             'name'        => 'remark',
             'label'       => 'Remark',

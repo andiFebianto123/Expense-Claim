@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use Carbon\Carbon;
+use App\Exports\ApJournalExport;
+use App\Exports\ApJournalHistoryExport;
 use App\Models\Role;
 use App\Models\User;
-use App\Models\Department;
 use App\Models\ExpenseClaim;
-use Illuminate\Support\Facades\DB;
+use App\Models\TransGoaApproval;
 use Illuminate\Database\Eloquent\Builder;
-use App\Http\Requests\ExpenseFinanceApHistoryRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * Class ExpenseFinanceApHistoryCrudController
@@ -32,23 +31,24 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
     {
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
-        $this->crud->department = $this->crud->user->department->name ?? null;
 
-        if($this->crud->role !== Role::SUPER_ADMIN && $this->crud->department !== Department::FINANCE){
-           $this->crud->denyAccess('list');
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
+            $this->crud->denyAccess('list');
+        }
+
+        if (allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
+            $this->crud->allowAccess('download_journal_ap_history');
         }
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
-                $query->where('expense_claims.status', ExpenseClaim::PROCEED);
+                $query->where('trans_expense_claims.status', ExpenseClaim::PROCEED);
             });
         });
 
         CRUD::setModel(ExpenseClaim::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap-history');
         CRUD::setEntityNameStrings('Expense Finance AP - History', 'Expense Finance AP - History');
-
-        
     }
 
     /**
@@ -59,7 +59,9 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-
+        $this->crud->enableBulkActions();
+        $this->crud->enableDetailsRow();
+        $this->crud->addButtonFromView('top', 'download_journal_ap_history', 'download_journal_ap_history', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
 
         CRUD::addColumns([
@@ -81,6 +83,7 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             [
                 'label' => 'Currency',
                 'name' => 'currency',
+                'visibleInTable' => false
             ],
             [
                 'label' => 'Request Date',
@@ -95,56 +98,56 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as r', 'r.id', '=', 'expense_claims.request_id')
-                    ->orderBy('r.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
-            [
-                'label' => 'Department',
-                'name' => 'department_id',
-                'type'      => 'select',
-                'entity'    => 'department',
-                'attribute' => 'name',
-                'model'     => Department::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('departments as d', 'd.id', '=', 'expense_claims.department_id')
-                    ->orderBy('d.name', $columnDirection)->select('expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'Approved By',
-                'name' => 'approval_id',
-                'type'      => 'select',
-                'entity'    => 'approval',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as a', 'a.id', '=', 'expense_claims.approval_id')
-                    ->orderBy('a.name', $columnDirection)->select('expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'Approved Date',
-                'name' => 'approval_date',
-                'type'  => 'date',
-            ],
-            [
-                'label' => 'GoA By',
-                'name' => 'goa_id',
-                'type'      => 'select',
-                'entity'    => 'goa',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as g', 'g.id', '=', 'expense_claims.goa_id')
-                    ->orderBy('g.name', $columnDirection)->select('expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'GoA Date',
-                'name' => 'goa_date',
-                'type'  => 'date',
-            ],
+            // [
+            //     'label' => 'Department',
+            //     'name' => 'department_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'department',
+            //     'attribute' => 'name',
+            //     'model'     => Department::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
+            //         ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'Approved By',
+            //     'name' => 'approval_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'approval',
+            //     'attribute' => 'name',
+            //     'model'     => User::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('users as a', 'a.id', '=', 'trans_expense_claims.approval_id')
+            //         ->orderBy('a.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'Approved Date',
+            //     'name' => 'approval_date',
+            //     'type'  => 'date',
+            // ],
+            // [
+            //     'label' => 'GoA By',
+            //     'name' => 'goa_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'goa',
+            //     'attribute' => 'name',
+            //     'model'     => User::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('users as g', 'g.id', '=', 'trans_expense_claims.goa_id')
+            //         ->orderBy('g.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
+            // [
+            //     'label' => 'GoA Date',
+            //     'name' => 'goa_date',
+            //     'type'  => 'date',
+            // ],
             [
                 'label' => 'Fin AP By',
                 'name' => 'finance_id',
@@ -153,8 +156,8 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as f', 'f.id', '=', 'expense_claims.goa_id')
-                    ->orderBy('f.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.finance_id')
+                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
             [
@@ -173,5 +176,112 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
                 ],
             ]
         ]);
+    }
+    // public function printReport(){
+    //     $this->crud->headerId = \Route::current()->parameter('header_id');
+    //     $data = [];
+    //     $expensePurpose = [];
+    //     $goaHolders = [];
+    //     $detailExpenses = [];
+    //     $totalDetailExpenseCost = 0;
+
+    //     $dataClaim = ExpenseClaim::where('id', $this->crud->headerId)
+    //     ->first();
+    //     if($dataClaim != null){
+    //         $dataClaimDetails = ExpenseClaimDetail::where('expense_claim_id', $dataClaim->id)->get();
+    //         if(count($dataClaimDetails) > 0){
+    //             foreach($dataClaimDetails as $dataClaimDetail){
+    //                 $nameExpense = $dataClaimDetail->expense_claim_type->expense_name;
+    //                 $idExpense = $dataClaimDetail->expense_claim_type->account_number;
+    //                 $descriptionExpense = $dataClaimDetail->expense_claim_type->description;
+    //                 $costCenterExpense = $dataClaimDetail->cost_center->cost_center_id;
+    //                 $totalExpense = $dataClaimDetail->cost;
+    //                 $totalDetailExpenseCost += $totalExpense;
+
+    //                 $expensePurpose[] = $nameExpense;
+    //                 $ex = [
+    //                     'account_description' => $nameExpense,
+    //                     'expense_code' => $idExpense,
+    //                     'description' => $descriptionExpense,
+    //                     'cost_center' => $costCenterExpense,
+    //                     'total' => $totalExpense,
+    //                 ];
+    //                 array_push($detailExpenses, $ex);
+    //             }
+    //         }
+    //         $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)->groupBy('goa_id')->get();
+    //         if(count($dataGoaDetails) > 0){
+    //             foreach($dataGoaDetails as $dataGoaDetail){
+    //                 $dataGoa = [
+    //                     'name' => $dataGoaDetail->user->name,
+    //                     'date' => Carbon::parse($dataGoaDetail->goa_date)->isoFormat('DD.MM.YYYY')
+    //                 ];
+    //                 array_push($goaHolders, $dataGoa);
+    //             }
+    //         }  
+
+    //         $data['claim_number'] = $dataClaim->expense_number;
+    //         $data['date_submited'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD/MM/YY');
+    //         $data['name'] = $dataClaim->request->name;
+    //         $data['bpid'] = $dataClaim->request->bpid;
+    //         $data['expense_date_from'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
+    //         $data['expense_date_to'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
+    //         $data['department'] = $dataClaim->request->department->name;
+
+    //         $data['purpose_of_expense'] = implode(', ', $expensePurpose);
+
+    //         $data['request_name'] = $dataClaim->request->name;
+    //         $data['request_date'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD.MM.YYYY');
+    //         $data['head_department_name'] = $dataClaim->hod->name ?? '';
+    //         $data['head_department_approval_date'] = ($dataClaim->hod_date != null) ? Carbon::parse($dataClaim->hod_date)->isoFormat('DD.MM.YYYY') : '';
+
+    //         $data['goa_holder'] = $goaHolders;
+
+    //         $data['print_date'] = Carbon::now()->isoFormat('DD-MMM-YY');
+
+    //         // detail for expenses
+    //         $data['detail_expenses'] = $detailExpenses;
+    //         $data['total_detail_expenses'] = $totalDetailExpenseCost; 
+
+    //         $print = new ReportClaim($data);
+    //         return $print->renderPdf();
+
+    //     }
+    // }
+    
+    public function showDetailsRow($id)
+    {
+        $this->crud->hasAccessOrFail('list');
+
+        // get entry ID from Request (makes sure its the last ID for nested resources)
+        $id = $this->crud->getCurrentEntryId() ?? $id;
+
+        $this->data['entry'] = $this->crud->getEntry($id);
+        $this->data['crud'] = $this->crud;
+
+        $this->data['goaApprovals'] = TransGoaApproval::where('expense_claim_id', $this->data['entry']->id)
+            ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
+            ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+            ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+            ->orderBy('order')
+            ->get();  
+
+        return view('detail_approval', $this->data);
+    }
+
+
+    public function downloadApJournal(){
+        $entries = null;
+        if(isset(request()->entries)){
+            $entries = request()->entries;
+        }
+        $filename = 'ap-journal-'.date('YmdHis').'.xlsx';    
+        $myFile =  Excel::raw(new ApJournalHistoryExport($entries), 'Xlsx');
+        
+        $response =  array(
+            'name' => $filename,
+            'file' => "data:application/vnd.ms-excel;base64,".base64_encode($myFile)
+         );
+         return response()->json($response);
     }
 }

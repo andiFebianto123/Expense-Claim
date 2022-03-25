@@ -4,24 +4,47 @@
 @php
     $user = backpack_user();
     $role = $user->role->name ?? null;
-    $department = $user->department->name ?? null;
     
     $classRole = 'App\Models\Role';
-    $allowMaster = in_array($role, [$classRole::SUPER_ADMIN, $classRole::DIRECTOR]);
-    $allowLevelOne = in_array($role, [$classRole::SUPER_ADMIN, $classRole::NATIONAL_SALES]);
-    $allowLevelTwo = in_array($role, [$classRole::SUPER_ADMIN, $classRole::DIRECTOR]);
+    $allowAll = allowedRole([$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY]);
 
-    $classDepartment = 'App\Models\Department';
-    $allowFinance = $role === $classRole::SUPER_ADMIN || $department === $classDepartment::FINANCE;
+    $allowMaster = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
+    $allowHod = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::HOD]);
+    $allowGoa = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::GOA_HOLDER]);
+    $allowFinance = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::FINANCE_AP]);
 @endphp
 
+@php
+    $hasFoundMenuMaster = false;
+@endphp
+@foreach ((new App\Helpers\Sidebar())->generate() as $key => $menu)
+    @if(allowedRole($menu['access']))
+        @if (!$hasFoundMenuMaster)
+            @php
+                $hasFoundMenuMaster = true;
+            @endphp
+            <li class="nav-title">Master</li>
+        @endif
+    <li class="nav-item @if($menu['childrens']) nav-dropdown @endif">
+        <a class="nav-link parent @if($menu['childrens']) nav-dropdown-toggle @endif" href="{{  $menu['url'] }}">
+            <i class="nav-icon la {{$menu['icon']}}"></i> {{$menu['label']}}
+        </a>
+        @if($menu['childrens'])
+        <ul class="nav-dropdown-items">
+            @foreach($menu['childrens'] as $key2 => $child)
+            <li class="nav-item">
+                <a class="nav-link childs" href="{{ $child['url'] }}">
+                <span>• {{$child['label']}}</span>
+                </a>
+            </li>
+            @endforeach
+        </ul>
+        @endif
+    </li> 
+    @endif
+@endforeach
 
-@if ($allowMaster)
-    <li class="nav-title">Master</li>
-    <li class="nav-item"><a class="nav-link" href="{{backpack_url('user-access-control')}}"><i class="la la-users nav-icon"></i> User Access Control</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{backpack_url('approval-card')}}"><i class="la la-cc-mastercard nav-icon"></i> Approval Card</a></li>    
-@endif
-
+@if($allowAll)
 <li class="nav-title">Expense</li>
 <li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-envelope-square"></i> User Request</a>
     <ul class="nav-dropdown-items">
@@ -29,8 +52,9 @@
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-user-request-history')}}"> History</a></li>
     </ul>
 </li>
+@endif
 
-@if ($allowLevelOne)
+@if ($allowHod)
 <li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-angle-right"></i> Approver HoD</a>
     <ul class="nav-dropdown-items">
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-approver-hod')}}"> Ongoing</a></li>
@@ -40,7 +64,7 @@
 @endif
 
 
-@if ($allowLevelTwo)
+@if ($allowGoa)
 <li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-angle-double-right"></i> Approver GoA</a>
     <ul class="nav-dropdown-items">
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-approver-goa')}}"> Ongoing</a></li>

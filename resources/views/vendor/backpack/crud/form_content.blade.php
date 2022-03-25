@@ -1,9 +1,9 @@
-<input type="hidden" name="http_referrer" value={{ url($crud->route) }}>
+<input type="hidden" name="_http_referrer" value={{ url($crud->route) }}>
 
 {{-- See if we're using tabs --}}
 @if ($crud->tabsEnabled() && count($crud->getTabs()))
     @include('crud::inc.show_tabbed_fields')
-    <input type="hidden" name="current_tab" value="{{ Str::slug($crud->getTabs()[0]) }}" />
+    <input type="hidden" name="_current_tab" value="{{ Str::slug($crud->getTabs()[0]) }}" />
 @else
   <div class="card">
     <div class="card-body row">
@@ -16,10 +16,6 @@
 {{-- Define blade stacks so css and js can be pushed from the fields to these sections. --}}
 
 @section('after_styles')
-    <link rel="stylesheet" href="{{ asset('packages/backpack/crud/css/crud.css').'?v='.config('backpack.base.cachebusting_string') }}">
-    <link rel="stylesheet" href="{{ asset('packages/backpack/crud/css/form.css').'?v='.config('backpack.base.cachebusting_string') }}">
-    <link rel="stylesheet" href="{{ asset('packages/backpack/crud/css/'.$action.'.css').'?v='.config('backpack.base.cachebusting_string') }}">
-
     <!-- CRUD FORM CONTENT - crud_fields_styles stack -->
     @stack('crud_fields_styles')
 
@@ -36,10 +32,6 @@
 @endsection
 
 @section('after_scripts')
-    <script src="{{ asset('packages/backpack/crud/js/crud.js').'?v='.config('backpack.base.cachebusting_string') }}"></script>
-    <script src="{{ asset('packages/backpack/crud/js/form.js').'?v='.config('backpack.base.cachebusting_string') }}"></script>
-    <script src="{{ asset('packages/backpack/crud/js/'.$action.'.js').'?v='.config('backpack.base.cachebusting_string') }}"></script>
-
     <!-- CRUD FORM CONTENT - crud_fields_scripts stack -->
     @stack('crud_fields_scripts')
 
@@ -73,7 +65,7 @@
       // Save button has multiple actions: save and exit, save and edit, save and new
       var saveActions = $('#saveActions'),
       crudForm        = saveActions.parents('form'),
-      saveActionField = $('[name="save_action"]');
+      saveActionField = $('[name="_save_action"]');
 
       saveActions.on('click', '.dropdown-menu a', function(){
           var saveAction = $(this).data('value');
@@ -162,11 +154,11 @@
 
       $("a[data-toggle='tab']").click(function(){
           currentTabName = $(this).attr('tab_name');
-          $("input[name='current_tab']").val(currentTabName);
+          $("input[name='_current_tab']").val(currentTabName);
       });
 
       if (window.location.hash) {
-          $("input[name='current_tab']").val(window.location.hash.substr(1));
+          $("input[name='_current_tab']").val(window.location.hash.substr(1));
       }
 
       });

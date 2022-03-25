@@ -15,8 +15,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseFinanceApDetailRequest;
+use App\Mail\StatusForRequestorMail;
+use App\Models\TransApRevision;
+use App\Models\TransGoaApproval;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Class ExpenseFinanceApDetailCrudController
@@ -37,28 +41,41 @@ class ExpenseFinanceApDetailCrudController extends CrudController
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
         $this->crud->department = $this->crud->user->department->name ?? null;
+        $this->crud->hasAction = false;
 
         $this->crud->headerId = \Route::current()->parameter('header_id');
+        $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
 
-        if($this->crud->role !== Role::SUPER_ADMIN && $this->crud->department !== Department::FINANCE){
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
             $this->crud->denyAccess('list');
          }
 
         ExpenseClaimDetail::addGlobalScope('header_id', function (Builder $builder) {
-            $builder->where('expense_claim_id', $this->crud->headerId);
+            $builder->where('trans_expense_claim_details.expense_claim_id', $this->crud->headerId);
         });
 
         CRUD::setModel(ExpenseClaimDetail::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap/' . ($this->crud->headerId ?? '-') . '/detail');
         CRUD::setEntityNameStrings('Expense Finance AP - Detail', 'Expense Finance AP - Detail');
+        $allowedStatus = in_array($this->crud->expenseClaim->status, [ExpenseClaim::FULLY_APPROVED]);
+        if ($allowedStatus && allowedRole([Role::FINANCE_AP])){
+            $this->crud->hasAction = true;
+        }
+       
+        $this->crud->goaList = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+                ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
+                ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+                ->select('mst_users.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+                ->orderBy('order')->get(); 
     }
 
     public function getExpenseClaim($id){
         
         $expenseClaim = ExpenseClaim::where('id', $id)
         ->where(function($query){
-            $query->where('expense_claims.status', ExpenseClaim::NEED_PROCESSING)
-            ->orWhere('expense_claims.status', ExpenseClaim::PROCEED);
+            $query->where('trans_expense_claims.status', ExpenseClaim::FULLY_APPROVED)
+            ->orWhere('trans_expense_claims.status', ExpenseClaim::PROCEED)
+            ->orWhere('trans_expense_claims.status', ExpenseClaim::NEED_REVISION);
         });
 
         $expenseClaim =  $expenseClaim->first();
@@ -93,34 +110,64 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 'type'  => 'date',
             ],
             [
-                'label' => 'Expense Type',
-                'name' => 'approval_card_id',
-                'type'      => 'select',
-                'entity'    => 'approvalCard',
-                'attribute' => 'name',
-                'model'     => ApprovalCard::class,
+                'name'     => 'expense_claim_type_id',
+                'label'    => 'Expense Type',
+                'type'     => 'select',
+                'entity'    => 'expense_claim_type', // the method that defines the relationship in your Model
+                'attribute' => 'expense_name', // foreign key attribute that is shown to user
+                'model'     => "App\Models\ExpenseClaimType", // foreign key model
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('approval_cards as a', 'a.id', '=', 'expense_claim_details.approval_card_id')
-                    ->orderBy('a.name', $columnDirection)->select('expense_claim_details.*');
+                    return $query
+                        ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
+                        ->orderBy('trans_expense_claim_types.expense_name', $columnDirection)
+                        ->select('trans_expense_claim_details.*');
+                },
+            ],
+
+            [
+                'name'     => 'expense_claim_type_id',
+                'label'    => 'Level',
+                'type'     => 'select',
+                'entity'    => 'expense_claim_type', // the method that defines the relationship in your Model
+                'attribute' => 'detail_level_id', // foreign key attribute that is shown to user
+                'model'     => "App\Models\ExpenseClaimType", // foreign key model
+                'key' => 'level_name',
+                'orderLogic' => function ($query, $column, $columnDirection) {
+                    return $query
+                        ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
+                        ->orderBy('trans_expense_claim_types.detail_level_id', $columnDirection)
+                        ->select('trans_expense_claim_details.*');
+                },
+            ],
+
+            [
+                'label' => 'Cost Center',
+                'name' => 'cost_center_id',
+                'type' => 'select',
+                'entity' => 'cost_center',
+                'model' => 'App\Models\CostCenter',
+                'attribute' => 'description',
+                'orderLogic' => function ($query, $column, $columnDirection) {
+                    return $query
+                        ->join('mst_cost_centers', 'trans_expense_claim_details.cost_center_id', '=', 'mst_cost_centers.id')
+                        ->orderBy('mst_cost_centers.description', $columnDirection)
+                        ->select('trans_expense_claim_details.*');
                 },
             ],
             [
-                'label' => 'Level',
-                'name' => 'level_id',
-                'type' => 'closure',
-                'orderable' => false,
-                'searchLogic' => false,
-                'function' => function($entry) {
-                    return $entry->level->name;
-                }
-            ],
-            [
-                'label' => 'Cost Center',
-                'name' => 'cost_center',
-            ],
-            [
-                'label' => 'Expense Code',
-                'name' => 'expense_code',
+                'name'     => 'expense_claim_type_id',
+                'label'    => 'Expense Code',
+                'type'     => 'select',
+                'entity'    => 'expense_claim_type', // the method that defines the relationship in your Model
+                'attribute' => 'description', // foreign key attribute that is shown to user
+                'model'     => "App\Models\ExpenseClaimType", // foreign key model
+                'key' => 'description',
+                'orderLogic' => function ($query, $column, $columnDirection) {
+                    return $query
+                        ->join('trans_expense_claim_types', 'trans_expense_claim_details.expense_claim_type_id', '=', 'trans_expense_claim_types.id')
+                        ->orderBy('trans_expense_claim_types.description', $columnDirection)
+                        ->select('trans_expense_claim_details.*');
+                },
             ],
             [
                 'label' => 'Cost',
@@ -138,8 +185,32 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 'searchLogic' => false,
                 'type'  => 'model_function',
                 'function_name' => 'getDocumentLink',
-                'function_parameters' => ['expense-finance-ap'],
-                'limit' => 1000000
+                'function_parameters' => ['expense-approver-hod'],
+                'limit' => 1000000,
+                'escaped' => false
+            ],
+            [
+                'label' => 'Converted Cost',
+                'name' => 'converted_cost',
+                'type' => 'number'
+            ],
+            [
+                'label' => 'Converted Currency',
+                'name' => 'converted_currency',
+                'type' => 'text'
+            ],
+            [
+                'label' => 'Exchange Value',
+                'name' => 'exchange_value',
+                'type' => 'number',
+            ],
+            [
+                'label' => 'Total Person',
+                'name' => 'total_person'
+            ],
+            [
+                'label' => 'Total Day',
+                'name' => 'total_day'
             ],
             [
                 'label' => 'Remark',
@@ -240,5 +311,63 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 'Cache-Control' => 'no-cache, must-revalidate'
             ]);
         }
+    }
+
+
+    public function revise($header_id, Request $request){
+        $request->validate(['remark' => 'nullable|max:255']);
+        DB::beginTransaction();
+        try{
+            $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+            $checkStatus = $this->checkStatusForApprover($expenseClaim, 'revised');
+            if($checkStatus !== true){
+                DB::rollback();
+                return response()->json(['message' =>  $checkStatus], 403);
+            }
+
+            $now = Carbon::now();
+            $expenseClaim->status = ExpenseClaim::NEED_REVISION;
+            $expenseClaim->finance_id = $this->crud->user->id;
+            $expenseClaim->remark = $request->remark;
+            $expenseClaim->save();
+
+            $insertApRevision = new TransApRevision();
+            $insertApRevision->expense_claim_id = $expenseClaim->id;
+            $insertApRevision->ap_finance_id = $this->crud->user->id;
+            $insertApRevision->ap_finance_date = $now;
+            $insertApRevision->remark = $request->remark;
+            $insertApRevision->status = ExpenseClaim::NEED_REVISION;
+            $insertApRevision->save();
+
+            $dataMailRequestor['approverName'] = $this->crud->user->name;
+            $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
+            $dataMailRequestor['status'] = ExpenseClaim::NEED_REVISION;
+            $dataMailRequestor['approverDate'] = $now;
+            $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
+
+            if (isset($expenseClaim->request->email)) {
+                Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
+            }
+
+            DB::commit();
+            \Alert::success(trans('custom.expense_claim_revise_success'))->flash();
+            return response()->json(['redirect_url' => backpack_url('expense-finance-ap/' . $expenseClaim->id .  '/detail')]);
+        }
+        catch(Exception $e){
+            DB::rollback();
+            throw $e;
+        }
+    }
+
+
+    private function checkStatusForApprover($expenseClaim, $action){
+        $allowedStatus = in_array($expenseClaim->status, [ExpenseClaim::FULLY_APPROVED]);
+        if(!allowedRole([Role::FINANCE_AP])){
+            return trans('custom.error_permission_message');
+        }
+        if(!$allowedStatus) {
+            return trans('custom.expense_claim_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.' . $action)]);
+        }
+        return true;
     }
 }

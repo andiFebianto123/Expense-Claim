@@ -11,6 +11,7 @@ use App\Models\ExpenseClaim;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseApproverGoaRequest;
+use App\Models\TransGoaApproval;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -33,34 +34,20 @@ class ExpenseApproverGoaCrudController extends CrudController
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
 
-        if($this->crud->role !== Role::SUPER_ADMIN && $this->crud->role !== Role::DIRECTOR){
-           $this->crud->denyAccess('list');
-        }
-        else
-        {
-            ExpenseClaim::addGlobalScope('user', function(Builder $builder){
-                $builder->where(function($query){
-                    if($this->crud->role === Role::DIRECTOR){
-                        $query->where('expense_claims.goa_temp_id', $this->crud->user->id);
-                    }
-                    else{
-                        $query->whereNotNull('expense_claims.goa_temp_id');
-                    }
-                });
-            });
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::GOA_HOLDER])) {
+            $this->crud->denyAccess('list');
         }
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
             $builder->where(function($query){
-                $query->where('expense_claims.status', ExpenseClaim::NEED_APPROVAL_TWO);
+                $query->where('trans_expense_claims.status', ExpenseClaim::REQUEST_FOR_APPROVAL_TWO)
+                    ->orWhere('trans_expense_claims.status', ExpenseClaim::PARTIAL_APPROVED);
             });
         });
 
         CRUD::setModel(ExpenseClaim::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-approver-goa');
-        CRUD::setEntityNameStrings('Expense Approver GoA - Ongoing', 'Expense Approver GoA - Ongoing');
-
-        
+        CRUD::setEntityNameStrings('Expense Approver GoA - Ongoing', 'Expense Approver GoA - Ongoing');   
     }
 
     /**
@@ -71,9 +58,20 @@ class ExpenseApproverGoaCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-
+        if(allowedRole([Role::SUPER_ADMIN, Role::ADMIN])){
+            $this->crud->query->whereNotNull('trans_expense_claims.current_trans_goa_id');
+        }
+        else{
+            $this->crud->query->join('trans_goa_approvals','trans_goa_approvals.expense_claim_id' , '=' ,'trans_expense_claims.id')
+            ->where(function($query){
+                $query->where('trans_goa_approvals.goa_id', $this->crud->user->id)
+                ->orWhere('trans_goa_approvals.goa_delegation_id', $this->crud->user->id);
+            })
+            ->groupBy('trans_expense_claims.expense_number')
+            ->select('trans_expense_claims.*', 'trans_goa_approvals.goa_delegation_id');
+        }
+        $this->crud->enableDetailsRow();
         $this->crud->addButtonFromModelFunction('line', 'detailApproverGoaButton', 'detailApproverGoaButton');
-
         CRUD::addColumns([
             [
                 'name'      => 'row_number',
@@ -93,6 +91,7 @@ class ExpenseApproverGoaCrudController extends CrudController
             [
                 'label' => 'Currency',
                 'name' => 'currency',
+                'visibleInTable' => false
             ],
             [
                 'label' => 'Request Date',
@@ -107,73 +106,22 @@ class ExpenseApproverGoaCrudController extends CrudController
                 'attribute' => 'name',
                 'model'     => User::class,
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as r', 'r.id', '=', 'expense_claims.request_id')
-                    ->orderBy('r.name', $columnDirection)->select('expense_claims.*');
+                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
-            [
-                'label' => 'Department',
-                'name' => 'department_id',
-                'type'      => 'select',
-                'entity'    => 'department',
-                'attribute' => 'name',
-                'model'     => Department::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('departments as d', 'd.id', '=', 'expense_claims.department_id')
-                    ->orderBy('d.name', $columnDirection)->select('expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'Approved By',
-                'name' => 'approval_id',
-                'type'      => 'select',
-                'entity'    => 'approval',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as a', 'a.id', '=', 'expense_claims.approval_id')
-                    ->orderBy('a.name', $columnDirection)->select('expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'Approved Date',
-                'name' => 'approval_date',
-                'type'  => 'date',
-            ],
-            [
-                'label' => 'GoA By',
-                'name' => 'goa_id',
-                'type'      => 'select',
-                'entity'    => 'goa',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as g', 'g.id', '=', 'expense_claims.goa_id')
-                    ->orderBy('g.name', $columnDirection)->select('expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'GoA Date',
-                'name' => 'goa_date',
-                'type'  => 'date',
-            ],
-            [
-                'label' => 'Fin AP By',
-                'name' => 'finance_id',
-                'type'      => 'select',
-                'entity'    => 'finance',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('users as f', 'f.id', '=', 'expense_claims.goa_id')
-                    ->orderBy('f.name', $columnDirection)->select('expense_claims.*');
-                },
-            ],
-            [
-                'label' => 'Fin AP Date',
-                'name' => 'finance_date',
-                'type'  => 'date',
-            ],
+            // [
+            //     'label' => 'Department',
+            //     'name' => 'department_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'department',
+            //     'attribute' => 'name',
+            //     'model'     => Department::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('mst_departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
+            //         ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
             [
                 'label' => 'Status',
                 'name' => 'status',
@@ -185,5 +133,25 @@ class ExpenseApproverGoaCrudController extends CrudController
                 ],
             ]
         ]);
+    }
+
+
+    public function showDetailsRow($id)
+    {
+        $this->crud->hasAccessOrFail('list');
+
+        // get entry ID from Request (makes sure its the last ID for nested resources)
+        $id = $this->crud->getCurrentEntryId() ?? $id;
+
+        $this->data['entry'] = $this->crud->getEntry($id);
+        $this->data['crud'] = $this->crud;
+
+        $this->data['goaApprovals'] = TransGoaApproval::where('expense_claim_id', $this->data['entry']->id)
+        ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
+        ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
+        ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+        ->orderBy('order')->get();  
+
+        return view('detail_approval', $this->data);
     }
 }

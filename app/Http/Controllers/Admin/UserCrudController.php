@@ -65,6 +65,28 @@ class UserCrudController extends CrudController
         $this->crud->updateCondition = function ($entry) {
             return $entry->user_id != User::USER_ID_SUPER_ADMIN;
         };
+
+        $this->crud->addFilter([
+            'name'  => 'roles',
+            'type'  => 'select2_multiple',
+            'label' => 'Roles'
+        ], function () {
+        return Role::select('id', 'name')->get()->keyBy('id')->pluck('name', 'id')->toArray();
+        }, function ($value) { // if the filter is active
+            try{
+                $value = json_decode($value);
+                $newValue = [];
+                if(is_array($value)){
+                    foreach($value as $val){
+                        $newValue[] = (int) $val;
+                    }
+                    $this->crud->addClause('whereJsonContains', 'roles', $newValue);
+                }
+            }
+            catch(Exception $e){
+                
+            }
+        });
     }
 
     public function getColumns($forList = true){
@@ -146,6 +168,33 @@ class UserCrudController extends CrudController
             },
             'searchLogic' => function ($query, $column, $searchTerm) {
                 $query->orWhereHas('department', function ($q) use ($column, $searchTerm) {
+                    $q->where('name', 'like', '%'.$searchTerm.'%');
+                });
+            }
+        ]);
+
+        CRUD::addColumn([
+            'label'     => "Department",
+            'type'      => 'closure',
+            'name'      => 'real_department_id',
+            'function' => function($entry){
+                if($entry->realdepartment){
+                    if($entry->realdepartment){
+                        return $entry->realdepartment->name;
+                    }
+                }else{
+                    return '-';
+                }
+            },
+            'orderable' => true,
+            'limit' => $limit,
+            'orderLogic' => function($query, $column, $columnDirection){
+                return $query->leftJoin('mst_departments as d', 'd.id', '=', 'mst_users.real_department_id')
+                ->orderBy('d.name', $columnDirection)
+                ->select('mst_users.*');
+            },
+            'searchLogic' => function ($query, $column, $searchTerm) {
+                $query->orWhereHas('realdepartment', function ($q) use ($column, $searchTerm) {
                     $q->where('name', 'like', '%'.$searchTerm.'%');
                 });
             }
@@ -311,6 +360,11 @@ class UserCrudController extends CrudController
         ->options(Department::select('id', 'name')->get()->pluck('name', 'id')->toArray())
         ->label('Head of Department');
 
+        CRUD::field('real_department_id')
+        ->type('select2_from_array')
+        ->options(Department::select('id', 'name')->get()->pluck('name', 'id')->toArray())
+        ->label('Department');
+
         CRUD::field('goa_holder_id')->label('GoA Holder')->type('select2_from_array')
         ->allows_null(true)
         ->options(GoaHolder::select('id', 'name')->get()->pluck('name', 'id'));
@@ -386,6 +440,15 @@ class UserCrudController extends CrudController
                     $errors['department_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.head_of_department')]);
                 }
             }
+
+
+            if($request->filled('real_department_id')){
+                $department = Department::where('id', $request->real_department_id)->first();
+                if($department == null){
+                    $errors['real_department_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.real_department_id')]);
+                }
+            }
+
 
             if($request->filled('goa_holder_id')){
                 $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
@@ -512,6 +575,13 @@ class UserCrudController extends CrudController
                 $department = Department::where('id', $request->department_id)->first();
                 if($department == null){
                     $errors['department_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.head_of_department')]);
+                }
+            }
+
+            if($request->filled('real_department_id')){
+                $department = Department::where('id', $request->real_department_id)->first();
+                if($department == null){
+                    $errors['real_department_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.real_department_id')]);
                 }
             }
 

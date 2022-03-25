@@ -159,6 +159,7 @@ return [
         'to_user_id' => 'delegation',
         'head_department_id' => 'head of department',
         'head_of_department' => 'head of department',
+        'real_department_id' => 'department',
         'department_id' => 'department ID',
         'department' => 'department',
         'approval_card_id' => 'expense type',

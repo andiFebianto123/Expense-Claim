@@ -44,6 +44,7 @@ class User extends Authenticatable
         'roles',
         'cost_center_id',
         'department_id',
+        'real_department_id',
         'goa_holder_id',
         'remark',
         'is_active',
@@ -85,6 +86,11 @@ class User extends Authenticatable
     public function department()
     {
         return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function realdepartment()
+    {
+        return $this->belongsTo(Department::class, 'real_department_id');
     }
 
     public function head_department()

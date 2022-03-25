@@ -12,7 +12,8 @@
                     <div class="col-md-6">
                         <p>Request Date : <b>{{ formatDate($crud->expenseClaim->request_date) }}</b></p>
                         <p>Requestor : <b>{{ $crud->expenseClaim->request->name ?? '-' }}</b></p>
-                        <p>Department : <b>{{ $crud->expenseClaim->request->department->name ?? '-' }}</b></p>
+                        <p>Head of Department : <b>{{ $crud->expenseClaim->request->department->name ?? '-' }}</b></p>
+                        <p>Department : <b>{{ $crud->expenseClaim->request->realdepartment->name ?? '-' }}</b></p>
                         <div class="mb-2">
                             <p class="mb-0">Hod By :</p>
                                 <ul class="mb-1 ml-3">

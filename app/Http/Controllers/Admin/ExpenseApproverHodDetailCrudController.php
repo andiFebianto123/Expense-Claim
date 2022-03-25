@@ -1424,15 +1424,15 @@ class ExpenseApproverHodDetailCrudController extends CrudController
     }
 
 
-    public function destroy($header_id, $id){
+    public function destroy($header_id, $id)
+    {
         $this->crud->hasAccessOrFail('delete');
 
         DB::beginTransaction();
         try {
             $id = $this->crud->getCurrentEntryId() ?? $id;
 
-            $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)
-            ->where('expense_claim_id', $this->crud->expenseClaim->id)->first();
+            $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)->first();
             $expenseClaimType = ExpenseClaimType::where('id', ($expenseClaimDetail->expense_claim_type_id ?? null))->first();
             if ($expenseClaimDetail == null || $expenseClaimType == null) {
                 DB::rollback();
@@ -1441,23 +1441,27 @@ class ExpenseApproverHodDetailCrudController extends CrudController
 
             $cost = $expenseClaimDetail->cost;
 
-            if($this->crud->expenseClaim->status != ExpenseClaim::DRAFT){
+            if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
                 $upperLimit = $this->crud->expenseClaim->upper_limit;
                 $bottomLimit = $this->crud->expenseClaim->bottom_limit;
-                if($upperLimit != null && $bottomLimit != null){
+                if ($bottomLimit != null) {
                     $newCost = $this->crud->expenseClaim->value - $cost;
-                    if($newCost < $bottomLimit || $newCost > $upperLimit){
+                    if ($newCost <= $bottomLimit || ($upperLimit != null && $newCost > $upperLimit)) {
                         DB::rollback();
-                        return response()->json(['message' => trans('custom.expense_claim_limit', 
-                        ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)])], 403);
+                        return response()->json(['message' => trans(
+                            'custom.expense_claim_limit',
+                            ['bottom' => formatNumber($bottomLimit), 'upper' => formatNumber($upperLimit)]
+                        )], 403);
                     }
                 }
+
             }
-            
+
             $this->crud->expenseClaim->value -= $cost;
             $this->crud->expenseClaim->save();
 
             $response = $this->crud->delete($id);
+
             if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
                 $hasBodRespective = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
                     $query->where('is_bod', 1)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
@@ -1477,12 +1481,17 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                     }
                 }
             }
+
+            if(!ExpenseClaimDetail::where('expense_claim_type_id', $expenseClaimDetail->expense_claim_type_id)->exists()){
+                ExpenseClaimType::where('id', $expenseClaimDetail->expense_claim_type_id)->delete();
+            }
+
             DB::commit();
             return $response;
         } catch (Exception $e) {
             DB::rollBack();
-            if($e instanceof QueryException){
-                if(isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451){
+            if ($e instanceof QueryException) {
+                if (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451) {
                     return response()->json(['message' => trans('custom.model_has_relation')], 403);
                 }
             }

@@ -19,7 +19,7 @@ class ConfigSeeder extends Seeder
             'key' => 'Email Password',
         ], [
             'key' => 'Email Password',
-            'value' => '',
+            'value' => 'ParaGames2018',
             'type' => 'password',
         ]);
 

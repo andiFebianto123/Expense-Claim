@@ -90,6 +90,7 @@ Route::group([
         });
         Route::crud('expense-finance-ap-history', 'ExpenseFinanceApHistoryCrudController');
         Route::post('expense-finance-ap-history/download-ap-journal', 'ExpenseFinanceApHistoryCrudController@downloadApJournal');
+        Route::get('expense-finance-ap-history/report-excel', 'ExpenseFinanceApHistoryCrudController@reportExcel');
     });
 
     Route::crud('role', 'RoleCrudController');

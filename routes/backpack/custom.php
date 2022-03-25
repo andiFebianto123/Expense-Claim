@@ -100,6 +100,7 @@ Route::group([
     Route::crud('goa-holder', 'GoaHolderCrudController');
     Route::crud('department', 'DepartmentCrudController');
     Route::crud('expense-type', 'ExpenseTypeCrudController');
+    Route::get('expense-type/report-excel', 'ExpenseTypeCrudController@reportExcel');
     Route::crud('cost-center', 'CostCenterCrudController');
     Route::crud('delegation', 'DelegationCrudController');
     Route::crud('expense', 'ExpenseCrudController');

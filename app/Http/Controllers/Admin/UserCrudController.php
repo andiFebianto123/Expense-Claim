@@ -743,14 +743,16 @@ class UserCrudController extends CrudController
 
     public function reportExcel()
     {
+        if(!allowedRole([Role::ADMIN])){
+            abort(404);
+        }
+        $filename = 'report-user-'.date('YmdHis').'.xlsx';
         $urlFull = parse_url(url()->full()); 
         $entries['param_url'] = [];
         if (array_key_exists("query", $urlFull)) {
             parse_str($urlFull['query'], $paramUrl);
             $entries['param_url'] = $paramUrl;
         }
-
-        $filename = 'report-user-'.date('YmdHis').'.xlsx';
 
         return Excel::download(new ReportUserExport($entries), $filename);
     }

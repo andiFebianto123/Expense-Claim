@@ -20,6 +20,7 @@ class ExpenseClaimDetail extends Model
     protected $fillable = [
         'expense_claim_id', 'expense_claim_type_id', 'date',
         'cost_center_id', 'expense_type_id', 'total_person',
+        'total_day', 'end_date',
         'is_bp_approval',
         'cost', 'currency', 'converted_currency', 'exchange_value', 'converted_cost',
         'document', 'remark'

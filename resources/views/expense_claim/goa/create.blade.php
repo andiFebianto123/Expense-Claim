@@ -97,7 +97,6 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
         var expenseTypes = @json($expenseTypes);
         var selectedExpenseTypeId = parseInt($('#expenseTypeId').val());
         var currentItem = null;
-        console.log(selectedExpenseTypeId);
 
         selectExpenseType(selectedExpenseTypeId)
 
@@ -113,7 +112,6 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
             var index = expenseTypes.findIndex(item => item.expense_type_id.toString() === selectedId.toString());
             if(index !== -1){
                 currentItem = expenseTypes[index];
-                console.log(currentItem);
                 item = currentItem;
                 if(item.traf){
                     $('#documentFile').parents('div.form-group').addClass('required-custom');
@@ -131,6 +129,18 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
                         }
                         else{
                             multiply = $('input[name="total_person"]').val();
+                        }
+                        if(multiply === null || multiply === undefined){
+                            multiply = 0;
+                        }
+                    }
+                    else if(item.limit_daily){
+                        if(cleaveElmtCache['total_day'] !== null && cleaveElmtCache['total_day'] !== undefined){
+                            multiply = cleaveElmtCache['total_day'].getRawValue();
+                            
+                        }
+                        else{
+                            multiply = $('input[name="total_day"]').val();
                         }
                         if(multiply === null || multiply === undefined){
                             multiply = 0;
@@ -158,11 +168,29 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
                     }
                     $('#totalPerson').parents('div.form-group').addClass('d-none');
                 }
+                if (item.limit_daily) {
+                    $('#totalDay').parents('div.form-group').removeClass('d-none');
+                } else {
+                    if(cleaveElmtCache['total_day'] !== null && cleaveElmtCache['total_day'] !== undefined){
+                        cleaveElmtCache['total_day'].setRawValue('');
+                    }
+                    $('#totalDay').parents('div.form-group').addClass('d-none');
+                }
             }
         }
 
         $('#totalPerson').parents('.form-group').find('input[type="hidden"]').on('change', function(){
             if(currentItem != null && currentItem.limit_person){
+                if(currentItem.limit === null || currentItem.limit === undefined){
+                    $('#limitId').val('-');
+                }
+                else{
+                    $('#limitId').val(numberWithCommas(currentItem.limit * (this.value.length == 0 ? 0 : this.value)));
+                }
+            }
+        });
+        $('#totalDay').parents('.form-group').find('input[type="hidden"]').on('change', function(){
+            if(currentItem != null && currentItem.limit_daily){
                 if(currentItem.limit === null || currentItem.limit === undefined){
                     $('#limitId').val('-');
                 }

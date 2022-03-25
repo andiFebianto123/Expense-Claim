@@ -37,6 +37,7 @@ class ExpenseApproverHodDetailRequest extends FormRequest
             'document' => ['nullable', 'file', 'max:5000'],
             'is_bp_approval' => 'nullable|boolean',
             'total_person' => 'nullable|int|min:1',
+            'total_day' => 'nullable|int|min:1',
             'remark' => 'nullable|max:255'
         ];
     }

@@ -191,7 +191,8 @@ return [
         'is_bp_approval' => 'business purpose approval',
         'bod_level' => 'boD level',
         'limit_departments' => 'limit departments',
-        'total_person' => 'total person'
+        'total_person' => 'total person',
+        'total_day' => 'total day'
     ],
 
     // CUSTOM
@@ -201,4 +202,5 @@ return [
     'limit' => ":Attr1 exceeding :attr2 of :value.",
     'not_active' => "Your account is not active.",
     'limit_bp' => ":Attr1 exceeding :attr2 of :value, need to check Business Purposes Approval.",
+    'attribute_cannot_be_used_together' => ':Attr1 cannot be used with :attr2.',
 ];

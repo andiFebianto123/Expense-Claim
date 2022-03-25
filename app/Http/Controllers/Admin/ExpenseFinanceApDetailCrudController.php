@@ -336,9 +336,9 @@ class ExpenseFinanceApDetailCrudController extends CrudController
             $dataMailRequestor['approverDate'] = $now;
             $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
 
-            // if (isset($expenseClaim->request->email)) {
-            //     Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
-            // }
+            if (isset($expenseClaim->request->email)) {
+                Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
+            }
 
             DB::commit();
             \Alert::success(trans('custom.expense_claim_revise_success'))->flash();

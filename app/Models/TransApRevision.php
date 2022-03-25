@@ -18,7 +18,7 @@ class TransApRevision extends Model
     protected $revisionForceDeleteEnabled = true;
 
     protected $table = 'trans_ap_revisions';
-    protected $fillable = ['expense_claim_id', 'ap_finance_id', 'ap_finance_date','status'];
+    protected $fillable = ['expense_claim_id', 'ap_finance_id', 'ap_finance_date','remark','status'];
 
     public function expenseClaim()
     {

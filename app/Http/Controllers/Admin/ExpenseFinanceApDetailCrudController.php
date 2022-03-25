@@ -335,6 +335,7 @@ class ExpenseFinanceApDetailCrudController extends CrudController
             $insertApRevision->expense_claim_id = $expenseClaim->id;
             $insertApRevision->ap_finance_id = $this->crud->user->id;
             $insertApRevision->ap_finance_date = $now;
+            $insertApRevision->remark = $request->remark;
             $insertApRevision->status = ExpenseClaim::NEED_REVISION;
             $insertApRevision->save();
 

@@ -26,27 +26,27 @@
           return;
         }
 
-        var message = "Are you sure you want to Download AP Journal these :number entries?";
+        var message = "Are you sure you want to download AP Journal these :number entries?";
         message = message.replace(":number", crud.checkedItems.length);
 
         // show confirm message
         swal({
-        title: "{{ trans('backpack::base.warning') }}",
+          title: "{!! trans('backpack::crud.confirmation') !!}",
         text: message,
-        icon: "warning",
+        icon: "info",
         buttons: {
           cancel: {
           text: "{{ trans('backpack::crud.cancel') }}",
           value: null,
           visible: true,
-          className: "bg-secondary",
+          // className: "bg-secondary",
           closeModal: true,
         },
           delete: {
           text: "Download",
           value: true,
           visible: true,
-          className: "bg-primary",
+          // className: "bg-primary",
         }
         },
       }).then((value) => {
@@ -72,7 +72,7 @@
                 link.remove();
                     new Noty({
                     type: "success",
-                    text: "<strong>Download success</strong><br>"
+                    text: "<strong>Download AP Journal success</strong><br>Successfully download the file."
                   }).show();
 
               crud.checkedItems = [];
@@ -82,7 +82,7 @@
               // Show an alert with the result
                     new Noty({
                     type: "danger",
-                    text: "<strong>Download failed</strong><br>One or more entries could not be created. Please try again."
+                    text: "<strong>Download failed</strong><br>One or more entries could not be downloaded. Please try again."
                   }).show();
             }
           });

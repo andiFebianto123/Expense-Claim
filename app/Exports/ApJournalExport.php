@@ -107,13 +107,16 @@ class ApJournalExport implements FromView, WithEvents
         $currency = '';
         $total_doc_curr_1_dc = 0;
 
-        $dataExpenses = ExpenseClaim::whereIn('id', $this->entries)->get();
+        $dataExpenses = ExpenseClaim::whereIn('id', $this->entries)
+        ->where('status', ExpenseClaim::FULLY_APPROVED)->get();
+
+        $now = Carbon::now();
 
         if(count($dataExpenses) > 0){
             foreach($dataExpenses as $dataExpense){
-                if($dataExpense->status == ExpenseClaim::PROCEED){
-                    continue;
-                }
+                // if($dataExpense->status == ExpenseClaim::PROCEED){
+                //     continue;
+                // }
                 $dataExpenseDetails = ExpenseClaimDetail::where('expense_claim_id', $dataExpense->id)->get();
                 if(count($dataExpenseDetails) > 0){
                     foreach($dataExpenseDetails as $dataExpenseDetail){
@@ -251,6 +254,8 @@ class ApJournalExport implements FromView, WithEvents
                     $total_doc_curr_1_dc = 0;
                     $no++;
                     array_push($dataRow, $row);
+                    $dataExpense->finance_id =  backpack_user()->id;
+                    $dataExpense->finance_date = $now;
                     $dataExpense->status = ExpenseClaim::PROCEED;
                     $dataExpense->save();
                 }

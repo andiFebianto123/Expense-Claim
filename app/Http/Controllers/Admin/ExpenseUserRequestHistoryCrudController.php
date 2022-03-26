@@ -190,7 +190,7 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
                     });
                 },
                 'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('mst_users as f', 'f.id', '=', 'trans_expense_claims.goa_id')
+                    return $query->leftJoin('mst_users as f', 'f.id', '=', 'trans_expense_claims.finance_id')
                         ->orderBy('f.name', $columnDirection)->select('trans_expense_claims.*');
                 },
                 'escaped' => false

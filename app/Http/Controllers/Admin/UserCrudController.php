@@ -65,28 +65,6 @@ class UserCrudController extends CrudController
         $this->crud->updateCondition = function ($entry) {
             return $entry->user_id != User::USER_ID_SUPER_ADMIN;
         };
-
-        $this->crud->addFilter([
-            'name'  => 'roles',
-            'type'  => 'select2_multiple',
-            'label' => 'Roles'
-        ], function () {
-        return Role::select('id', 'name')->get()->keyBy('id')->pluck('name', 'id')->toArray();
-        }, function ($value) { // if the filter is active
-            try{
-                $value = json_decode($value);
-                $newValue = [];
-                if(is_array($value)){
-                    foreach($value as $val){
-                        $newValue[] = (int) $val;
-                    }
-                    $this->crud->addClause('whereJsonContains', 'roles', $newValue);
-                }
-            }
-            catch(Exception $e){
-                
-            }
-        });
     }
 
     public function getColumns($forList = true){

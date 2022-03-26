@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ReportUserExport;
 use File;
 use Exception;
 use Carbon\Carbon;
@@ -48,6 +49,11 @@ class UserCrudController extends CrudController
         if(!allowedRole([Role::ADMIN])){
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
         }
+        if(allowedRole([Role::ADMIN])){
+            $this->crud->excelUrl = url('user/report-excel');
+            $this->crud->allowAccess('download_excel_report');
+        }
+
         CRUD::setModel(\App\Models\User::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/user');
         CRUD::setEntityNameStrings('User', 'Users');
@@ -146,6 +152,33 @@ class UserCrudController extends CrudController
         ]);
 
         CRUD::addColumn([
+            'label'     => "Department",
+            'type'      => 'closure',
+            'name'      => 'real_department_id',
+            'function' => function($entry){
+                if($entry->realdepartment){
+                    if($entry->realdepartment){
+                        return $entry->realdepartment->name;
+                    }
+                }else{
+                    return '-';
+                }
+            },
+            'orderable' => true,
+            'limit' => $limit,
+            'orderLogic' => function($query, $column, $columnDirection){
+                return $query->leftJoin('mst_departments as d', 'd.id', '=', 'mst_users.real_department_id')
+                ->orderBy('d.name', $columnDirection)
+                ->select('mst_users.*');
+            },
+            'searchLogic' => function ($query, $column, $searchTerm) {
+                $query->orWhereHas('realdepartment', function ($q) use ($column, $searchTerm) {
+                    $q->where('name', 'like', '%'.$searchTerm.'%');
+                });
+            }
+        ]);
+
+        CRUD::addColumn([
             'label'     => "GoA",
             'type'      => 'closure',
             'name'      => 'goa',
@@ -203,6 +236,52 @@ class UserCrudController extends CrudController
      */
     protected function setupListOperation()
     {
+        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_excel_report', 'end');
+        $this->crud->addFilter([
+            'name'  => 'roles',
+            'type'  => 'select2',
+            'label' => 'Role'
+          ], function () {
+            return Role::pluck('name','id')->toArray();
+          }, function ($value) { // if the filter is active
+            $this->crud->addClause('whereJsonContains', 'roles', (int)$value);
+        });
+        $this->crud->addFilter([
+            'name'  => 'level_id',
+            'type'  => 'select2',
+            'label' => 'Level'
+          ], function () {
+            return Level::pluck('name','id')->toArray();
+          }, function ($value) { // if the filter is active
+            $this->crud->addClause('where', 'level_id', (int)$value);
+        });
+        $this->crud->addFilter([
+            'name'  => 'department_id',
+            'type'  => 'select2',
+            'label' => 'Department'
+          ], function () {
+            return Department::pluck('name','id')->toArray();
+          }, function ($value) { // if the filter is active
+            $this->crud->addClause('where', 'department_id', (int)$value);
+        });
+        $this->crud->addFilter([
+            'name'  => 'goa_holder_id',
+            'type'  => 'select2',
+            'label' => 'GoA Holder'
+          ], function () {
+            return GoaHolder::pluck('name','id')->toArray();
+          }, function ($value) { // if the filter is active
+            $this->crud->addClause('where', 'goa_holder_id', (int)$value);
+        });
+        $this->crud->addFilter([
+            'name'  => 'cost_center_id',
+            'type'  => 'select2',
+            'label' => 'Cost Center'
+          ], function () {
+            return CostCenter::pluck('cost_center_id','id')->toArray();
+          }, function ($value) { // if the filter is active
+            $this->crud->addClause('where', 'cost_center_id', (int)$value);
+        });
         $this->getColumns();
     }
 
@@ -258,6 +337,11 @@ class UserCrudController extends CrudController
         ->type('select2_from_array')
         ->options(Department::select('id', 'name')->get()->pluck('name', 'id')->toArray())
         ->label('Head of Department');
+
+        CRUD::field('real_department_id')
+        ->type('select2_from_array')
+        ->options(Department::select('id', 'name')->get()->pluck('name', 'id')->toArray())
+        ->label('Department');
 
         CRUD::field('goa_holder_id')->label('GoA Holder')->type('select2_from_array')
         ->allows_null(true)
@@ -334,6 +418,15 @@ class UserCrudController extends CrudController
                     $errors['department_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.head_of_department')]);
                 }
             }
+
+
+            if($request->filled('real_department_id')){
+                $department = Department::where('id', $request->real_department_id)->first();
+                if($department == null){
+                    $errors['real_department_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.real_department_id')]);
+                }
+            }
+
 
             if($request->filled('goa_holder_id')){
                 $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
@@ -463,6 +556,13 @@ class UserCrudController extends CrudController
                 }
             }
 
+            if($request->filled('real_department_id')){
+                $department = Department::where('id', $request->real_department_id)->first();
+                if($department == null){
+                    $errors['real_department_id'] = trans('validation.exists', ['attribute' => trans('validation.attributes.real_department_id')]);
+                }
+            }
+
             if($request->filled('goa_holder_id')){
                 $goaholder = GoaHolder::where('id', $request->goa_holder_id)->first();
                 if($goaholder == null){
@@ -523,6 +623,8 @@ class UserCrudController extends CrudController
         }
 
     }
+
+
     public function destroy($id)
     {
         $this->crud->hasAccessOrFail('delete');
@@ -555,6 +657,7 @@ class UserCrudController extends CrudController
         }
     }
 
+
     public function printReportExpense(){
         // $n = new GetLog('log_import_user_20220316_112321.txt', 'w');
         // $n->getString(1, 'Success');
@@ -573,6 +676,8 @@ class UserCrudController extends CrudController
         // fclose($myfile);
         // $this->getFileCsv();
     }
+
+
     function cobaBuatImportUser(){
         $path = storage_path().'/app/data';
         $files = File::files($path);
@@ -611,6 +716,23 @@ class UserCrudController extends CrudController
                 throw $e;
             }
         }
+    }
+
+
+    public function reportExcel()
+    {
+        if(!allowedRole([Role::ADMIN])){
+            abort(404);
+        }
+        $filename = 'report-user-'.date('YmdHis').'.xlsx';
+        $urlFull = parse_url(url()->full()); 
+        $entries['param_url'] = [];
+        if (array_key_exists("query", $urlFull)) {
+            parse_str($urlFull['query'], $paramUrl);
+            $entries['param_url'] = $paramUrl;
+        }
+
+        return Excel::download(new ReportUserExport($entries), $filename);
     }
     
 }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\ApJournalExport;
 use App\Exports\ApJournalHistoryExport;
+use App\Exports\ReportClaimSummaryExport;
+use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\ExpenseClaim;
@@ -37,7 +39,10 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         }
 
         if (allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
+            $this->crud->excelUrl = url('expense-finance-ap-history/report-excel');
             $this->crud->allowAccess('download_journal_ap_history');
+            $this->crud->allowAccess('download_excel_report');
+
         }
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
@@ -62,7 +67,39 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         $this->crud->enableBulkActions();
         $this->crud->enableDetailsRow();
         $this->crud->addButtonFromView('top', 'download_journal_ap_history', 'download_journal_ap_history', 'end');
+        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_excel_report', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
+
+        $this->crud->addFilter([
+            'name'  => 'department_id',
+            'type'  => 'select2',
+            'label' => 'Department'
+          ], function () {
+            return Department::pluck('name','id')->toArray();
+          }, function ($value) { // if the filter is active
+            $this->crud->addClause('where', 'department_id', (int)$value);
+        });
+        $this->crud->addFilter([
+            'name'  => 'status',
+            'type'  => 'select2',
+            'label' => 'Status'
+          ], function () {
+              $arrStatus = [
+                ExpenseClaim::DRAFT => ExpenseClaim::DRAFT,
+                ExpenseClaim::REQUEST_FOR_APPROVAL => ExpenseClaim::REQUEST_FOR_APPROVAL,
+                ExpenseClaim::REQUEST_FOR_APPROVAL_TWO => ExpenseClaim::REQUEST_FOR_APPROVAL_TWO,
+                ExpenseClaim::PARTIAL_APPROVED => ExpenseClaim::PARTIAL_APPROVED,
+                ExpenseClaim::FULLY_APPROVED => ExpenseClaim::FULLY_APPROVED,
+                ExpenseClaim::NEED_REVISION => ExpenseClaim::NEED_REVISION,
+                ExpenseClaim::PROCEED => ExpenseClaim::PROCEED,
+                ExpenseClaim::REJECTED_ONE => ExpenseClaim::REJECTED_ONE,
+                ExpenseClaim::REJECTED_TWO => ExpenseClaim::REJECTED_TWO,
+                ExpenseClaim::CANCELED => ExpenseClaim::CANCELED,
+              ];
+            return $arrStatus;
+          }, function ($value) { // if the filter is active
+            $this->crud->addClause('where', 'status', $value);
+        });
 
         CRUD::addColumns([
             [
@@ -283,5 +320,22 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             'file' => "data:application/vnd.ms-excel;base64,".base64_encode($myFile)
          );
          return response()->json($response);
+    }
+
+
+    public function reportExcel()
+    {
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
+            abort(404);
+        }
+        $filename = 'report-claim-summary-'.date('YmdHis').'.xlsx';
+        $urlFull = parse_url(url()->full()); 
+        $entries['param_url'] = [];
+        if (array_key_exists("query", $urlFull)) {
+            parse_str($urlFull['query'], $paramUrl);
+            $entries['param_url'] = $paramUrl;
+        }
+
+        return Excel::download(new ReportClaimSummaryExport($entries), $filename);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ReportExpenseTypeExport;
 use Exception;
 use App\Models\Role;
 use App\Models\Level;
@@ -19,6 +20,7 @@ use App\Models\MstExpenseTypeDepartment;
 use App\Http\Requests\ExpenseTypeRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ExpenseTypeCrudController extends CrudController
 {
@@ -34,6 +36,10 @@ class ExpenseTypeCrudController extends CrudController
         $roleName = backpack_user()->role->name;
         if (!allowedRole([Role::ADMIN])) {
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
+        }
+        if(allowedRole([Role::ADMIN])){
+            $this->crud->excelUrl = url('expense-type/report-excel');
+            $this->crud->allowAccess('download_excel_report');
         }
         CRUD::setModel(\App\Models\ExpenseType::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-type');
@@ -233,6 +239,34 @@ class ExpenseTypeCrudController extends CrudController
 
     protected function setupListOperation()
     {
+        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_excel_report', 'end');
+        $this->crud->addFilter([
+            'name'  => 'expense_id',
+            'type'  => 'select2',
+            'label' => 'Expense Type'
+          ], function () {
+            return MstExpense::pluck('name','id')->toArray();
+          }, function ($value) { // if the filter is active
+            $this->crud->addClause('where', 'expense_id', (int)$value);
+        });
+        $this->crud->addFilter([
+            'name'  => 'level_id',
+            'type'  => 'select2',
+            'label' => 'Level'
+          ], function () {
+            return Level::pluck('name','id')->toArray();
+          }, function ($value) { // if the filter is active
+            $this->crud->addClause('where', 'level_id', (int)$value);
+        });
+        $this->crud->addFilter([
+            'name'  => 'expense_code_id',
+            'type'  => 'select2',
+            'label' => 'Expense Code'
+          ], function () {
+            return ExpenseCode::pluck('description','id')->toArray();
+          }, function ($value) { // if the filter is active
+            $this->crud->addClause('where', 'expense_code_id', (int)$value);
+        });
         $this->getColumns();
     }
 
@@ -375,7 +409,6 @@ class ExpenseTypeCrudController extends CrudController
                 'class'      => 'form-group col-md-12'
             ],
         ]);
-
 
         CRUD::addField([
             'name'        => 'remark',
@@ -687,5 +720,22 @@ class ExpenseTypeCrudController extends CrudController
             }
             throw $e;
         }
+    }
+
+
+    public function reportExcel()
+    {
+        if(!allowedRole([Role::ADMIN])){
+            abort(404);
+        }
+        $filename = 'report-expense-type-'.date('YmdHis').'.xlsx';
+        $urlFull = parse_url(url()->full()); 
+        $entries['param_url'] = [];
+        if (array_key_exists("query", $urlFull)) {
+            parse_str($urlFull['query'], $paramUrl);
+            $entries['param_url'] = $paramUrl;
+        }
+
+        return Excel::download(new ReportExpenseTypeExport($entries), $filename);
     }
 }

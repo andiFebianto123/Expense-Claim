@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ReportUserExport;
 use Exception;
 use Carbon\Carbon;
 use App\Models\Role;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * Class ExpenseUserRequestCrudController
@@ -276,4 +278,5 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
 
         return view('detail_approval', $this->data);
     }
+
 }

@@ -223,6 +223,10 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
         $totalDetailExpenseCost = 0;
 
         $dataClaim = ExpenseClaim::where('id', $this->crud->headerId)
+        ->where(function($query){
+            $query->where('status', ExpenseClaim::FULLY_APPROVED)
+            ->orWhere('status', ExpenseClaim::PROCEED);
+        })
         ->first();
         if($dataClaim != null){
             $dataClaimDetails = ExpenseClaimDetail::where('expense_claim_id', $dataClaim->id)->get();

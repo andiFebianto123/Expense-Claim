@@ -104,7 +104,7 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
             $excEpenseClaims->where('trans_expense_claims.status', $paramUrl['status']);
         }
         if (isset($paramUrl['department_id'])) {
-            $excEpenseClaims->where('user_req.real_department_id', (int)$paramUrl['department_id']);
+            $excEpenseClaims->where('user_req.real_department_id', $paramUrl['department_id']);
         }
 
         if(isset($paramUrl['request_date'])){

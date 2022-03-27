@@ -80,6 +80,16 @@ class ExpenseApproverHodCrudController extends CrudController
         $this->crud->addButtonFromModelFunction('line', 'detailApproverHodButton', 'detailApproverHodButton');
         $this->crud->enableDetailsRow();
 
+        $dashboard = request()->dashboard;
+        if($dashboard == ExpenseClaim::PARAM_HOD && allowedRole([Role::HOD])){
+            $this->crud->addClause('where', function($query){
+                $query->where(function($innerQuery){
+                    $innerQuery->where('hod_id', $this->crud->user->id);
+                    $innerQuery->orWhere('hod_delegation_id', $this->crud->user->id);
+                })->where('status', ExpenseClaim::REQUEST_FOR_APPROVAL);
+            });
+        }
+
         CRUD::addColumns([
             [
                 'name'      => 'row_number',

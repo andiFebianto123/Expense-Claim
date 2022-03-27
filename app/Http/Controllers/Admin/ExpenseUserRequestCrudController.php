@@ -71,6 +71,42 @@ class ExpenseUserRequestCrudController extends CrudController
         $this->crud->addButtonFromModelFunction('line', 'detailRequestButton', 'detailRequestButton');
         $this->crud->addButtonFromView('line', 'cancel', 'cancel', 'end');
 
+        $dashboard = request()->dashboard;
+        $validDashboard = in_array($dashboard, ExpenseClaim::PARAMS_DASHBOARD);
+        $status_dashboard = request()->status_dashboard;
+        $validStatusDashboard = in_array($status_dashboard, ExpenseClaim::PARAMS_STATUS);
+
+        if($validDashboard || $validStatusDashboard){
+            $this->crud->addClause('where', function($query){
+                $query->where(function($innerQuery){
+                    $innerQuery->where('request_id', $this->crud->user->id);
+                    if (allowedRole([Role::SECRETARY])) {
+                        $innerQuery->orWhere('secretary_id', $this->crud->user->id);
+                    }
+                });
+            });
+
+            if($validDashboard){
+                $this->crud->addClause('where', function($query) use($dashboard){
+                    if($dashboard == ExpenseClaim::PARAM_HOD){
+                        $query->where('status', ExpenseClaim::REQUEST_FOR_APPROVAL);
+                    }
+                    else if($dashboard == ExpenseClaim::PARAM_GOA){
+                        $query->where(function($innerQuery){
+                            $innerQuery->where('status', ExpenseClaim::REQUEST_FOR_APPROVAL_TWO)
+                            ->orWhere('status', ExpenseClaim::PARTIAL_APPROVED);
+                        });
+                    }
+                });
+            }
+    
+            if($validStatusDashboard){
+                $this->crud->addClause('where', function($query) use($status_dashboard){
+                    $query->where('status', $status_dashboard);
+                });
+            }
+        }
+
         CRUD::addColumns([
             [
                 'name'      => 'row_number',

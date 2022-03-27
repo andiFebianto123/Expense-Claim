@@ -12,6 +12,9 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                     <div class="col-md-6">
                         <p>Request Date : <b>{{ formatDate($crud->expenseClaim->request_date) }}</b></p>
                         <p>Requestor : <b>{{ $crud->expenseClaim->request->name ?? '-' }}</b></p>
+                        @if ($crud->expenseClaim->secretary_id != null)
+                            <p>Secretary : <b>{{ $crud->expenseClaim->secretary->name ?? '-' }}</b></p>
+                        @endif
                         <p>Head of Department : <b>{{ $crud->expenseClaim->request->department->name ?? '-' }}</b></p>
                         <p>Department : <b>{{ $crud->expenseClaim->request->realdepartment->name ?? '-' }}</b></p>
                         @if ($crud->expenseClaim->hod_id == null)

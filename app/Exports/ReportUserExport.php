@@ -89,7 +89,9 @@ class ReportUserExport implements FromView, WithEvents, WithDrawings
         $users = User::join('mst_levels', 'mst_levels.id', 'mst_users.level_id')
             ->join('mst_departments', 'mst_departments.id', 'mst_users.department_id')
             ->join('goa_holders', 'goa_holders.id', 'mst_users.goa_holder_id')
-            ->join('mst_cost_centers', 'mst_cost_centers.id', 'mst_users.cost_center_id');
+            ->join('mst_cost_centers', 'mst_cost_centers.id', 'mst_users.cost_center_id')
+            // skip ID = 1
+            ->where('mst_users.id', '>', 1);
 
         if (isset($paramUrl['roles'])) {
             $users->whereJsonContains('roles', (int)$paramUrl['roles']);

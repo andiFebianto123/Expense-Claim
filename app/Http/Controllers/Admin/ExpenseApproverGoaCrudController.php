@@ -86,6 +86,21 @@ class ExpenseApproverGoaCrudController extends CrudController
     {
         $this->crud->enableDetailsRow();
         $this->crud->addButtonFromModelFunction('line', 'detailApproverGoaButton', 'detailApproverGoaButton');
+
+        $dashboard = request()->dashboard;
+        if($dashboard == ExpenseClaim::PARAM_GOA && allowedRole([Role::GOA_HOLDER])){
+            $this->crud->addClause('where', function($query){
+                $query->where(function($innerQuery){
+                    $innerQuery->where('current_trans_goa_id', $this->crud->user->id);
+                    $innerQuery->orWhere('current_trans_goa_delegation_id', $this->crud->user->id);
+                })->where(function($innerQuery){
+                    $innerQuery->where('status', ExpenseClaim::REQUEST_FOR_APPROVAL_TWO)
+                    ->orWhere('status', ExpenseClaim::PARTIAL_APPROVED);
+                });
+            });
+        }
+
+
         CRUD::addColumns([
             [
                 'name'      => 'row_number',

@@ -12,6 +12,7 @@
     $allowHod = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::HOD]);
     $allowGoa = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::GOA_HOLDER]);
     $allowFinance = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::FINANCE_AP]);
+    $allowReport = allowedRole([$classRole::ADMIN]);
 @endphp
 
 @php
@@ -82,7 +83,7 @@
 </li>
 @endif
 
-@if ($allowMaster)
+@if ($allowReport)
 <li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-list"></i> Report</a>
     <ul class="nav-dropdown-items">
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-claim-summary')}}"> Claim Summary</a></li>

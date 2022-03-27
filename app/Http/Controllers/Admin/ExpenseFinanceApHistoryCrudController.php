@@ -60,6 +60,12 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             $this->crud->allowAccess('download_claim_detail');
         }
 
+        ExpenseClaim::addGlobalScope('status', function(Builder $builder){
+            $builder->where(function($query){
+                $query->where('trans_expense_claims.status', ExpenseClaim::PROCEED);
+            });
+        });
+
         CRUD::setModel(ExpenseClaim::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap-history');
         CRUD::setEntityNameStrings('Expense Finance AP - History', 'Expense Finance AP - History');
@@ -76,80 +82,79 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         $this->crud->enableBulkActions();
         $this->crud->enableDetailsRow();
         $this->crud->addButtonFromView('top', 'download_journal_ap_history', 'download_journal_ap_history', 'end');
-        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_summary', 'end');
-        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_detail', 'end');
+        // $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_summary', 'end');
+        // $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_detail', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
-        $this->crud->addClause('where', 'trans_expense_claims.status', '=', ExpenseClaim::PROCEED);
 
         
-        $this->crud->addFilter([
-            'name'  => 'department_id',
-            'type'  => 'select2',
-            'label' => 'Department'
-          ], function () {
-            return Department::pluck('name','id')->toArray();
-          }, function ($value) { // if the filter is active
-            return $this->crud->query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
-                ->where('department_id', $value);
-        });
-        $this->crud->addFilter([
-            'name'  => 'status',
-            'type'  => 'select2',
-            'label' => 'Status'
-          ], function () {
-              $arrStatus = [
-                ExpenseClaim::DRAFT => ExpenseClaim::DRAFT,
-                ExpenseClaim::REQUEST_FOR_APPROVAL => ExpenseClaim::REQUEST_FOR_APPROVAL,
-                ExpenseClaim::REQUEST_FOR_APPROVAL_TWO => ExpenseClaim::REQUEST_FOR_APPROVAL_TWO,
-                ExpenseClaim::PARTIAL_APPROVED => ExpenseClaim::PARTIAL_APPROVED,
-                ExpenseClaim::FULLY_APPROVED => ExpenseClaim::FULLY_APPROVED,
-                ExpenseClaim::NEED_REVISION => ExpenseClaim::NEED_REVISION,
-                ExpenseClaim::PROCEED => ExpenseClaim::PROCEED,
-                ExpenseClaim::REJECTED_ONE => ExpenseClaim::REJECTED_ONE,
-                ExpenseClaim::REJECTED_TWO => ExpenseClaim::REJECTED_TWO,
-                ExpenseClaim::CANCELED => ExpenseClaim::CANCELED,
-              ];
-            return $arrStatus;
-          }, function ($value) { // if the filter is active
-            $this->crud->addClause('where', 'status', $value);
-        });
-        $this->crud->addFilter([
-            'type'  => 'date_range',
-            'name'  => 'request_date',
-            'label' => 'Date',
-          ],
-          false,
-          function ($value) { // if the filter is active, apply these constraints
-            $dates = json_decode($value);
-            $this->crud->addClause('where', 'request_date', '>=', $dates->from);
-            $this->crud->addClause('where', 'request_date', '<=', $dates->to . ' 23:59:59');
-        });
+        // $this->crud->addFilter([
+        //     'name'  => 'department_id',
+        //     'type'  => 'select2',
+        //     'label' => 'Department'
+        //   ], function () {
+        //     return Department::pluck('name','id')->toArray();
+        //   }, function ($value) { // if the filter is active
+        //     return $this->crud->query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+        //         ->where('department_id', $value);
+        // });
+        // $this->crud->addFilter([
+        //     'name'  => 'status',
+        //     'type'  => 'select2',
+        //     'label' => 'Status'
+        //   ], function () {
+        //       $arrStatus = [
+        //         ExpenseClaim::DRAFT => ExpenseClaim::DRAFT,
+        //         ExpenseClaim::REQUEST_FOR_APPROVAL => ExpenseClaim::REQUEST_FOR_APPROVAL,
+        //         ExpenseClaim::REQUEST_FOR_APPROVAL_TWO => ExpenseClaim::REQUEST_FOR_APPROVAL_TWO,
+        //         ExpenseClaim::PARTIAL_APPROVED => ExpenseClaim::PARTIAL_APPROVED,
+        //         ExpenseClaim::FULLY_APPROVED => ExpenseClaim::FULLY_APPROVED,
+        //         ExpenseClaim::NEED_REVISION => ExpenseClaim::NEED_REVISION,
+        //         ExpenseClaim::PROCEED => ExpenseClaim::PROCEED,
+        //         ExpenseClaim::REJECTED_ONE => ExpenseClaim::REJECTED_ONE,
+        //         ExpenseClaim::REJECTED_TWO => ExpenseClaim::REJECTED_TWO,
+        //         ExpenseClaim::CANCELED => ExpenseClaim::CANCELED,
+        //       ];
+        //     return $arrStatus;
+        //   }, function ($value) { // if the filter is active
+        //     $this->crud->addClause('where', 'status', $value);
+        // });
+        // $this->crud->addFilter([
+        //     'type'  => 'date_range',
+        //     'name'  => 'request_date',
+        //     'label' => 'Date',
+        //   ],
+        //   false,
+        //   function ($value) { // if the filter is active, apply these constraints
+        //     $dates = json_decode($value);
+        //     $this->crud->addClause('where', 'request_date', '>=', $dates->from);
+        //     $this->crud->addClause('where', 'request_date', '<=', $dates->to . ' 23:59:59');
+        // });
 
-        $this->crud->addFilter([
-            'name'  => 'expense_type',
-            'type'  => 'select2',
-            'label' => 'Expense Type'
-          ], function () {
-              $arrExpense = [];
-              $mstExpenses = MstExpense::get();
-              foreach ($mstExpenses as $key => $mstExpense) {
-                $arrExpense[$mstExpense->name] = $mstExpense->name;
-              }
-              return $arrExpense;
-          }, function ($value) { // if the filter is active
-            return $this->crud->query->leftJoin('trans_expense_claim_types as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
-                ->where('r.expense_name', $value);
-        });
-        $this->crud->addFilter([
-            'name'  => 'cost_center_id',
-            'type'  => 'select2',
-            'label' => 'Cost Center'
-          ], function () {
-            return CostCenter::pluck('cost_center_id','id')->toArray();
-          }, function ($value) { // if the filter is active
-            return $this->crud->query->leftJoin('trans_expense_claim_details as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
-                ->where('r.cost_center_id', $value);
-        });
+        // $this->crud->addFilter([
+        //     'name'  => 'expense_type',
+        //     'type'  => 'select2',
+        //     'label' => 'Expense Type'
+        //   ], function () {
+        //       $arrExpense = [];
+        //       $mstExpenses = MstExpense::get();
+        //       foreach ($mstExpenses as $key => $mstExpense) {
+        //         $arrExpense[$mstExpense->name] = $mstExpense->name;
+        //       }
+        //       return $arrExpense;
+        //   }, function ($value) { // if the filter is active
+        //     return $this->crud->query->leftJoin('trans_expense_claim_types as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
+        //         ->where('r.expense_name', $value);
+        // });
+        // $this->crud->addFilter([
+        //     'name'  => 'cost_center_id',
+        //     'type'  => 'select2',
+        //     'label' => 'Cost Center'
+        //   ], function () {
+        //     return CostCenter::pluck('cost_center_id','id')->toArray();
+        //   }, function ($value) { // if the filter is active
+        //     return $this->crud->query->leftJoin('trans_expense_claim_details as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
+        //         ->where('r.cost_center_id', $value);
+        // });
 
         CRUD::addColumns([
             [
@@ -521,38 +526,38 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
     }
 
 
-    public function reportExcelClaimSummary()
-    {
-        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
-            abort(404);
-        }
-        $this->crud->hasAccessOrFail('download_claim_summary');
-        $filename = 'report-claim-summary-'.date('YmdHis').'.xlsx';
-        $urlFull = parse_url(url()->full()); 
-        $entries['param_url'] = [];
-        if (array_key_exists("query", $urlFull)) {
-            parse_str($urlFull['query'], $paramUrl);
-            $entries['param_url'] = $paramUrl;
-        }
+    // public function reportExcelClaimSummary()
+    // {
+    //     if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
+    //         abort(404);
+    //     }
+    //     $this->crud->hasAccessOrFail('download_claim_summary');
+    //     $filename = 'report-claim-summary-'.date('YmdHis').'.xlsx';
+    //     $urlFull = parse_url(url()->full()); 
+    //     $entries['param_url'] = [];
+    //     if (array_key_exists("query", $urlFull)) {
+    //         parse_str($urlFull['query'], $paramUrl);
+    //         $entries['param_url'] = $paramUrl;
+    //     }
 
-        return Excel::download(new ReportClaimSummaryExport($entries), $filename);
-    }
+    //     return Excel::download(new ReportClaimSummaryExport($entries), $filename);
+    // }
 
 
-    public function reportExcelClaimDetail()
-    {
-        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
-            abort(404);
-        }
-        $this->crud->hasAccessOrFail('download_claim_detail');
-        $filename = 'report-claim-detail-'.date('YmdHis').'.xlsx';
-        $urlFull = parse_url(url()->full()); 
-        $entries['param_url'] = [];
-        if (array_key_exists("query", $urlFull)) {
-            parse_str($urlFull['query'], $paramUrl);
-            $entries['param_url'] = $paramUrl;
-        }
+    // public function reportExcelClaimDetail()
+    // {
+    //     if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
+    //         abort(404);
+    //     }
+    //     $this->crud->hasAccessOrFail('download_claim_detail');
+    //     $filename = 'report-claim-detail-'.date('YmdHis').'.xlsx';
+    //     $urlFull = parse_url(url()->full()); 
+    //     $entries['param_url'] = [];
+    //     if (array_key_exists("query", $urlFull)) {
+    //         parse_str($urlFull['query'], $paramUrl);
+    //         $entries['param_url'] = $paramUrl;
+    //     }
 
-        return Excel::download(new ReportClaimDetailExport($entries), $filename);
-    }
+    //     return Excel::download(new ReportClaimDetailExport($entries), $filename);
+    // }
 }

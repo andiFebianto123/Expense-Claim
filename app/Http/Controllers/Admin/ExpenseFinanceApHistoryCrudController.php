@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\ApJournalExport;
 use App\Exports\ApJournalHistoryExport;
+use App\Exports\ReportClaimDetailExport;
 use App\Exports\ReportClaimSummaryExport;
+use App\Models\CostCenter;
 use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\ExpenseClaim;
+use App\Models\ExpenseCode;
+use App\Models\MstExpense;
 use App\Models\TransGoaApproval;
 use Illuminate\Database\Eloquent\Builder;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -39,10 +43,21 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         }
 
         if (allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
-            $this->crud->excelUrl = url('expense-finance-ap-history/report-excel');
+            $this->crud->excelReportBtn = [
+                [
+                    'name' => 'download_claim_summary', 
+                    'label' => 'Claim Summary',
+                    'url' => url('expense-finance-ap-history/report-excel-claim-summary')
+                ],
+                [
+                    'name' => 'download_claim_detail', 
+                    'label' => 'Claim Detail',
+                    'url' => url('expense-finance-ap-history/report-excel-claim-detail')
+                ],
+            ];
             $this->crud->allowAccess('download_journal_ap_history');
-            $this->crud->allowAccess('download_excel_report');
-
+            $this->crud->allowAccess('download_claim_summary');
+            $this->crud->allowAccess('download_claim_detail');
         }
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
@@ -67,9 +82,11 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         $this->crud->enableBulkActions();
         $this->crud->enableDetailsRow();
         $this->crud->addButtonFromView('top', 'download_journal_ap_history', 'download_journal_ap_history', 'end');
-        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_excel_report', 'end');
+        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_summary', 'end');
+        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_detail', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
 
+        
         $this->crud->addFilter([
             'name'  => 'department_id',
             'type'  => 'select2',
@@ -77,7 +94,8 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
           ], function () {
             return Department::pluck('name','id')->toArray();
           }, function ($value) { // if the filter is active
-            $this->crud->addClause('where', 'department_id', (int)$value);
+            return $this->crud->query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+                ->where('department_id', $value);
         });
         $this->crud->addFilter([
             'name'  => 'status',
@@ -99,6 +117,43 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             return $arrStatus;
           }, function ($value) { // if the filter is active
             $this->crud->addClause('where', 'status', $value);
+        });
+        $this->crud->addFilter([
+            'type'  => 'date_range',
+            'name'  => 'request_date',
+            'label' => 'Date',
+          ],
+          false,
+          function ($value) { // if the filter is active, apply these constraints
+            $dates = json_decode($value);
+            $this->crud->addClause('where', 'request_date', '>=', $dates->from);
+            $this->crud->addClause('where', 'request_date', '<=', $dates->to . ' 23:59:59');
+        });
+
+        $this->crud->addFilter([
+            'name'  => 'expense_type',
+            'type'  => 'select2',
+            'label' => 'Expense Type'
+          ], function () {
+              $arrExpense = [];
+              $mstExpenses = MstExpense::get();
+              foreach ($mstExpenses as $key => $mstExpense) {
+                $arrExpense[$mstExpense->name] = $mstExpense->name;
+              }
+              return $arrExpense;
+          }, function ($value) { // if the filter is active
+            return $this->crud->query->leftJoin('trans_expense_claim_types as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
+                ->where('r.expense_name', $value);
+        });
+        $this->crud->addFilter([
+            'name'  => 'cost_center_id',
+            'type'  => 'select2',
+            'label' => 'Cost Center'
+          ], function () {
+            return CostCenter::pluck('cost_center_id','id')->toArray();
+          }, function ($value) { // if the filter is active
+            return $this->crud->query->leftJoin('trans_expense_claim_details as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
+                ->where('r.cost_center_id', $value);
         });
 
         CRUD::addColumns([
@@ -323,7 +378,7 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
     }
 
 
-    public function reportExcel()
+    public function reportExcelClaimSummary()
     {
         if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
             abort(404);
@@ -337,5 +392,22 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         }
 
         return Excel::download(new ReportClaimSummaryExport($entries), $filename);
+    }
+
+
+    public function reportExcelClaimDetail()
+    {
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
+            abort(404);
+        }
+        $filename = 'report-claim-detail-'.date('YmdHis').'.xlsx';
+        $urlFull = parse_url(url()->full()); 
+        $entries['param_url'] = [];
+        if (array_key_exists("query", $urlFull)) {
+            parse_str($urlFull['query'], $paramUrl);
+            $entries['param_url'] = $paramUrl;
+        }
+
+        return Excel::download(new ReportClaimDetailExport($entries), $filename);
     }
 }

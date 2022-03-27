@@ -50,7 +50,13 @@ class UserCrudController extends CrudController
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
         }
         if(allowedRole([Role::ADMIN])){
-            $this->crud->excelUrl = url('user/report-excel');
+            $this->crud->excelReportBtn = [
+                [
+                    'name' => 'download_excel_report', 
+                    'label' => 'Excel Report',
+                    'url' => url('user/report-excel')
+                ],
+            ];
             $this->crud->allowAccess('download_excel_report');
         }
 
@@ -65,28 +71,6 @@ class UserCrudController extends CrudController
         $this->crud->updateCondition = function ($entry) {
             return $entry->user_id != User::USER_ID_SUPER_ADMIN;
         };
-
-        $this->crud->addFilter([
-            'name'  => 'roles',
-            'type'  => 'select2_multiple',
-            'label' => 'Roles'
-        ], function () {
-        return Role::select('id', 'name')->get()->keyBy('id')->pluck('name', 'id')->toArray();
-        }, function ($value) { // if the filter is active
-            try{
-                $value = json_decode($value);
-                $newValue = [];
-                if(is_array($value)){
-                    foreach($value as $val){
-                        $newValue[] = (int) $val;
-                    }
-                    $this->crud->addClause('whereJsonContains', 'roles', $newValue);
-                }
-            }
-            catch(Exception $e){
-                
-            }
-        });
     }
 
     public function getColumns($forList = true){

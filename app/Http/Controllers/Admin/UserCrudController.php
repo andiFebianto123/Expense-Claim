@@ -250,7 +250,9 @@ class UserCrudController extends CrudController
           ], function () {
             return Role::pluck('name','id')->toArray();
           }, function ($value) { // if the filter is active
-            $this->crud->addClause('whereJsonContains', 'roles', (int)$value);
+            if($value !== null && ctype_digit($value)){
+                $this->crud->addClause('whereJsonContains', 'roles', (int)$value);
+            }
         });
         $this->crud->addFilter([
             'name'  => 'level_id',
@@ -259,7 +261,7 @@ class UserCrudController extends CrudController
           ], function () {
             return Level::pluck('name','id')->toArray();
           }, function ($value) { // if the filter is active
-            $this->crud->addClause('where', 'level_id', (int)$value);
+            $this->crud->addClause('where', 'level_id', $value);
         });
         $this->crud->addFilter([
             'name'  => 'department_id',
@@ -268,7 +270,7 @@ class UserCrudController extends CrudController
           ], function () {
             return Department::pluck('name','id')->toArray();
           }, function ($value) { // if the filter is active
-            $this->crud->addClause('where', 'department_id', (int)$value);
+            $this->crud->addClause('where', 'real_department_id', $value);
         });
         $this->crud->addFilter([
             'name'  => 'goa_holder_id',
@@ -277,7 +279,7 @@ class UserCrudController extends CrudController
           ], function () {
             return GoaHolder::pluck('name','id')->toArray();
           }, function ($value) { // if the filter is active
-            $this->crud->addClause('where', 'goa_holder_id', (int)$value);
+            $this->crud->addClause('where', 'goa_holder_id', $value);
         });
         $this->crud->addFilter([
             'name'  => 'cost_center_id',
@@ -286,7 +288,7 @@ class UserCrudController extends CrudController
           ], function () {
             return CostCenter::pluck('cost_center_id','id')->toArray();
           }, function ($value) { // if the filter is active
-            $this->crud->addClause('where', 'cost_center_id', (int)$value);
+            $this->crud->addClause('where', 'cost_center_id', $value);
         });
         $this->getColumns();
     }
@@ -733,11 +735,16 @@ class UserCrudController extends CrudController
         $filename = 'report-user-'.date('YmdHis').'.xlsx';
         $urlFull = parse_url(url()->full()); 
         $entries['param_url'] = [];
-        if (array_key_exists("query", $urlFull)) {
-            parse_str($urlFull['query'], $paramUrl);
-            $entries['param_url'] = $paramUrl;
+        try{
+            if (array_key_exists("query", $urlFull)) {
+                parse_str($urlFull['query'], $paramUrl);
+                $entries['param_url'] = $paramUrl;
+            }
         }
+        catch(Exception $e){
 
+        }
+        
         return Excel::download(new ReportUserExport($entries), $filename);
     }
     

@@ -111,9 +111,9 @@ class ReportUserExport implements FromView, WithEvents, WithDrawings
             $users->where('mst_users.cost_center_id', $paramUrl['cost_center_id']);
         }
 
-        $users = $users->get(['mst_users.user_id', 'vendor_number', 'mst_users.name', 'email', 'bpid', 'bpcscode', 'roles', 
+        $users = $users->select('mst_users.user_id', 'vendor_number', 'mst_users.name', 'email', 'bpid', 'bpcscode', 'roles', 
                 'mst_levels.level_id as lvl_code', 'mst_levels.name as lvl_name', 'head.name as md_name', 'dept.name as dept_name',
-                'goa_holders.name as gh_name', 'mst_cost_centers.cost_center_id as mcc_cost_center_id', 'is_active', 'remark']);
+                'goa_holders.name as gh_name', 'mst_cost_centers.cost_center_id as mcc_cost_center_id', 'is_active', 'remark')->get();
         
         $arrRows = [];
         foreach ($users as $key => $user) {

@@ -87,74 +87,74 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
 
         
-        $this->crud->addFilter([
-            'name'  => 'department_id',
-            'type'  => 'select2',
-            'label' => 'Department'
-          ], function () {
-            return Department::pluck('name','id')->toArray();
-          }, function ($value) { // if the filter is active
-            return $this->crud->query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
-                ->where('department_id', $value);
-        });
-        $this->crud->addFilter([
-            'name'  => 'status',
-            'type'  => 'select2',
-            'label' => 'Status'
-          ], function () {
-              $arrStatus = [
-                ExpenseClaim::DRAFT => ExpenseClaim::DRAFT,
-                ExpenseClaim::REQUEST_FOR_APPROVAL => ExpenseClaim::REQUEST_FOR_APPROVAL,
-                ExpenseClaim::REQUEST_FOR_APPROVAL_TWO => ExpenseClaim::REQUEST_FOR_APPROVAL_TWO,
-                ExpenseClaim::PARTIAL_APPROVED => ExpenseClaim::PARTIAL_APPROVED,
-                ExpenseClaim::FULLY_APPROVED => ExpenseClaim::FULLY_APPROVED,
-                ExpenseClaim::NEED_REVISION => ExpenseClaim::NEED_REVISION,
-                ExpenseClaim::PROCEED => ExpenseClaim::PROCEED,
-                ExpenseClaim::REJECTED_ONE => ExpenseClaim::REJECTED_ONE,
-                ExpenseClaim::REJECTED_TWO => ExpenseClaim::REJECTED_TWO,
-                ExpenseClaim::CANCELED => ExpenseClaim::CANCELED,
-              ];
-            return $arrStatus;
-          }, function ($value) { // if the filter is active
-            $this->crud->addClause('where', 'status', $value);
-        });
-        $this->crud->addFilter([
-            'type'  => 'date_range',
-            'name'  => 'request_date',
-            'label' => 'Date',
-          ],
-          false,
-          function ($value) { // if the filter is active, apply these constraints
-            $dates = json_decode($value);
-            $this->crud->addClause('where', 'request_date', '>=', $dates->from);
-            $this->crud->addClause('where', 'request_date', '<=', $dates->to . ' 23:59:59');
-        });
+        // $this->crud->addFilter([
+        //     'name'  => 'department_id',
+        //     'type'  => 'select2',
+        //     'label' => 'Department'
+        //   ], function () {
+        //     return Department::pluck('name','id')->toArray();
+        //   }, function ($value) { // if the filter is active
+        //     return $this->crud->query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+        //         ->where('department_id', $value);
+        // });
+        // $this->crud->addFilter([
+        //     'name'  => 'status',
+        //     'type'  => 'select2',
+        //     'label' => 'Status'
+        //   ], function () {
+        //       $arrStatus = [
+        //         ExpenseClaim::DRAFT => ExpenseClaim::DRAFT,
+        //         ExpenseClaim::REQUEST_FOR_APPROVAL => ExpenseClaim::REQUEST_FOR_APPROVAL,
+        //         ExpenseClaim::REQUEST_FOR_APPROVAL_TWO => ExpenseClaim::REQUEST_FOR_APPROVAL_TWO,
+        //         ExpenseClaim::PARTIAL_APPROVED => ExpenseClaim::PARTIAL_APPROVED,
+        //         ExpenseClaim::FULLY_APPROVED => ExpenseClaim::FULLY_APPROVED,
+        //         ExpenseClaim::NEED_REVISION => ExpenseClaim::NEED_REVISION,
+        //         ExpenseClaim::PROCEED => ExpenseClaim::PROCEED,
+        //         ExpenseClaim::REJECTED_ONE => ExpenseClaim::REJECTED_ONE,
+        //         ExpenseClaim::REJECTED_TWO => ExpenseClaim::REJECTED_TWO,
+        //         ExpenseClaim::CANCELED => ExpenseClaim::CANCELED,
+        //       ];
+        //     return $arrStatus;
+        //   }, function ($value) { // if the filter is active
+        //     $this->crud->addClause('where', 'status', $value);
+        // });
+        // $this->crud->addFilter([
+        //     'type'  => 'date_range',
+        //     'name'  => 'request_date',
+        //     'label' => 'Date',
+        //   ],
+        //   false,
+        //   function ($value) { // if the filter is active, apply these constraints
+        //     $dates = json_decode($value);
+        //     $this->crud->addClause('where', 'request_date', '>=', $dates->from);
+        //     $this->crud->addClause('where', 'request_date', '<=', $dates->to . ' 23:59:59');
+        // });
 
-        $this->crud->addFilter([
-            'name'  => 'expense_type',
-            'type'  => 'select2',
-            'label' => 'Expense Type'
-          ], function () {
-              $arrExpense = [];
-              $mstExpenses = MstExpense::get();
-              foreach ($mstExpenses as $key => $mstExpense) {
-                $arrExpense[$mstExpense->name] = $mstExpense->name;
-              }
-              return $arrExpense;
-          }, function ($value) { // if the filter is active
-            return $this->crud->query->leftJoin('trans_expense_claim_types as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
-                ->where('r.expense_name', $value);
-        });
-        $this->crud->addFilter([
-            'name'  => 'cost_center_id',
-            'type'  => 'select2',
-            'label' => 'Cost Center'
-          ], function () {
-            return CostCenter::pluck('cost_center_id','id')->toArray();
-          }, function ($value) { // if the filter is active
-            return $this->crud->query->leftJoin('trans_expense_claim_details as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
-                ->where('r.cost_center_id', $value);
-        });
+        // $this->crud->addFilter([
+        //     'name'  => 'expense_type',
+        //     'type'  => 'select2',
+        //     'label' => 'Expense Type'
+        //   ], function () {
+        //       $arrExpense = [];
+        //       $mstExpenses = MstExpense::get();
+        //       foreach ($mstExpenses as $key => $mstExpense) {
+        //         $arrExpense[$mstExpense->name] = $mstExpense->name;
+        //       }
+        //       return $arrExpense;
+        //   }, function ($value) { // if the filter is active
+        //     return $this->crud->query->leftJoin('trans_expense_claim_types as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
+        //         ->where('r.expense_name', $value);
+        // });
+        // $this->crud->addFilter([
+        //     'name'  => 'cost_center_id',
+        //     'type'  => 'select2',
+        //     'label' => 'Cost Center'
+        //   ], function () {
+        //     return CostCenter::pluck('cost_center_id','id')->toArray();
+        //   }, function ($value) { // if the filter is active
+        //     return $this->crud->query->leftJoin('trans_expense_claim_details as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
+        //         ->where('r.cost_center_id', $value);
+        // });
 
         CRUD::addColumns([
             [

@@ -50,7 +50,13 @@ class UserCrudController extends CrudController
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
         }
         if(allowedRole([Role::ADMIN])){
-            $this->crud->excelUrl = url('user/report-excel');
+            $this->crud->excelReportBtn = [
+                [
+                    'name' => 'download_excel_report', 
+                    'label' => 'Excel Report',
+                    'url' => url('user/report-excel')
+                ],
+            ];
             $this->crud->allowAccess('download_excel_report');
         }
 

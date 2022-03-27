@@ -2,6 +2,7 @@
 namespace App\Exports;
 
 use App\Models\ExpenseClaim;
+use App\Models\ExpenseClaimDetail;
 use App\Models\ExpenseType;
 use App\Models\Role;
 use App\Models\TransGoaApproval;
@@ -13,14 +14,15 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithDrawings;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
-class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
+class ReportClaimDetailExport implements FromView, WithEvents, WithDrawings
 {
     public function __construct($entries = [])
     {
-        $this->title = 'Report Claim Summary';
+        $this->title = 'Report Claim Detail';
         $this->entries = $entries;
-        $this->headers = ['User ID','Requestor', 'Department', 'Expense Number', 'Date', 'Total Value', 'HOD Approved By',	
-        'HOD Approved Date', 'GoA Approved By', 'GoA Approved Date', 'Finance AP By', 'Finance AP Date', 'Expense Status'];
+        $this->headers = ['User ID','Requestor', 'Department', 'Expense Number', 'Date', 'HOD Approved By',	
+        'HOD Approved Date', 'GoA Approved By', 'GoA Approved Date', 'Finance AP By', 'Finance AP Date', 'Expense Status', 
+        'Expense Type',	'Date',	'Cost Center',	'Cost Center Description',	'Cost', 'Total Days', 'Remark'];
     }
 
     public function drawings()
@@ -41,7 +43,7 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
             AfterSheet::class    => function(AfterSheet $event) {
                 $i = 0;
                 $start = 'A';
-                $end = 'O';
+                $end = 'U';
                 $styleHeader = [
                     //Set font style
                     'font' => [
@@ -53,6 +55,22 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
                         'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
                         'startColor' => [
                             'rgb' => '2184ff',
+                         ]           
+                    ],
+        
+                ];
+
+                $styleHeaderDetail = [
+                    //Set font style
+                    'font' => [
+                        'bold'      =>  true,
+                        'color' => ['argb' => 'ffffff'],
+                    ],
+                    //Set background style
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => [
+                            'rgb' => 'ff9800',
                          ]           
                     ],
         
@@ -73,7 +91,8 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
                     $i++;
                 }
 
-                $end = 'N'; // based on notes so, it should be N
+                // section for header blue //
+                $end = 'M'; // based on notes so, it should be N
                 $event->sheet->getDelegate()->getStyle($start.'5:'.$end.'5')->applyFromArray($styleHeader);
                 $event->sheet->getDelegate()->getRowDimension('5')->setRowHeight(22);
                 $event->sheet->getDelegate()->getStyle($start.'5:'.$end.'5')
@@ -82,6 +101,19 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
                 $event->sheet->getDelegate()->getStyle($start.'5:'.$end.'5')
                     ->getAlignment()
                     ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+
+                // section for header orange //
+                $start = 'N'; // based on notes so, it should be N
+                $end = 'T'; // based on notes so, it should be N
+                $event->sheet->getDelegate()->getStyle($start.'5:'.$end.'5')->applyFromArray($styleHeaderDetail);
+                $event->sheet->getDelegate()->getRowDimension('5')->setRowHeight(22);
+                $event->sheet->getDelegate()->getStyle($start.'5:'.$end.'5')
+                    ->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $event->sheet->getDelegate()->getStyle($start.'5:'.$end.'5')
+                    ->getAlignment()
+                    ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+                
                 },
         ];
     }
@@ -89,24 +121,43 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
     public function view(): View
     {
         $paramUrl = $this->entries['param_url'];
-        $expenseClaims = ExpenseClaim::leftJoin('mst_users as user_req', 'user_req.id', 'trans_expense_claims.request_id')
-            ->leftJoin('mst_users as user_goa', 'user_goa.id', 'trans_expense_claims.current_trans_goa_id')
-            ->leftJoin('mst_users as user_hod', 'user_hod.id', 'trans_expense_claims.hod_id')
-            ->leftJoin('mst_users as user_finance', 'user_finance.id', 'trans_expense_claims.finance_id')
-            ->leftJoin('mst_users as user_hod_deleg', 'user_hod_deleg.id', 'trans_expense_claims.hod_delegation_id')
+        $expenseClaims = 
+            ExpenseClaimDetail::leftJoin('trans_expense_claims as tec', 'tec.id', 'trans_expense_claim_details.expense_claim_id')
+            ->leftJoin('trans_expense_claim_types as tect', 'tect.id', 'trans_expense_claim_details.expense_claim_type_id')
+            ->leftJoin('mst_cost_centers as mcc', 'mcc.id', 'trans_expense_claim_details.cost_center_id')
+            ->leftJoin('mst_users as user_req', 'user_req.id', 'tec.request_id')
+            ->leftJoin('mst_users as user_goa', 'user_goa.id', 'tec.current_trans_goa_id')
+            ->leftJoin('mst_users as user_hod', 'user_hod.id', 'tec.hod_id')
+            ->leftJoin('mst_users as user_finance', 'user_finance.id', 'tec.finance_id')
+            ->leftJoin('mst_users as user_hod_deleg', 'user_hod_deleg.id', 'tec.hod_delegation_id')
             ->leftJoin('mst_departments', 'mst_departments.id', 'user_req.department_id');
 
         if (isset($paramUrl['status'])) {
-            $expenseClaims->where('trans_expense_claims.status', $paramUrl['status']);
+            $expenseClaims->where('tec.status', $paramUrl['status']);
         }
         if (isset($paramUrl['department_id'])) {
             $expenseClaims->where('user_req.department_id', (int)$paramUrl['department_id']);
         }
+        if (isset($paramUrl['date_range'])) {
+            $dates = json_decode($paramUrl['date_range']);
+            $expenseClaims->where('tec.request_date', '>=', $dates->from);
+            $expenseClaims->where('tec.request_date', '<=', $dates->to . ' 23:59:59');
+        }
+        if (isset($paramUrl['expense_type'])) {
+            $expenseClaims->where('tect.expense_name', (int)$paramUrl['expense_type']);
+        }
+        if (isset($paramUrl['cost_center_id'])) {
+            $expenseClaims->where('mcc.id', (int)$paramUrl['cost_center_id']);
+        }
+        
 
-        $expenseClaims = $expenseClaims->get(['trans_expense_claims.id', 'user_req.user_id as user_id', 'user_req.name as requestor', 
-            'mst_departments.name as md_name', 'expense_number', 'request_date', 'value', 'user_hod.name as hod_name', 
-            'trans_expense_claims.hod_date as hod_date', 'user_goa.name as goa_name', 'user_finance.name as finance_name', 
-            'finance_date', 'user_hod_deleg.name as delegation_name', 'trans_expense_claims.status', 'user_req.department_id']);
+        $expenseClaims = $expenseClaims->get(['tec.id', 'user_req.user_id as user_id', 'user_req.name as requestor', 
+            'mst_departments.name as md_name', 'tec.expense_number', 'tec.request_date', 
+            'tec.value', 'user_hod.name as hod_name', 'tec.hod_date as hod_date', 'user_goa.name as goa_name', 
+            'user_finance.name as finance_name', 'tec.finance_date', 'user_hod_deleg.name as delegation_name', 
+            'tec.status', 'tect.expense_name', 'trans_expense_claim_details.date as tec_date', 
+            'mcc.cost_center_id as mcc_cci', 'mcc.description as mcc_description', 'trans_expense_claim_details.cost as tecd_cost', 
+            'trans_expense_claim_details.total_day as tecd_total_days', 'trans_expense_claim_details.remark as tecd_remark']);
         
         $arrRows = [];
         foreach ($expenseClaims as $key => $expenseType) {
@@ -134,14 +185,20 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
                 $expenseType->md_name, 
                 $expenseType->expense_number, 
                 $expenseType->request_date, 
-                $expenseType->value, 
                 $hodName, 
                 $expenseType->hod_date ?? '-', 
                 $goaName,
                 $transGoaApproval->goa_date ?? '-',
                 $expenseType->finance_name ?? '',
                 $expenseType->finance_date ?? '',
-                $expenseType->status
+                $expenseType->status, 
+                $expenseType->expense_name, 
+                $expenseType->tec_date, 
+                $expenseType->mcc_cci, 
+                $expenseType->mcc_description, 
+                $expenseType->tecd_cost, 
+                $expenseType->tecd_total_days,
+                $expenseType->tecd_remark,
             ];
         }
 

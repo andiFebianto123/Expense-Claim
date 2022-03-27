@@ -1,35 +1,38 @@
-@if ($crud->hasAccess('download_excel_report'))
+
+@foreach($crud->excelReportBtn as $k => $rb)
 @php
-    $excelUrl = $crud->excelUrl;
+    $excelUrl = $rb['url'] ?? '#';
+    $btnName = $rb['name'] ?? 'download_excel_report';
+    $btnLabel = $rb['label'] ?? 'Excel Report';
 @endphp
-<a 
-    id="linkExcelReport"
-    class="btn btn-primary" 
-    data-style="zoom-in"
-    href="{{$excelUrl}}"
->
-    <span class="ladda-label">
-        <i class="la la-download"></i>Export Report
-    </span>
-</a>
-@else
-@php
-    $excelUrl = null;
-@endphp
-@endif
+    @if ($crud->hasAccess($btnName))
+    <a 
+        id="linkExcelReport-{{$k}}"
+        class="btn btn-success" 
+        data-style="zoom-in"
+        href="{{$excelUrl}}"
+    >
+        <span class="ladda-label">
+            <i class="la la-download"></i>{{$btnLabel}}
+        </span>
+    </a>
+    @endif
+@endforeach
 
 @push('after_scripts')
+@foreach($crud->excelReportBtn as $k => $rb)
 <script>
 $( document ).ajaxStop(function() {
-    var excelUrl = "{{$excelUrl}}";
+    var excelUrl = "{{$rb['url']}}"
     var currentUrl = window.location.href
     var queryParam = ''
     if (currentUrl.includes('?')) {
         queryParam = currentUrl.split('?')[1]
         excelUrl += '?'+queryParam
     }
-    $('#linkExcelReport').attr('href', excelUrl)
+    $('#linkExcelReport-{{$k}}').attr('href', excelUrl)
 });
 
 </script>
+@endforeach
 @endpush

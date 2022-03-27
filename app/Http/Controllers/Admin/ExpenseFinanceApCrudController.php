@@ -77,6 +77,14 @@ class ExpenseFinanceApCrudController extends CrudController
         $this->crud->addButtonFromView('top', 'download_journal_ap', 'download_journal_ap', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
 
+        $dashboard = request()->dashboard;
+        if($dashboard == ExpenseClaim::PARAM_FINANCE && allowedRole([Role::FINANCE_AP])){
+            $this->crud->addClause('where', function($query){
+                $query->where('status', ExpenseClaim::FULLY_APPROVED);
+            });
+        }
+
+
         CRUD::addColumns([
             [
                 'name' => 'row_number',

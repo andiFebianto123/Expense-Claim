@@ -74,6 +74,37 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
         $this->crud->addButtonFromModelFunction('line', 'detailRequestButton', 'detailRequestButton');
         $this->crud->addButtonFromModelFunction('line', 'printReportExpense', 'printReportExpense', 'end');
 
+
+        $dashboard = request()->dashboard;
+        $validDashboard = in_array($dashboard, ExpenseClaim::PARAMS_DASHBOARD_HISTORY);
+        $status_dashboard = request()->status_dashboard;
+        $validStatusDashboard = in_array($status_dashboard, ExpenseClaim::PARAMS_STATUS_HISTORY);
+
+        if($validDashboard || $validStatusDashboard){
+            $this->crud->addClause('where', function($query){
+                $query->where(function($innerQuery){
+                    $innerQuery->where('request_id', $this->crud->user->id);
+                    if (allowedRole([Role::SECRETARY])) {
+                        $innerQuery->orWhere('secretary_id', $this->crud->user->id);
+                    }
+                });
+            });
+
+            if($validDashboard){
+                $this->crud->addClause('where', function($query) use($dashboard){
+                    if($dashboard == ExpenseClaim::PARAM_FINANCE){
+                        $query->where('status', ExpenseClaim::FULLY_APPROVED);
+                    }
+                });
+            }
+    
+            if($validStatusDashboard){
+                $this->crud->addClause('where', function($query) use($status_dashboard){
+                    $query->where('status', $status_dashboard);
+                });
+            }
+        }
+
         CRUD::addColumns([
             [
                 'name'      => 'row_number',

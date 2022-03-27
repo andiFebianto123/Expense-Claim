@@ -36,10 +36,18 @@ class ExpenseClaim extends Model
     public const NEED_APPROVAL_TWO = 'Need Approval (Level 2)';
     public const NEED_PROCESSING = 'Need Processing';
 
+    public const PARAM_HOD = 'hod';
+    public const PARAM_GOA = 'goa';
+    public const PARAM_FINANCE = 'finance';
+    public const PARAMS_DASHBOARD = [ExpenseClaim::PARAM_HOD, ExpenseClaim::PARAM_GOA];
+    public const PARAMS_DASHBOARD_HISTORY = [ExpenseClaim::PARAM_FINANCE];
+    public const PARAMS_STATUS = [ExpenseClaim::DRAFT, ExpenseClaim::NEED_REVISION];
+    public const PARAMS_STATUS_HISTORY = [ExpenseClaim::CANCELED];
+
     protected $fillable = [
         'expense_number', 'value', 'currency', 'request_date', 'request_id',
         'hod_id', 'hod_action_id', 'hod_status', 'hod_delegation_id', 'start_approval_date', 'is_admin_delegation', 'ho_date',
-        'secretary_id', 'finance_id', 'finance_date', 'status', 'remark',
+        'finance_id', 'finance_date', 'status', 'remark',
         'rejected_id', 'rejected_date', 'canceled_id', 'canceled_date',
         'secretary_id', 'current_trans_goa_id', 'current_trans_goa_delegation_id', 'upper_limit', 'bottom_limit'
     ];
@@ -47,6 +55,10 @@ class ExpenseClaim extends Model
     public function request()
     {
         return $this->belongsTo(User::class, 'request_id');
+    }
+    public function secretary()
+    {
+        return $this->belongsTo(User::class, 'secretary_id');
     }
 
     public function department()

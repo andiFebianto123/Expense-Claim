@@ -60,6 +60,12 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             $this->crud->allowAccess('download_claim_detail');
         }
 
+        ExpenseClaim::addGlobalScope('status', function(Builder $builder){
+            $builder->where(function($query){
+                $query->where('trans_expense_claims.status', ExpenseClaim::PROCEED);
+            });
+        });
+
         CRUD::setModel(ExpenseClaim::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap-history');
         CRUD::setEntityNameStrings('Expense Finance AP - History', 'Expense Finance AP - History');
@@ -76,10 +82,9 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         $this->crud->enableBulkActions();
         $this->crud->enableDetailsRow();
         $this->crud->addButtonFromView('top', 'download_journal_ap_history', 'download_journal_ap_history', 'end');
-        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_summary', 'end');
-        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_detail', 'end');
+        // $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_summary', 'end');
+        // $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_detail', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
-        $this->crud->addClause('where', 'trans_expense_claims.status', '=', ExpenseClaim::PROCEED);
 
         
         $this->crud->addFilter([
@@ -521,38 +526,38 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
     }
 
 
-    public function reportExcelClaimSummary()
-    {
-        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
-            abort(404);
-        }
-        $this->crud->hasAccessOrFail('download_claim_summary');
-        $filename = 'report-claim-summary-'.date('YmdHis').'.xlsx';
-        $urlFull = parse_url(url()->full()); 
-        $entries['param_url'] = [];
-        if (array_key_exists("query", $urlFull)) {
-            parse_str($urlFull['query'], $paramUrl);
-            $entries['param_url'] = $paramUrl;
-        }
+    // public function reportExcelClaimSummary()
+    // {
+    //     if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
+    //         abort(404);
+    //     }
+    //     $this->crud->hasAccessOrFail('download_claim_summary');
+    //     $filename = 'report-claim-summary-'.date('YmdHis').'.xlsx';
+    //     $urlFull = parse_url(url()->full()); 
+    //     $entries['param_url'] = [];
+    //     if (array_key_exists("query", $urlFull)) {
+    //         parse_str($urlFull['query'], $paramUrl);
+    //         $entries['param_url'] = $paramUrl;
+    //     }
 
-        return Excel::download(new ReportClaimSummaryExport($entries), $filename);
-    }
+    //     return Excel::download(new ReportClaimSummaryExport($entries), $filename);
+    // }
 
 
-    public function reportExcelClaimDetail()
-    {
-        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
-            abort(404);
-        }
-        $this->crud->hasAccessOrFail('download_claim_detail');
-        $filename = 'report-claim-detail-'.date('YmdHis').'.xlsx';
-        $urlFull = parse_url(url()->full()); 
-        $entries['param_url'] = [];
-        if (array_key_exists("query", $urlFull)) {
-            parse_str($urlFull['query'], $paramUrl);
-            $entries['param_url'] = $paramUrl;
-        }
+    // public function reportExcelClaimDetail()
+    // {
+    //     if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
+    //         abort(404);
+    //     }
+    //     $this->crud->hasAccessOrFail('download_claim_detail');
+    //     $filename = 'report-claim-detail-'.date('YmdHis').'.xlsx';
+    //     $urlFull = parse_url(url()->full()); 
+    //     $entries['param_url'] = [];
+    //     if (array_key_exists("query", $urlFull)) {
+    //         parse_str($urlFull['query'], $paramUrl);
+    //         $entries['param_url'] = $paramUrl;
+    //     }
 
-        return Excel::download(new ReportClaimDetailExport($entries), $filename);
-    }
+    //     return Excel::download(new ReportClaimDetailExport($entries), $filename);
+    // }
 }

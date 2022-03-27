@@ -68,7 +68,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
         $this->crud->goaApprovals = TransGoaApproval::where('expense_claim_id', $this->crud->expenseClaim->id)
         ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
         ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
-        ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+        ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status', 'goa_id', 'goa_action_id')
         ->orderBy('order')->get();  
 
         $this->crud->setCreateView('expense_claim.request.create');
@@ -1470,15 +1470,22 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 ->orderBy('order')->get();
             }
 
+            $expenseClaim->finance_id = null;
+            $expenseClaim->finance_date = null;
+
             $needApprovalHod = false;
             if($expenseClaim->hod_id == null){
                 $expenseClaim->hod_delegation_id = null;
+                $expenseClaim->hod_action_id = null;
                 $expenseClaim->hod_date = null;
+                $expenseClaim->hod_status = '-';
                 $expenseClaim->start_approval_date = null;
             }
             else if($expenseClaim->hod_id == $expenseClaim->request_id){
                 $expenseClaim->hod_delegation_id = null;
+                $expenseClaim->hod_action_id = $expenseClaim->request_id;
                 $expenseClaim->hod_date = $now;
+                $expenseClaim->hod_status = 'Approved';
                 $expenseClaim->start_approval_date = $now;
             }
             else{
@@ -1487,7 +1494,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     $expenseClaim->hod_delegation_id = MstDelegation::where('start_date', '<=', $now->format('Y-m-d'))
                     ->where('end_date', '>=', $now->format('Y-m-d'))->where('from_user_id', $expenseClaim->hod_id)->select('to_user_id')->first()->to_user_id ?? null;
                 }
+                $expenseClaim->hod_action_id = null;
                 $expenseClaim->hod_date = null;
+                $expenseClaim->hod_status = '-';
                 $expenseClaim->start_approval_date = $now;
             }
 
@@ -1500,12 +1509,14 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 foreach($transGoaApprovals as $indexGoa => $transGoaApproval){
                     if(!$needBreak){
                         if($transGoaApproval->goa_id == $expenseClaim->request_id){
+                            $transGoaApproval->goa_action_id = $expenseClaim->request_id;
                             $transGoaApproval->goa_delegation_id = null;
                             $transGoaApproval->goa_date = $now;
                             $transGoaApproval->start_approval_date = $now;
                             $transGoaApproval->status = 'Approved';
                             $transGoaApproval->save();
                             $skippedGoa++;
+                            $expenseClaim->current_trans_goa_delegation_id = null;
                             $expenseClaim->current_trans_goa_id = $transGoaApproval->goa_id;
                         }
                         else{
@@ -1514,10 +1525,12 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                                 ->where('end_date', '>=', $now->format('Y-m-d'))->where('from_user_id', $transGoaApproval->goa_id)->select('to_user_id')->first()->to_user_id ?? null;
                             }
                             $goaDelegationId = $transGoaApproval->goa_delegation_id;
+                            $transGoaApproval->goa_action_id = null;
                             $transGoaApproval->goa_date = null;
                             $transGoaApproval->start_approval_date = $now;
                             $transGoaApproval->status = "-";
                             $transGoaApproval->save();
+                            $expenseClaim->current_trans_goa_delegation_id = $goaDelegationId;
                             $expenseClaim->current_trans_goa_id = $transGoaApproval->goa_id;
                             $needBreak = true;
                         }
@@ -1526,6 +1539,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         if(!$transGoaApproval->is_admin_delegation){
                             $transGoaApproval->goa_delegation_id = null;
                         }
+                        $transGoaApproval->goa_action_id = null;
                         $transGoaApproval->goa_date = null;
                         $transGoaApproval->start_approval_date = null;
                         $transGoaApproval->status = "-";
@@ -1578,7 +1592,20 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             }
             else{
                 $status = ExpenseClaim::REQUEST_FOR_APPROVAL;
+                $expenseClaim->current_trans_goa_delegation_id = null;
                 $expenseClaim->current_trans_goa_id = null;
+
+                foreach($transGoaApprovals as $indexGoa => $transGoaApproval){
+                    if(!$transGoaApproval->is_admin_delegation){
+                        $transGoaApproval->goa_delegation_id = null;
+                    }
+                    $transGoaApproval->goa_action_id = null;
+                    $transGoaApproval->goa_date = null;
+                    $transGoaApproval->start_approval_date = null;
+                    $transGoaApproval->status = "-";
+                    $transGoaApproval->save();
+                }
+
                 if ($expenseClaim->hod_delegation_id != null) {
                     $user = User::where('id', $expenseClaim->hod_delegation_id)->first();
                 }else{

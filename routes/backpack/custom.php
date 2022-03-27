@@ -93,6 +93,8 @@ Route::group([
         Route::get('expense-finance-ap-history/report-excel', 'ExpenseFinanceApHistoryCrudController@reportExcel');
     });
 
+    // Route::get('dashboard', 'DashboardController@index');
+
     Route::crud('role', 'RoleCrudController');
     Route::crud('level', 'LevelCrudController');
     Route::crud('user', 'UserCrudController');

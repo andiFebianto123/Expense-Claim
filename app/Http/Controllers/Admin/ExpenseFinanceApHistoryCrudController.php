@@ -42,7 +42,6 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             $this->crud->excelUrl = url('expense-finance-ap-history/report-excel');
             $this->crud->allowAccess('download_journal_ap_history');
             $this->crud->allowAccess('download_excel_report');
-
         }
 
         ExpenseClaim::addGlobalScope('status', function(Builder $builder){
@@ -188,14 +187,39 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             [
                 'label' => 'Fin AP By',
                 'name' => 'finance_id',
-                'type'      => 'select',
-                'entity'    => 'finance',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.finance_id')
-                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
+                'type' => 'closure',
+                'function' => function($entry){
+                    if($entry->finance){
+                        if($entry->finance_date != null){
+                            $icon = '';
+                            if($entry->status == ExpenseClaim::PROCEED)
+                            {
+                                $icon = '<i class="position-absolute la la-check-circle text-success ml-2"
+                                style="font-size: 18px"></i>';
+                            }
+                            else if($entry->status == ExpenseClaim::NEED_REVISION)
+                            {
+                                $icon = '<i class="position-absolute la la-paste text-primary ml-2"
+                                style="font-size: 18px"></i>';
+                            }
+                            return '<span>' . $entry->finance->name . '&nbsp' . $icon . '</span>';
+                        }
+                        return $entry->finance->name;
+                    }
+                    else{
+                        return '-';
+                    }
                 },
+                'searchLogic' => function ($query, $column, $searchTerm) {
+                    $query->orWhereHas('finance', function ($q) use ($column, $searchTerm) {
+                        $q->where('name', 'like', '%'.$searchTerm.'%');
+                    });
+                },
+                'orderLogic' => function ($query, $column, $columnDirection) {
+                    return $query->leftJoin('mst_users as f', 'f.id', '=', 'trans_expense_claims.finance_id')
+                        ->orderBy('f.name', $columnDirection)->select('trans_expense_claims.*');
+                },
+                'escaped' => false
             ],
             [
                 'label' => 'Fin AP Date',
@@ -214,6 +238,128 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             ]
         ]);
     }
+
+    public function getRowViews($entry, $rowNumber = false)
+    {
+        $row_items = [];
+
+        foreach ($this->crud->columns() as $key => $column) {
+            $row_items[] = $this->crud->getCellView($column, $entry, $rowNumber);
+        }
+
+        // add the buttons as the last column
+        if ($this->crud->buttons()->where('stack', 'line')->count()) {
+            $row_items[] = \View::make('crud::inc.button_stack', ['stack' => 'line'])
+                ->with('crud', $this->crud)
+                ->with('entry', $entry)
+                ->with('row_number', $rowNumber)
+                ->render();
+        }
+
+        // add the bulk actions checkbox to the first column
+        if ($this->crud->getOperationSetting('bulkActions')) {
+            $bulk_actions_checkbox = \View::make('crud::columns.inc.bulk_actions_checkbox_custom', ['entry' => $entry, 'conditionCheckbox' => function($entry){
+                return $entry->status == ExpenseClaim::PROCEED && 
+                allowedRole([Role::ADMIN]);
+            }])->render();
+            $row_items[0] = $bulk_actions_checkbox . $row_items[0];
+        }
+
+        // add the details_row button to the first column
+        if ($this->crud->getOperationSetting('detailsRow')) {
+            $details_row_button = \View::make('crud::columns.inc.details_row_button')
+                ->with('crud', $this->crud)
+                ->with('entry', $entry)
+                ->with('row_number', $rowNumber)
+                ->render();
+            $row_items[0] = $details_row_button . $row_items[0];
+        }
+
+        return $row_items;
+    }
+
+    public function getEntriesAsJsonForDatatables($entries, $totalRows, $filteredRows, $startIndex = false)
+    {
+        $rows = [];
+
+        foreach ($entries as $row) {
+            $rows[] = $this->getRowViews($row, $startIndex === false ? false : ++$startIndex);
+        }
+
+        return [
+            'draw' => (isset($this->crud->getRequest()['draw']) ? (int) $this->crud->getRequest()['draw'] : 0),
+            'recordsTotal' => $totalRows,
+            'recordsFiltered' => $filteredRows,
+            'data' => $rows,
+        ];
+    }
+
+    public function search()
+    {
+        $this->crud->hasAccessOrFail('list');
+
+        $this->crud->applyUnappliedFilters();
+
+        $totalRows = $this->crud->model->count();
+        $filteredRows = $this->crud->query->toBase()->getCountForPagination();
+        $startIndex = request()->input('start') ?: 0;
+        // if a search term was present
+        if (request()->input('search') && request()->input('search')['value']) {
+            // filter the results accordingly
+            $this->crud->applySearchTerm(request()->input('search')['value']);
+            // recalculate the number of filtered rows
+            $filteredRows = $this->crud->count();
+        }
+        // start the results according to the datatables pagination
+        if (request()->input('start')) {
+            $this->crud->skip((int) request()->input('start'));
+        }
+        // limit the number of results according to the datatables pagination
+        if (request()->input('length')) {
+            $this->crud->take((int) request()->input('length'));
+        }
+        // overwrite any order set in the setup() method with the datatables order
+        if (request()->input('order')) {
+            // clear any past orderBy rules
+            $this->crud->query->getQuery()->orders = null;
+            foreach ((array) request()->input('order') as $order) {
+                $column_number = (int) $order['column'];
+                $column_direction = (strtolower((string) $order['dir']) == 'asc' ? 'ASC' : 'DESC');
+                $column = $this->crud->findColumnById($column_number);
+                if ($column['tableColumn'] && !isset($column['orderLogic'])) {
+                    // apply the current orderBy rules
+                    $this->crud->orderByWithPrefix($column['name'], $column_direction);
+                }
+
+                // check for custom order logic in the column definition
+                if (isset($column['orderLogic'])) {
+                    $this->crud->customOrderBy($column, $column_direction);
+                }
+            }
+        }
+
+        // show newest items first, by default (if no order has been set for the primary column)
+        // if there was no order set, this will be the only one
+        // if there was an order set, this will be the last one (after all others were applied)
+        // Note to self: `toBase()` returns also the orders contained in global scopes, while `getQuery()` don't.
+        $orderBy = $this->crud->query->toBase()->orders;
+        $table = $this->crud->model->getTable();
+        $key = $this->crud->model->getKeyName();
+
+        $hasOrderByPrimaryKey = collect($orderBy)->some(function ($item) use ($key, $table) {
+            return (isset($item['column']) && $item['column'] === $key)
+                || (isset($item['sql']) && str_contains($item['sql'], "$table.$key"));
+        });
+
+        if (!$hasOrderByPrimaryKey) {
+            $this->crud->orderByWithPrefix($this->crud->model->getKeyName(), 'DESC');
+        }
+
+        $entries = $this->crud->getEntries();
+
+        return $this->getEntriesAsJsonForDatatables($entries, $totalRows, $filteredRows, $startIndex);
+    }
+
     // public function printReport(){
     //     $this->crud->headerId = \Route::current()->parameter('header_id');
     //     $data = [];
@@ -299,7 +445,7 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         $this->data['goaApprovals'] = TransGoaApproval::where('expense_claim_id', $this->data['entry']->id)
             ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
             ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
-            ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+            ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status', 'goa_id', 'goa_action_id')
             ->orderBy('order')
             ->get();  
 
@@ -308,8 +454,9 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
 
 
     public function downloadApJournal(){
-        $entries = null;
-        if(isset(request()->entries)){
+        $this->crud->hasAccessOrFail('download_journal_ap_history');
+        $entries = [];
+        if(isset(request()->entries) && is_array(request()->entries)){
             $entries = request()->entries;
         }
         $filename = 'ap-journal-'.date('YmdHis').'.xlsx';    
@@ -325,9 +472,7 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
 
     public function reportExcel()
     {
-        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
-            abort(404);
-        }
+        $this->crud->hasAccessOrFail('download_excel_report');
         $filename = 'report-claim-summary-'.date('YmdHis').'.xlsx';
         $urlFull = parse_url(url()->full()); 
         $entries['param_url'] = [];

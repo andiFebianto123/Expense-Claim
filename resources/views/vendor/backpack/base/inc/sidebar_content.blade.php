@@ -6,7 +6,7 @@
     $role = $user->role->name ?? null;
     
     $classRole = 'App\Models\Role';
-    $allowAll = allowedRole([$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY]);
+    $allowAll = allowedRole([$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY, $classRole::FINANCE_AP]);
 
     $allowMaster = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::DIRECTOR]);
     $allowHod = allowedRole([$classRole::SUPER_ADMIN, $classRole::ADMIN, $classRole::HOD]);

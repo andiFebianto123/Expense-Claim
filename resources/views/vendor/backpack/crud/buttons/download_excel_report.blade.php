@@ -12,12 +12,16 @@
         <i class="la la-download"></i>Export Report
     </span>
 </a>
+@else
+@php
+    $excelUrl = null;
+@endphp
 @endif
 
 @push('after_scripts')
 <script>
 $( document ).ajaxStop(function() {
-    var excelUrl = "{{$excelUrl}}"
+    var excelUrl = "{{$excelUrl}}";
     var currentUrl = window.location.href
     var queryParam = ''
     if (currentUrl.includes('?')) {

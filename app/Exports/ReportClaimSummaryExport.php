@@ -22,6 +22,7 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
         $this->entries = $entries;
         $this->headers = ['User ID','Requestor', 'Department', 'Expense Number', 'Date', 'Total Value', 'HOD Approved By',	
         'HOD Approved Date', 'GoA Approved By', 'GoA Approved Date', 'Finance AP By', 'Finance AP Date', 'Expense Status'];
+        $this->countGoas = [];
     }
 
     public function drawings()
@@ -85,6 +86,13 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
                 $event->sheet->getDelegate()->getStyle($start.'5:'.$end.'5')
                     ->getAlignment()
                     ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+                $event->sheet->getDelegate()->getStyle('J6:J' . $event->sheet->getHighestRow())->getAlignment()->setWrapText(true);
+                $event->sheet->getDelegate()->getStyle('K6:K' . $event->sheet->getHighestRow())->getAlignment()->setWrapText(true);
+                $highestRow =  $event->sheet->getHighestRow();
+                for($i = 6; $i <= $highestRow; $i++){
+                    $countGoa = $this->countGoas[$i - 6];
+                    $event->sheet->getDelegate()->getRowDimension($i)->setRowHeight(15 * $countGoa);
+                }
                 $event->sheet->getDelegate()->getStyle('G6:G' . $event->sheet->getHighestRow())->getNumberFormat()->setFormatCode($formatNumberExcelNoDecimal);
                 },
         ];
@@ -134,31 +142,37 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
                 ->select('goa.name as goa_name', 'goa_date', 'delegation.name as delegation_name', 'goa_delegation_id', 'goa_action_id', 'status')
                 ->get();
             
+            $hodName = $expenseType->hod_name ?? '-';
+            if($expenseType->hod_action_id != null && $expenseType->hod_action_id == $expenseType->hod_delegation_id){
+                $hodName = '(D) ' . $expenseType->delegation_name ?? '-';
+            }
+
+            $goaNames = collect();
+            $goaDates = collect();
             foreach($transGoaApproval as $currentTransGoa){
-                $hodName = $expenseType->hod_name ?? '-';
-                if($expenseType->hod_action_id != null && $expenseType->hod_action_id == $expenseType->hod_delegation_id){
-                    $hodName = '(D) ' . $expenseType->delegation_name ?? '-';
-                }
                 $goaName = $currentTransGoa->goa_name ?? '-';
                 if($currentTransGoa->goa_action_id != null && $currentTransGoa->goa_action_id == $currentTransGoa->goa_delegation_id){
                     $goaName = '(D) ' . $currentTransGoa->delegation_name ?? '-';
                 }
-                $arrRows[] = [
-                    $expenseType->user_id, 
-                    $expenseType->requestor, 
-                    $expenseType->md_name, 
-                    $expenseType->expense_number, 
-                    $expenseType->request_date, 
-                    $expenseType->value, 
-                    $hodName, 
-                    $expenseType->hod_date ?? '-', 
-                    $goaName,
-                    $currentTransGoa->goa_date ?? '-',
-                    $expenseType->finance_name ?? '',
-                    $expenseType->finance_date ?? '',
-                    $expenseType->status
-                ];
+                $goaNames->push($goaName);
+                $goaDates->push( $currentTransGoa->goa_date ?? '-');
             }
+            $this->countGoas[] = $goaNames->count();
+            $arrRows[] = [
+                $expenseType->user_id, 
+                $expenseType->requestor, 
+                $expenseType->md_name, 
+                $expenseType->expense_number, 
+                $expenseType->request_date, 
+                $expenseType->value, 
+                $hodName, 
+                $expenseType->hod_date ?? '-', 
+                $goaNames->join("<br>"),
+                $goaDates->join("<br>"),
+                $expenseType->finance_name ?? '',
+                $expenseType->finance_date ?? '',
+                $expenseType->status
+            ];
         }
 
         $data['title'] = $this->title;

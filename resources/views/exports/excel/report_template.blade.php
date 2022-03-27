@@ -26,7 +26,7 @@
                 <tr>
                     <td>{{ $k+1 }}</td>
                     @for($t = 0; $t < sizeof($headers); $t++)
-                    <td>{{ $row[$t] }}</td>
+                    <td>{!! $row[$t] !!}</td>
                     @endfor
                 </tr>
                 @endforeach

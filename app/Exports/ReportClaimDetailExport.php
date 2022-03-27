@@ -121,9 +121,8 @@ class ReportClaimDetailExport implements FromView, WithEvents, WithDrawings
     public function view(): View
     {
         $paramUrl = $this->entries['param_url'];
-        $expenseClaims = 
-            ExpenseClaimDetail::leftJoin('trans_expense_claims as tec', 'tec.id', 'trans_expense_claim_details.expense_claim_id')
-            ->leftJoin('trans_expense_claim_types as tect', 'tect.id', 'trans_expense_claim_details.expense_claim_type_id')
+        $excEpenseClaimDetails = ExpenseClaimDetail::join('trans_expense_claims as tec', 'tec.id', 'trans_expense_claim_details.expense_claim_id')
+            ->join('trans_expense_claim_types as tect', 'tect.id', 'trans_expense_claim_details.expense_claim_type_id')
             ->leftJoin('mst_cost_centers as mcc', 'mcc.id', 'trans_expense_claim_details.cost_center_id')
             ->leftJoin('mst_users as user_req', 'user_req.id', 'tec.request_id')
             ->leftJoin('mst_users as user_goa', 'user_goa.id', 'tec.current_trans_goa_id')
@@ -131,27 +130,27 @@ class ReportClaimDetailExport implements FromView, WithEvents, WithDrawings
             ->leftJoin('mst_users as user_finance', 'user_finance.id', 'tec.finance_id')
             ->leftJoin('mst_users as user_hod_deleg', 'user_hod_deleg.id', 'tec.hod_delegation_id')
             ->leftJoin('mst_departments', 'mst_departments.id', 'user_req.department_id');
+        $excEpenseClaimDetails->whereNotNull('expense_number');
 
         if (isset($paramUrl['status'])) {
-            $expenseClaims->where('tec.status', $paramUrl['status']);
+            $excEpenseClaimDetails->where('tec.status', $paramUrl['status']);
         }
         if (isset($paramUrl['department_id'])) {
-            $expenseClaims->where('user_req.department_id', (int)$paramUrl['department_id']);
+            $excEpenseClaimDetails->where('user_req.department_id', (int)$paramUrl['department_id']);
         }
         if (isset($paramUrl['date_range'])) {
             $dates = json_decode($paramUrl['date_range']);
-            $expenseClaims->where('tec.request_date', '>=', $dates->from);
-            $expenseClaims->where('tec.request_date', '<=', $dates->to . ' 23:59:59');
+            $excEpenseClaimDetails->where('tec.request_date', '>=', $dates->from);
+            $excEpenseClaimDetails->where('tec.request_date', '<=', $dates->to . ' 23:59:59');
         }
         if (isset($paramUrl['expense_type'])) {
-            $expenseClaims->where('tect.expense_name', (int)$paramUrl['expense_type']);
+            $excEpenseClaimDetails->where('tect.expense_name', (int)$paramUrl['expense_type']);
         }
         if (isset($paramUrl['cost_center_id'])) {
-            $expenseClaims->where('mcc.id', (int)$paramUrl['cost_center_id']);
+            $excEpenseClaimDetails->where('mcc.id', (int)$paramUrl['cost_center_id']);
         }
-        
 
-        $expenseClaims = $expenseClaims->get(['tec.id', 'user_req.user_id as user_id', 'user_req.name as requestor', 
+        $excEpenseClaimDetails = $excEpenseClaimDetails->get(['tec.id', 'user_req.user_id as user_id', 'user_req.name as requestor', 
             'mst_departments.name as md_name', 'tec.expense_number', 'tec.request_date', 
             'tec.value', 'user_hod.name as hod_name', 'tec.hod_date as hod_date', 'user_goa.name as goa_name', 
             'user_finance.name as finance_name', 'tec.finance_date', 'user_hod_deleg.name as delegation_name', 
@@ -160,7 +159,7 @@ class ReportClaimDetailExport implements FromView, WithEvents, WithDrawings
             'trans_expense_claim_details.total_day as tecd_total_days', 'trans_expense_claim_details.remark as tecd_remark']);
         
         $arrRows = [];
-        foreach ($expenseClaims as $key => $expenseType) {
+        foreach ($excEpenseClaimDetails as $key => $expenseType) {
 
             $transGoaApproval = TransGoaApproval::leftJoin('mst_users as goa', 'goa.id', 'trans_goa_approvals.goa_id')
                 ->leftJoin('mst_users as delegation', 'delegation.id', 'trans_goa_approvals.goa_delegation_id')

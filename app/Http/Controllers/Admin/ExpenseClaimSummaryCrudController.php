@@ -24,7 +24,7 @@ use Maatwebsite\Excel\Facades\Excel;
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class ExpenseFinanceApHistoryCrudController extends CrudController
+class ExpenseClaimSummaryCrudController extends CrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
 
@@ -38,31 +38,24 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
 
-        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
             $this->crud->denyAccess('list');
         }
 
         if (allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
             $this->crud->excelReportBtn = [
                 [
-                    'name' => 'download_claim_summary', 
-                    'label' => 'Claim Summary',
-                    'url' => url('expense-finance-ap-history/report-excel-claim-summary')
-                ],
-                [
-                    'name' => 'download_claim_detail', 
-                    'label' => 'Claim Detail',
-                    'url' => url('expense-finance-ap-history/report-excel-claim-detail')
+                    'name' => 'download_excel_report', 
+                    'label' => 'Excel Report',
+                    'url' => url('expense-claim-summary/report-excel')
                 ],
             ];
-            $this->crud->allowAccess('download_journal_ap_history');
-            $this->crud->allowAccess('download_claim_summary');
-            $this->crud->allowAccess('download_claim_detail');
+            $this->crud->allowAccess('download_excel_report');
         }
 
         CRUD::setModel(ExpenseClaim::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap-history');
-        CRUD::setEntityNameStrings('Expense Finance AP - History', 'Expense Finance AP - History');
+        CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-claim-summary');
+        CRUD::setEntityNameStrings('Expense Claim - Summary', 'Expense Claim - Summary');
     }
 
     /**
@@ -73,15 +66,10 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        $this->crud->enableBulkActions();
-        $this->crud->enableDetailsRow();
-        $this->crud->addButtonFromView('top', 'download_journal_ap_history', 'download_journal_ap_history', 'end');
-        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_summary', 'end');
-        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_detail', 'end');
-        $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
-        $this->crud->addClause('where', 'trans_expense_claims.status', '=', ExpenseClaim::PROCEED);
+        // $this->crud->enableDetailsRow();
+        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_excel_report', 'end');
+        $this->crud->query->whereNotNull('expense_number');
 
-        
         $this->crud->addFilter([
             'name'  => 'department_id',
             'type'  => 'select2',
@@ -123,32 +111,6 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             $dates = json_decode($value);
             $this->crud->addClause('where', 'request_date', '>=', $dates->from);
             $this->crud->addClause('where', 'request_date', '<=', $dates->to . ' 23:59:59');
-        });
-
-        $this->crud->addFilter([
-            'name'  => 'expense_type',
-            'type'  => 'select2',
-            'label' => 'Expense Type'
-          ], function () {
-              $arrExpense = [];
-              $mstExpenses = MstExpense::get();
-              foreach ($mstExpenses as $key => $mstExpense) {
-                $arrExpense[$mstExpense->name] = $mstExpense->name;
-              }
-              return $arrExpense;
-          }, function ($value) { // if the filter is active
-            return $this->crud->query->leftJoin('trans_expense_claim_types as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
-                ->where('r.expense_name', $value);
-        });
-        $this->crud->addFilter([
-            'name'  => 'cost_center_id',
-            'type'  => 'select2',
-            'label' => 'Cost Center'
-          ], function () {
-            return CostCenter::pluck('cost_center_id','id')->toArray();
-          }, function ($value) { // if the filter is active
-            return $this->crud->query->leftJoin('trans_expense_claim_details as r', 'r.expense_claim_id', '=', 'trans_expense_claims.id')
-                ->where('r.cost_center_id', $value);
         });
 
         CRUD::addColumns([
@@ -411,78 +373,7 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         return $this->getEntriesAsJsonForDatatables($entries, $totalRows, $filteredRows, $startIndex);
     }
 
-    // public function printReport(){
-    //     $this->crud->headerId = \Route::current()->parameter('header_id');
-    //     $data = [];
-    //     $expensePurpose = [];
-    //     $goaHolders = [];
-    //     $detailExpenses = [];
-    //     $totalDetailExpenseCost = 0;
 
-    //     $dataClaim = ExpenseClaim::where('id', $this->crud->headerId)
-    //     ->first();
-    //     if($dataClaim != null){
-    //         $dataClaimDetails = ExpenseClaimDetail::where('expense_claim_id', $dataClaim->id)->get();
-    //         if(count($dataClaimDetails) > 0){
-    //             foreach($dataClaimDetails as $dataClaimDetail){
-    //                 $nameExpense = $dataClaimDetail->expense_claim_type->expense_name;
-    //                 $idExpense = $dataClaimDetail->expense_claim_type->account_number;
-    //                 $descriptionExpense = $dataClaimDetail->expense_claim_type->description;
-    //                 $costCenterExpense = $dataClaimDetail->cost_center->cost_center_id;
-    //                 $totalExpense = $dataClaimDetail->cost;
-    //                 $totalDetailExpenseCost += $totalExpense;
-
-    //                 $expensePurpose[] = $nameExpense;
-    //                 $ex = [
-    //                     'account_description' => $nameExpense,
-    //                     'expense_code' => $idExpense,
-    //                     'description' => $descriptionExpense,
-    //                     'cost_center' => $costCenterExpense,
-    //                     'total' => $totalExpense,
-    //                 ];
-    //                 array_push($detailExpenses, $ex);
-    //             }
-    //         }
-    //         $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)->groupBy('goa_id')->get();
-    //         if(count($dataGoaDetails) > 0){
-    //             foreach($dataGoaDetails as $dataGoaDetail){
-    //                 $dataGoa = [
-    //                     'name' => $dataGoaDetail->user->name,
-    //                     'date' => Carbon::parse($dataGoaDetail->goa_date)->isoFormat('DD.MM.YYYY')
-    //                 ];
-    //                 array_push($goaHolders, $dataGoa);
-    //             }
-    //         }  
-
-    //         $data['claim_number'] = $dataClaim->expense_number;
-    //         $data['date_submited'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD/MM/YY');
-    //         $data['name'] = $dataClaim->request->name;
-    //         $data['bpid'] = $dataClaim->request->bpid;
-    //         $data['expense_date_from'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
-    //         $data['expense_date_to'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
-    //         $data['department'] = $dataClaim->request->department->name;
-
-    //         $data['purpose_of_expense'] = implode(', ', $expensePurpose);
-
-    //         $data['request_name'] = $dataClaim->request->name;
-    //         $data['request_date'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD.MM.YYYY');
-    //         $data['head_department_name'] = $dataClaim->hod->name ?? '';
-    //         $data['head_department_approval_date'] = ($dataClaim->hod_date != null) ? Carbon::parse($dataClaim->hod_date)->isoFormat('DD.MM.YYYY') : '';
-
-    //         $data['goa_holder'] = $goaHolders;
-
-    //         $data['print_date'] = Carbon::now()->isoFormat('DD-MMM-YY');
-
-    //         // detail for expenses
-    //         $data['detail_expenses'] = $detailExpenses;
-    //         $data['total_detail_expenses'] = $totalDetailExpenseCost; 
-
-    //         $print = new ReportClaim($data);
-    //         return $print->renderPdf();
-
-    //     }
-    // }
-    
     public function showDetailsRow($id)
     {
         $this->crud->hasAccessOrFail('list');
@@ -504,29 +395,13 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
     }
 
 
-    public function downloadApJournal(){
-        $this->crud->hasAccessOrFail('download_journal_ap_history');
-        $entries = [];
-        if(isset(request()->entries) && is_array(request()->entries)){
-            $entries = request()->entries;
-        }
-        $filename = 'ap-journal-'.date('YmdHis').'.xlsx';    
-        $myFile =  Excel::raw(new ApJournalHistoryExport($entries), 'Xlsx');
-        
-        $response =  array(
-            'name' => $filename,
-            'file' => "data:application/vnd.ms-excel;base64,".base64_encode($myFile)
-         );
-         return response()->json($response);
-    }
 
-
-    public function reportExcelClaimSummary()
+    public function reportExcel()
     {
         if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
             abort(404);
         }
-        $this->crud->hasAccessOrFail('download_claim_summary');
+        $this->crud->hasAccessOrFail('download_excel_report');
         $filename = 'report-claim-summary-'.date('YmdHis').'.xlsx';
         $urlFull = parse_url(url()->full()); 
         $entries['param_url'] = [];
@@ -538,21 +413,4 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         return Excel::download(new ReportClaimSummaryExport($entries), $filename);
     }
 
-
-    public function reportExcelClaimDetail()
-    {
-        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
-            abort(404);
-        }
-        $this->crud->hasAccessOrFail('download_claim_detail');
-        $filename = 'report-claim-detail-'.date('YmdHis').'.xlsx';
-        $urlFull = parse_url(url()->full()); 
-        $entries['param_url'] = [];
-        if (array_key_exists("query", $urlFull)) {
-            parse_str($urlFull['query'], $paramUrl);
-            $entries['param_url'] = $paramUrl;
-        }
-
-        return Excel::download(new ReportClaimDetailExport($entries), $filename);
-    }
 }

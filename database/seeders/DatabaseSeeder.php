@@ -221,7 +221,7 @@ class DatabaseSeeder extends Seeder
             $role = Role::where('name', $userRole)->first();
             $department = Department::where('name', $user['Head of Department'])->first();
 
-            $realDepartment = Department::where('name', ($user['Department'] ?? null))->first();
+            $realDepartment = Department::where('name', ($user['Department Name'] ?? null))->first();
 
             $costCenter = CostCenter::where('cost_center_id', $user['Cost Center'])->first();
             $bpidExist = User::where('bpid',  $user['BPID'])->first();

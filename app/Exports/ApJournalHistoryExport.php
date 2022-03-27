@@ -248,8 +248,6 @@ class ApJournalHistoryExport implements FromView, WithEvents
                     $total_doc_curr_1_dc = 0;
                     $no++;
                     array_push($dataRow, $row);
-                    $dataExpense->status = ExpenseClaim::PROCEED;
-                    $dataExpense->save();
                 }
             }
         }

@@ -15,6 +15,9 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                     <div class="col-md-6">
                         <p>Request Date : <b>{{ formatDate($crud->expenseClaim->request_date) }}</b></p>
                         <p>Requestor : <b>{{ $crud->expenseClaim->request->name ?? '-' }}</b></p>
+                        @if ($crud->expenseClaim->secretary_id != null)
+                            <p>Secretary : <b>{{ $crud->expenseClaim->secretary->name ?? '-' }}</b></p>
+                        @endif
                         <p>Head of Department : <b>{{ $crud->expenseClaim->request->department->name ?? '-' }}</b></p>
                         <p>Department : <b>{{ $crud->expenseClaim->request->realdepartment->name ?? '-' }}</b></p>
                         @if ($crud->expenseClaim->hod_id == null)
@@ -25,22 +28,28 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                                 <ul class="mb-1 ml-3">
                                     <li class="position-relative">
                                         <p class="mb-0">Name : <b>{{ $crud->expenseClaim->hod->name ?? '-' }}</b>
-                                        @if ($crud->expenseClaim->hod_date != null && $crud->expenseClaim->rejected_date == null && $crud->expenseClaim->hod_delegation_id == null)
+                                        @if ($crud->expenseClaim->hod_status == 'Approved' && $crud->expenseClaim->hod_id == $crud->expenseClaim->hod_action_id)
                                             <i class="position-absolute la la-check-circle text-success ml-2"
                                                 style="font-size: 24px"></i>
-                                        @elseif($crud->expenseClaim->rejected_date != null && $crud->expenseClaim->hod_delegation_id == null)
+                                        @elseif($crud->expenseClaim->hod_status == 'Rejected' && $crud->expenseClaim->hod_id == $crud->expenseClaim->hod_action_id)
                                             <i class="position-absolute la la-close text-danger ml-2"
+                                            style="font-size: 24px"></i>
+                                        @elseif($crud->expenseClaim->hod_status == $classExpenseClaim::NEED_REVISION && $crud->expenseClaim->hod_id == $crud->expenseClaim->hod_action_id)
+                                            <i class="position-absolute la la-paste text-primary ml-2"
                                             style="font-size: 24px"></i>
                                         @endif
                                         </p>
                                         @if ($crud->expenseClaim->hod_delegation_id != null)
                                             <p class="mb-0">
                                                 Delegation Name : <b>{{ $crud->expenseClaim->hod_delegation->name ?? '-' }}</b>
-                                                @if ($crud->expenseClaim->hod_date != null && $crud->expenseClaim->rejected_date == null)
+                                                @if ($crud->expenseClaim->hod_status == 'Approved' && $crud->expenseClaim->hod_delegation_id == $crud->expenseClaim->hod_action_id)
                                                     <i class="position-absolute la la-check-circle text-success ml-2"
                                                         style="font-size: 24px"></i>
-                                                @elseif($crud->expenseClaim->rejected_date != null)
+                                                @elseif($crud->expenseClaim->hod_status == 'Rejected' && $crud->expenseClaim->hod_delegation_id == $crud->expenseClaim->hod_action_id)
                                                         <i class="position-absolute la la-close text-danger ml-2"
+                                                        style="font-size: 24px"></i>
+                                                @elseif($crud->expenseClaim->hod_status == $classExpenseClaim::NEED_REVISION && $crud->expenseClaim->hod_delegation_id == $crud->expenseClaim->hod_action_id)
+                                                        <i class="position-absolute la la-paste text-primary ml-2"
                                                         style="font-size: 24px"></i>
                                                 @endif
                                             </p>
@@ -59,22 +68,28 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                                 @foreach ($crud->goaApprovals as $item)
                                     <li class="position-relative">
                                         <p class="mb-0">Name : <b>{{ $item->user_name }}</b>
-                                            @if ($item->status == 'Approved' && $item->goa_delegation_id == null)
+                                            @if ($item->status == 'Approved' && $item->goa_id == $item->goa_action_id)
                                                 <i class="position-absolute la la-check-circle text-success ml-2"
                                                     style="font-size: 24px"></i>
-                                            @elseif($item->status == 'Rejected' && $item->goa_delegation_id == null)
+                                            @elseif($item->status == 'Rejected' && $item->goa_id == $item->goa_action_id)
                                                 <i class="position-absolute la la-close text-danger ml-2"
+                                                style="font-size: 24px"></i>
+                                            @elseif($item->status == $classExpenseClaim::NEED_REVISION && $item->goa_id == $item->goa_action_id)
+                                                <i class="position-absolute la la-paste text-primary ml-2"
                                                 style="font-size: 24px"></i>
                                             @endif
                                         </p>
                                         @if ($item->goa_delegation_id  != null)
                                             <p class="mb-0">
                                                 Delegation Name : <b>{{ $item->user_delegation_name ?? '-' }}</b>
-                                                @if ($item->status == 'Approved')
+                                                @if ($item->status == 'Approved' && $item->goa_delegation_id == $item->goa_action_id)
                                                     <i class="position-absolute la la-check-circle text-success ml-2"
                                                         style="font-size: 24px"></i>
-                                                @elseif($item->status == 'Rejected')
+                                                @elseif($item->status == 'Rejected' && $item->goa_delegation_id == $item->goa_action_id)
                                                     <i class="position-absolute la la-close text-danger ml-2"
+                                                    style="font-size: 24px"></i>
+                                                @elseif($item->status == $classExpenseClaim::NEED_REVISION && $item->goa_delegation_id == $item->goa_action_id)
+                                                    <i class="position-absolute la la-paste text-primary ml-2"
                                                     style="font-size: 24px"></i>
                                                 @endif
                                             </p>
@@ -93,6 +108,18 @@ $classExpenseClaim = 'App\Models\ExpenseClaim';
                         <p>Status : <span
                                 class="rounded p-1 font-weight-bold text-white {{ App\Models\ExpenseClaim::mapColorStatus($crud->expenseClaim->status) }}">{{ $crud->expenseClaim->status }}</span>
                         </p>
+                        <p>Finance By : <b>{{ $crud->expenseClaim->finance->name ?? '-' }} </b> 
+                            @if ($crud->expenseClaim->finance_date != null)
+                                @if ($crud->expenseClaim->status == $classExpenseClaim::PROCEED)
+                                <i class="position-absolute la la-check-circle text-success ml-2"
+                                    style="font-size: 24px"></i>
+                                @elseif($crud->expenseClaim->status == $classExpenseClaim::NEED_REVISION)
+                                    <i class="position-absolute la la-paste text-primary ml-2"
+                                    style="font-size: 24px"></i>
+                                @endif
+                            @endif
+                        </p>
+                        <p>Finance Date : <b>{{ formatDate($crud->expenseClaim->finance_date) }}</b></p>
                         @if ($crud->expenseClaim->rejected_id != null)
                             <p>Rejected By : <b>{{ $crud->expenseClaim->rejected->name ?? '-' }}</b></p>
                             <p>Rejected Date : <b>{{ formatDate($crud->expenseClaim->rejected_date) }}</b></p>

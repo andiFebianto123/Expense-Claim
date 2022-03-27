@@ -94,6 +94,8 @@ Route::group([
         Route::get('expense-finance-ap-history/report-excel-claim-detail', 'ExpenseFinanceApHistoryCrudController@reportExcelClaimDetail');
     });
 
+    Route::get('dashboard', 'DashboardController@index');
+
     Route::crud('role', 'RoleCrudController');
     Route::crud('level', 'LevelCrudController');
     Route::crud('user', 'UserCrudController');

@@ -80,6 +80,16 @@ class ExpenseApproverHodCrudController extends CrudController
         $this->crud->addButtonFromModelFunction('line', 'detailApproverHodButton', 'detailApproverHodButton');
         $this->crud->enableDetailsRow();
 
+        $dashboard = request()->dashboard;
+        if($dashboard == ExpenseClaim::PARAM_HOD && allowedRole([Role::HOD])){
+            $this->crud->addClause('where', function($query){
+                $query->where(function($innerQuery){
+                    $innerQuery->where('hod_id', $this->crud->user->id);
+                    $innerQuery->orWhere('hod_delegation_id', $this->crud->user->id);
+                })->where('status', ExpenseClaim::REQUEST_FOR_APPROVAL);
+            });
+        }
+
         CRUD::addColumns([
             [
                 'name'      => 'row_number',
@@ -131,6 +141,48 @@ class ExpenseApproverHodCrudController extends CrudController
             //     },
             // ],
             [
+                'label' => 'Fin AP By',
+                'name' => 'finance_id',
+                'type' => 'closure',
+                'function' => function($entry){
+                    if($entry->finance){
+                        if($entry->finance_date != null){
+                            $icon = '';
+                            if($entry->status == ExpenseClaim::PROCEED)
+                            {
+                                $icon = '<i class="position-absolute la la-check-circle text-success ml-2"
+                                style="font-size: 18px"></i>';
+                            }
+                            else if($entry->status == ExpenseClaim::NEED_REVISION)
+                            {
+                                $icon = '<i class="position-absolute la la-paste text-primary ml-2"
+                                style="font-size: 18px"></i>';
+                            }
+                            return '<span>' . $entry->finance->name . '&nbsp' . $icon . '</span>';
+                        }
+                        return $entry->finance->name;
+                    }
+                    else{
+                        return '-';
+                    }
+                },
+                'searchLogic' => function ($query, $column, $searchTerm) {
+                    $query->orWhereHas('finance', function ($q) use ($column, $searchTerm) {
+                        $q->where('name', 'like', '%'.$searchTerm.'%');
+                    });
+                },
+                'orderLogic' => function ($query, $column, $columnDirection) {
+                    return $query->leftJoin('mst_users as f', 'f.id', '=', 'trans_expense_claims.finance_id')
+                        ->orderBy('f.name', $columnDirection)->select('trans_expense_claims.*');
+                },
+                'escaped' => false
+            ],
+            [
+                'label' => 'Fin AP Date',
+                'name' => 'finance_date',
+                'type'  => 'date',
+            ],
+            [
                 'label' => 'Status',
                 'name' => 'status',
                 'wrapper' => [
@@ -157,7 +209,7 @@ class ExpenseApproverHodCrudController extends CrudController
         $this->data['goaApprovals'] = TransGoaApproval::where('expense_claim_id', $this->data['entry']->id)
         ->join('mst_users as user', 'user.id', '=', 'trans_goa_approvals.goa_id')      
         ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
-        ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+        ->select('user.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status', 'goa_id', 'goa_action_id')
         ->orderBy('order')->get();  
 
         return view('detail_approval', $this->data);

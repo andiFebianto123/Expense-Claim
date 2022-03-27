@@ -62,10 +62,10 @@ class ExpenseFinanceApDetailCrudController extends CrudController
             $this->crud->hasAction = true;
         }
        
-        $this->crud->goaList = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+        $this->crud->goaApprovals = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
                 ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
                 ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
-                ->select('mst_users.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+                ->select('mst_users.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status', 'goa_id', 'goa_action_id')
                 ->orderBy('order')->get(); 
     }
 
@@ -75,7 +75,10 @@ class ExpenseFinanceApDetailCrudController extends CrudController
         ->where(function($query){
             $query->where('trans_expense_claims.status', ExpenseClaim::FULLY_APPROVED)
             ->orWhere('trans_expense_claims.status', ExpenseClaim::PROCEED)
-            ->orWhere('trans_expense_claims.status', ExpenseClaim::NEED_REVISION);
+            ->orWhere(function($innerQuery){
+                $innerQuery->where('trans_expense_claims.status', ExpenseClaim::NEED_REVISION)
+                ->whereNotNull('trans_expense_claims.finance_id');
+            });
         });
 
         $expenseClaim =  $expenseClaim->first();
@@ -94,7 +97,6 @@ class ExpenseFinanceApDetailCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
         $this->crud->viewBeforeContent = ['expense_claim.finance_ap.header'];
 
         CRUD::addColumns([
@@ -300,7 +302,7 @@ class ExpenseFinanceApDetailCrudController extends CrudController
 
 
     public function document($header_id, $id){
-        $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+        $expenseClaim = $this->crud->expenseClaim;
         $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)->firstOrFail();
         if($expenseClaimDetail->document === null || !File::exists(storage_path('app/public/' . $expenseClaimDetail->document)))
         {
@@ -318,7 +320,7 @@ class ExpenseFinanceApDetailCrudController extends CrudController
         $request->validate(['remark' => 'nullable|max:255']);
         DB::beginTransaction();
         try{
-            $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+            $expenseClaim = $this->crud->expenseClaim;
             $checkStatus = $this->checkStatusForApprover($expenseClaim, 'revised');
             if($checkStatus !== true){
                 DB::rollback();
@@ -328,6 +330,7 @@ class ExpenseFinanceApDetailCrudController extends CrudController
             $now = Carbon::now();
             $expenseClaim->status = ExpenseClaim::NEED_REVISION;
             $expenseClaim->finance_id = $this->crud->user->id;
+            $expenseClaim->finance_date = $now;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();
 
@@ -362,11 +365,11 @@ class ExpenseFinanceApDetailCrudController extends CrudController
 
     private function checkStatusForApprover($expenseClaim, $action){
         $allowedStatus = in_array($expenseClaim->status, [ExpenseClaim::FULLY_APPROVED]);
-        if(!allowedRole([Role::FINANCE_AP])){
-            return trans('custom.error_permission_message');
-        }
         if(!$allowedStatus) {
             return trans('custom.expense_claim_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.' . $action)]);
+        }
+        if(!allowedRole([Role::FINANCE_AP])){
+            return trans('custom.error_permission_message');
         }
         return true;
     }

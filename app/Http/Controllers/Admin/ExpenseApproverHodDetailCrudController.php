@@ -57,7 +57,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
 
         if (!allowedRole( [Role::SUPER_ADMIN, Role::ADMIN, Role::HOD])) {
-            $this->crud->denyAccess(['create', 'edit', 'delete']);
+            $this->crud->denyAccess(['list', 'create', 'edit', 'delete']);
         }
 
         ExpenseClaimDetail::addGlobalScope('header_id', function (Builder $builder) {
@@ -74,16 +74,20 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         if ($this->crud->expenseClaim->status == ExpenseClaim::REQUEST_FOR_APPROVAL && 
             ($this->crud->expenseClaim->hod_id == $this->crud->user->id ||
             $this->crud->expenseClaim->hod_delegation_id == $this->crud->user->id
-            )
+            ) && allowedRole([Role::HOD])
             ) 
         {
             $this->crud->hasAction = true;
         }
 
-        $this->crud->goaList = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+        if (!$this->crud->hasAction) {
+            $this->crud->denyAccess(['create', 'edit', 'delete']);
+        }
+
+        $this->crud->goaApprovals = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
                 ->join('mst_users', 'mst_users.id', 'trans_goa_approvals.goa_id')
                 ->leftJoin('mst_users as user_delegation', 'user_delegation.id', '=', 'trans_goa_approvals.goa_delegation_id')
-                ->select('mst_users.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status')
+                ->select('mst_users.name as user_name', 'user_delegation.name as user_delegation_name', 'goa_date', 'goa_delegation_id', 'status', 'goa_id', 'goa_action_id')
                 ->orderBy('order')
                 ->get();  
     }
@@ -92,27 +96,17 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         
         $expenseClaim = ExpenseClaim::where('id', $id)
         ->where(function($query){
-            $query->where('trans_expense_claims.status', ExpenseClaim::REQUEST_FOR_APPROVAL)
-            ->orWhere(function($innerQuery){
-                $innerQuery->where('trans_expense_claims.status', '!=', ExpenseClaim::NONE)
-                ->where('trans_expense_claims.status', '!=', ExpenseClaim::REQUEST_FOR_APPROVAL)
-                ->where(function($innerQuery){
-                    $innerQuery->whereNotNull('hod_id')
-                    ->orWhere('trans_expense_claims.status', ExpenseClaim::REJECTED_ONE)
-                    ->orWhere(function($deepestQuery){
-                        $deepestQuery
-                        ->where('trans_expense_claims.status', '=', ExpenseClaim::NEED_REVISION)
-                        ->whereNull('hod_id');
-                    });
-                });
-            });
+            $query->where('trans_expense_claims.status', '!=', ExpenseClaim::DRAFT)
+            ->where('trans_expense_claims.status', '!=', ExpenseClaim::CANCELED);
         });
         if (allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
             $expenseClaim->whereNotNull('trans_expense_claims.hod_id');
         }
         else{
-            $expenseClaim->where('trans_expense_claims.hod_id', $this->crud->user->id)
-                        ->orWhere('trans_expense_claims.hod_delegation_id', $this->crud->user->id);
+            $expenseClaim->where(function($query){
+                $query->where('trans_expense_claims.hod_id', $this->crud->user->id)
+                ->orWhere('trans_expense_claims.hod_delegation_id', $this->crud->user->id);
+            });
         }
         $expenseClaim =  $expenseClaim->first();
         if($expenseClaim == null){
@@ -125,7 +119,6 @@ class ExpenseApproverHodDetailCrudController extends CrudController
 
     protected function setupListOperation()
     {
-        $this->crud->expenseClaim = $this->getExpenseClaim($this->crud->headerId);
         $this->crud->viewBeforeContent = ['expense_claim.hod.header'];
         $allowActions = $this->crud->hasAction;
         
@@ -1246,23 +1239,12 @@ class ExpenseApproverHodDetailCrudController extends CrudController
     }
 
 
-    private function checkStatusForDetail($expenseClaim, $action){
-        if($expenseClaim->approval_temp_id != $this->crud->user->id){
-            return trans('custom.error_permission_message');
-        }
-        if($expenseClaim->status !== ExpenseClaim::REQUEST_FOR_APPROVAL) {
-            return trans('custom.expense_claim_detail_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.' . $action)]);
-        }
-        return true;
-    }
-
-
     private function checkStatusForApprover($expenseClaim, $action){
-        if($expenseClaim->hod_id != $this->crud->user->id){
-            return trans('custom.error_permission_message');
-        }
         if($expenseClaim->status !== ExpenseClaim::REQUEST_FOR_APPROVAL) {
             return trans('custom.expense_claim_cant_status', ['status' => $expenseClaim->status, 'action' => trans('custom.' . $action)]);
+        }
+        if(!$this->crud->hasAction){
+            return trans('custom.error_permission_message');
         }
         return true;
     }
@@ -1272,7 +1254,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         $request->validate(['remark' => 'nullable|max:255']);
         DB::beginTransaction();
         try{
-            $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+            $expenseClaim = $this->crud->expenseClaim;
             $checkStatus = $this->checkStatusForApprover($expenseClaim, 'approved');
             if($checkStatus !== true){
                 DB::rollback();
@@ -1287,34 +1269,43 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                             'mst_users.name as goa_name', 'user_delegation.name as goa_delegation_name', 
                             'goa_id','goa_date', 'goa_delegation_id', 'status',)
                             ->first();
-            $goaOrDelegationEmail = $goaApproval->goa_email;
-            $goaOrDelegationName = $goaApproval->goa_name;
-            $goaApprovalWillReplaces = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)->get();
+            $goaOrDelegationEmail = $goaApproval->goa_email ?? null;
+            $goaOrDelegationName = $goaApproval->goa_name ?? null;
+            $goaApprovalWillReplaces = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
+            ->orderBy('order', 'asc')->get();
             $arrDelegationId = [];
             foreach ($goaApprovalWillReplaces as $key => $gawr) {
                 $delegation = MstDelegation::where('from_user_id', $gawr->goa_id)
                         ->whereDate('start_date', '<=', $now)                                 
                         ->whereDate('end_date', '>=', $now)
                         ->first();
+                if($key == 0){
+                    $gawr->start_approval_date = $now;
+                }
                 if (isset($delegation)) {
-                    $setDelegation = TransGoaApproval::where('expense_claim_id', $this->crud->headerId)
-                        ->where('goa_id', $gawr->goa_id)
-                        ->first();
-                    $setDelegation->goa_delegation_id = $delegation->to_user_id;
-                    $setDelegation->save();
-                    $arrDelegationId[] = $delegation->to_user_id;
+                    $gawr->goa_delegation_id = $delegation->to_user_id;
+                    $gawr->save();
+                    if($key == 0){
+                        $arrDelegationId[] = $delegation->to_user_id;
+                    }
+                }
+                if($key == 0 && !isset($delegation)){
+                    $gawr->save();
                 }
             }
             if (count($arrDelegationId) > 0) {
                 $user = User::where('id', $arrDelegationId[0])->first();
-                $goaOrDelegationEmail = $user->email;
-                $goaOrDelegationName = $user->name;    
+                $goaOrDelegationEmail = $user->email ?? null;
+                $goaOrDelegationName = $user->name ?? null;    
             }
 
-            $expenseClaim->hod_id = $this->crud->user->id;
+            // $expenseClaim->hod_id = $this->crud->user->id;
+            $expenseClaim->hod_action_id = $this->crud->user->id;
             $expenseClaim->hod_date = $now;
+            $expenseClaim->hod_status = 'Approved';
+            $expenseClaim->current_trans_goa_delegation_id = $user->id ?? null;
             $expenseClaim->current_trans_goa_id = $goaApproval->goa_id ?? null;
-            $expenseClaim->status = ExpenseClaim::REQUEST_FOR_APPROVAL_TWO;
+            $expenseClaim->status = ExpenseClaim::PARTIAL_APPROVED;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();
 
@@ -1341,7 +1332,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         $request->validate(['remark' => 'nullable|max:255']);
         DB::beginTransaction();
         try{
-            $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+            $expenseClaim = $this->crud->expenseClaim;
             $checkStatus = $this->checkStatusForApprover($expenseClaim, 'revised');
             if($checkStatus !== true){
                 DB::rollback();
@@ -1351,6 +1342,9 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             $now = Carbon::now();
             $expenseClaim->status = ExpenseClaim::NEED_REVISION;
             $expenseClaim->remark = $request->remark;
+            $expenseClaim->hod_action_id = $this->crud->user->id;
+            $expenseClaim->hod_date = $now;
+            $expenseClaim->hod_status = ExpenseClaim::NEED_REVISION;
             $expenseClaim->save();
 
             $dataMailRequestor['approverName'] = $this->crud->user->name;
@@ -1376,7 +1370,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
         $request->validate(['remark' => 'nullable|max:255']);
         DB::beginTransaction();
         try{
-            $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+            $expenseClaim = $this->crud->expenseClaim;
             $checkStatus = $this->checkStatusForApprover($expenseClaim, 'rejected');
             if($checkStatus !== true){
                 DB::rollback();
@@ -1386,6 +1380,9 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             $now = Carbon::now();
             $expenseClaim->rejected_id = $this->crud->user->id;
             $expenseClaim->rejected_date = $now;
+            $expenseClaim->hod_action_id = $this->crud->user->id;
+            $expenseClaim->hod_status = 'Rejected';
+            $expenseClaim->hod_date = $now;
             $expenseClaim->status = ExpenseClaim::REJECTED_ONE;
             $expenseClaim->remark = $request->remark;
             $expenseClaim->save();
@@ -1410,7 +1407,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
     }
 
     public function document($header_id, $id){
-        $expenseClaim = $this->getExpenseClaim($this->crud->headerId);
+        $expenseClaim = $this->crud->expenseClaim;
         $expenseClaimDetail = ExpenseClaimDetail::where('id', $id)->firstOrFail();
         if($expenseClaimDetail->document === null || !File::exists(storage_path('app/public/' . $expenseClaimDetail->document)))
         {

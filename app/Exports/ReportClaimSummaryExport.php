@@ -136,7 +136,7 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
             
             foreach($transGoaApproval as $currentTransGoa){
                 $hodName = $expenseType->hod_name ?? '-';
-                if($expenseType->hod_action_id != null && $expenseType->hod_action_id == $expenseType->hod_action_id){
+                if($expenseType->hod_action_id != null && $expenseType->hod_action_id == $expenseType->hod_delegation_id){
                     $hodName = '(D) ' . $expenseType->delegation_name ?? '-';
                 }
                 $goaName = $currentTransGoa->goa_name ?? '-';

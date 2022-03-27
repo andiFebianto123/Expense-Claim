@@ -253,7 +253,7 @@ class ExpenseTypeCrudController extends CrudController
           ], function () {
             return MstExpense::pluck('name','id')->toArray();
           }, function ($value) { // if the filter is active
-            $this->crud->addClause('where', 'expense_id', (int)$value);
+            $this->crud->addClause('where', 'expense_id', $value);
         });
         $this->crud->addFilter([
             'name'  => 'level_id',
@@ -262,7 +262,7 @@ class ExpenseTypeCrudController extends CrudController
           ], function () {
             return Level::pluck('name','id')->toArray();
           }, function ($value) { // if the filter is active
-            $this->crud->addClause('where', 'level_id', (int)$value);
+            $this->crud->addClause('where', 'level_id', $value);
         });
         $this->crud->addFilter([
             'name'  => 'expense_code_id',
@@ -271,7 +271,7 @@ class ExpenseTypeCrudController extends CrudController
           ], function () {
             return ExpenseCode::pluck('description','id')->toArray();
           }, function ($value) { // if the filter is active
-            $this->crud->addClause('where', 'expense_code_id', (int)$value);
+            $this->crud->addClause('where', 'expense_code_id', $value);
         });
         $this->getColumns();
     }
@@ -737,9 +737,14 @@ class ExpenseTypeCrudController extends CrudController
         $filename = 'report-expense-type-'.date('YmdHis').'.xlsx';
         $urlFull = parse_url(url()->full()); 
         $entries['param_url'] = [];
-        if (array_key_exists("query", $urlFull)) {
-            parse_str($urlFull['query'], $paramUrl);
-            $entries['param_url'] = $paramUrl;
+        try{
+            if (array_key_exists("query", $urlFull)) {
+                parse_str($urlFull['query'], $paramUrl);
+                $entries['param_url'] = $paramUrl;
+            }
+        }
+        catch(Exception $e){
+
         }
 
         return Excel::download(new ReportExpenseTypeExport($entries), $filename);

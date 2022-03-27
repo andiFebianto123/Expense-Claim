@@ -89,27 +89,28 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
     public function view(): View
     {
         $paramUrl = $this->entries['param_url'];
-        $expenseClaims = ExpenseClaim::leftJoin('mst_users as user_req', 'user_req.id', 'trans_expense_claims.request_id')
+        $excEpenseClaims = ExpenseClaim::leftJoin('mst_users as user_req', 'user_req.id', 'trans_expense_claims.request_id')
             ->leftJoin('mst_users as user_goa', 'user_goa.id', 'trans_expense_claims.current_trans_goa_id')
             ->leftJoin('mst_users as user_hod', 'user_hod.id', 'trans_expense_claims.hod_id')
             ->leftJoin('mst_users as user_finance', 'user_finance.id', 'trans_expense_claims.finance_id')
             ->leftJoin('mst_users as user_hod_deleg', 'user_hod_deleg.id', 'trans_expense_claims.hod_delegation_id')
             ->leftJoin('mst_departments', 'mst_departments.id', 'user_req.department_id');
+        $excEpenseClaims->whereNotNull('expense_number');
 
         if (isset($paramUrl['status'])) {
-            $expenseClaims->where('trans_expense_claims.status', $paramUrl['status']);
+            $excEpenseClaims->where('trans_expense_claims.status', $paramUrl['status']);
         }
         if (isset($paramUrl['department_id'])) {
-            $expenseClaims->where('user_req.department_id', (int)$paramUrl['department_id']);
+            $excEpenseClaims->where('user_req.department_id', (int)$paramUrl['department_id']);
         }
 
-        $expenseClaims = $expenseClaims->get(['trans_expense_claims.id', 'user_req.user_id as user_id', 'user_req.name as requestor', 
+        $excEpenseClaims = $excEpenseClaims->get(['trans_expense_claims.id', 'user_req.user_id as user_id', 'user_req.name as requestor', 
             'mst_departments.name as md_name', 'expense_number', 'request_date', 'value', 'user_hod.name as hod_name', 
             'trans_expense_claims.hod_date as hod_date', 'user_goa.name as goa_name', 'user_finance.name as finance_name', 
             'finance_date', 'user_hod_deleg.name as delegation_name', 'trans_expense_claims.status', 'user_req.department_id']);
         
         $arrRows = [];
-        foreach ($expenseClaims as $key => $expenseType) {
+        foreach ($excEpenseClaims as $key => $expenseType) {
 
             $transGoaApproval = TransGoaApproval::leftJoin('mst_users as goa', 'goa.id', 'trans_goa_approvals.goa_id')
                 ->leftJoin('mst_users as delegation', 'delegation.id', 'trans_goa_approvals.goa_delegation_id')

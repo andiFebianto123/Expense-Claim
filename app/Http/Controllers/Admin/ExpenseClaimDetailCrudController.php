@@ -11,6 +11,7 @@ use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\ExpenseClaim;
+use App\Models\ExpenseClaimDetail;
 use App\Models\ExpenseCode;
 use App\Models\MstExpense;
 use App\Models\TransGoaApproval;
@@ -24,7 +25,7 @@ use Maatwebsite\Excel\Facades\Excel;
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class ExpenseFinanceApHistoryCrudController extends CrudController
+class ExpenseClaimDetailCrudController extends CrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
 
@@ -38,31 +39,24 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         $this->crud->user = backpack_user();
         $this->crud->role = $this->crud->user->role->name ?? null;
 
-        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE_AP])) {
+        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
             $this->crud->denyAccess('list');
         }
 
         if (allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
             $this->crud->excelReportBtn = [
                 [
-                    'name' => 'download_claim_summary', 
-                    'label' => 'Claim Summary',
-                    'url' => url('expense-finance-ap-history/report-excel-claim-summary')
-                ],
-                [
-                    'name' => 'download_claim_detail', 
-                    'label' => 'Claim Detail',
-                    'url' => url('expense-finance-ap-history/report-excel-claim-detail')
+                    'name' => 'download_excel_report', 
+                    'label' => 'Excel Report',
+                    'url' => url('expense-claim-detail/report-excel')
                 ],
             ];
-            $this->crud->allowAccess('download_journal_ap_history');
-            $this->crud->allowAccess('download_claim_summary');
-            $this->crud->allowAccess('download_claim_detail');
+            $this->crud->allowAccess('download_excel_report');
         }
 
-        CRUD::setModel(ExpenseClaim::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-finance-ap-history');
-        CRUD::setEntityNameStrings('Expense Finance AP - History', 'Expense Finance AP - History');
+        CRUD::setModel(ExpenseClaimDetail::class);
+        CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-claim-detail');
+        CRUD::setEntityNameStrings('Expense Claim - Detail', 'Expense Claim - Detail');
     }
 
     /**
@@ -73,15 +67,16 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        $this->crud->enableBulkActions();
-        $this->crud->enableDetailsRow();
-        $this->crud->addButtonFromView('top', 'download_journal_ap_history', 'download_journal_ap_history', 'end');
         $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_summary', 'end');
         $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_detail', 'end');
-        $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
-        $this->crud->addClause('where', 'trans_expense_claims.status', '=', ExpenseClaim::PROCEED);
+        $this->crud->query->leftJoin('trans_expense_claims as tec', 'tec.id', '=', 'trans_expense_claim_details.expense_claim_id');
+        $this->crud->query->leftJoin('trans_expense_claim_types as tect', 'tect.id', 'trans_expense_claim_details.expense_claim_type_id');
+        $this->crud->query->leftJoin('mst_users as user_req', 'user_req.id', 'tec.request_id');
+        $this->crud->query->select('tec.id', 'user_req.user_id as user_id', 'user_req.name as requestor', 
+        'tec.expense_number', 'tec.request_date', 'tec.status',  'trans_expense_claim_details.cost as tecd_cost',
+        'tect.expense_name',);
+        $this->crud->query->whereNotNull('expense_number');
 
-        
         $this->crud->addFilter([
             'name'  => 'department_id',
             'type'  => 'select2',
@@ -163,32 +158,44 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
                 'name' => 'expense_number',
             ],
             [
-                'label' => 'Total Value',
-                'name' => 'value',
-                'type' => 'number',
-            ],
-            [
-                'label' => 'Currency',
-                'name' => 'currency',
-                'visibleInTable' => false
-            ],
-            [
-                'label' => 'Request Date',
-                'name' => 'request_date',
-                'type'  => 'date',
-            ],
-            [
                 'label' => 'Requestor',
-                'name' => 'request_id',
-                'type'      => 'select',
-                'entity'    => 'request',
-                'attribute' => 'name',
-                'model'     => User::class,
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
-                        ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
-                },
+                'name' => 'requestor',
             ],
+            [
+                'label' => 'Expense Type',
+                'name' => 'expense_name',
+            ],
+            [
+                'label' => 'Cost',
+                'name' => 'tecd_cost',
+            ],
+            // [
+            //     'label' => 'Total Value',
+            //     'name' => 'value',
+            //     'type' => 'number',
+            // ],
+            // [
+            //     'label' => 'Currency',
+            //     'name' => 'currency',
+            //     'visibleInTable' => false
+            // ],
+            // [
+            //     'label' => 'Request Date',
+            //     'name' => 'request_date',
+            //     'type'  => 'date',
+            // ],
+            // [
+            //     'label' => 'Requestor',
+            //     'name' => 'request_id',
+            //     'type'      => 'select',
+            //     'entity'    => 'request',
+            //     'attribute' => 'name',
+            //     'model'     => User::class,
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
+            //             ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            // ],
             // [
             //     'label' => 'Department',
             //     'name' => 'department_id',
@@ -235,48 +242,48 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
             //     'name' => 'goa_date',
             //     'type'  => 'date',
             // ],
-            [
-                'label' => 'Fin AP By',
-                'name' => 'finance_id',
-                'type' => 'closure',
-                'function' => function($entry){
-                    if($entry->finance){
-                        if($entry->finance_date != null){
-                            $icon = '';
-                            if($entry->status == ExpenseClaim::PROCEED)
-                            {
-                                $icon = '<i class="position-absolute la la-check-circle text-success ml-2"
-                                style="font-size: 18px"></i>';
-                            }
-                            else if($entry->status == ExpenseClaim::NEED_REVISION)
-                            {
-                                $icon = '<i class="position-absolute la la-paste text-primary ml-2"
-                                style="font-size: 18px"></i>';
-                            }
-                            return '<span>' . $entry->finance->name . '&nbsp' . $icon . '</span>';
-                        }
-                        return $entry->finance->name;
-                    }
-                    else{
-                        return '-';
-                    }
-                },
-                'searchLogic' => function ($query, $column, $searchTerm) {
-                    $query->orWhereHas('finance', function ($q) use ($column, $searchTerm) {
-                        $q->where('name', 'like', '%'.$searchTerm.'%');
-                    });
-                },
-                'orderLogic' => function ($query, $column, $columnDirection) {
-                    return $query->leftJoin('mst_users as f', 'f.id', '=', 'trans_expense_claims.finance_id')
-                        ->orderBy('f.name', $columnDirection)->select('trans_expense_claims.*');
-                },
-                'escaped' => false
-            ],
-            [
-                'label' => 'Fin AP Date',
-                'name' => 'finance_date',
-                'type'  => 'date',
-            ],
+            // [
+            //     'label' => 'Fin AP By',
+            //     'name' => 'finance_id',
+            //     'type' => 'closure',
+            //     'function' => function($entry){
+            //         if($entry->finance){
+            //             if($entry->finance_date != null){
+            //                 $icon = '';
+            //                 if($entry->status == ExpenseClaim::PROCEED)
+            //                 {
+            //                     $icon = '<i class="position-absolute la la-check-circle text-success ml-2"
+            //                     style="font-size: 18px"></i>';
+            //                 }
+            //                 else if($entry->status == ExpenseClaim::NEED_REVISION)
+            //                 {
+            //                     $icon = '<i class="position-absolute la la-paste text-primary ml-2"
+            //                     style="font-size: 18px"></i>';
+            //                 }
+            //                 return '<span>' . $entry->finance->name . '&nbsp' . $icon . '</span>';
+            //             }
+            //             return $entry->finance->name;
+            //         }
+            //         else{
+            //             return '-';
+            //         }
+            //     },
+            //     'searchLogic' => function ($query, $column, $searchTerm) {
+            //         $query->orWhereHas('finance', function ($q) use ($column, $searchTerm) {
+            //             $q->where('name', 'like', '%'.$searchTerm.'%');
+            //         });
+            //     },
+            //     'orderLogic' => function ($query, $column, $columnDirection) {
+            //         return $query->leftJoin('mst_users as f', 'f.id', '=', 'trans_expense_claims.finance_id')
+            //             ->orderBy('f.name', $columnDirection)->select('trans_expense_claims.*');
+            //     },
+            //     'escaped' => false
+            // ],
+            // [
+            //     'label' => 'Fin AP Date',
+            //     'name' => 'finance_date',
+            //     'type'  => 'date',
+            // ],
             [
                 'label' => 'Status',
                 'name' => 'status',
@@ -411,77 +418,6 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         return $this->getEntriesAsJsonForDatatables($entries, $totalRows, $filteredRows, $startIndex);
     }
 
-    // public function printReport(){
-    //     $this->crud->headerId = \Route::current()->parameter('header_id');
-    //     $data = [];
-    //     $expensePurpose = [];
-    //     $goaHolders = [];
-    //     $detailExpenses = [];
-    //     $totalDetailExpenseCost = 0;
-
-    //     $dataClaim = ExpenseClaim::where('id', $this->crud->headerId)
-    //     ->first();
-    //     if($dataClaim != null){
-    //         $dataClaimDetails = ExpenseClaimDetail::where('expense_claim_id', $dataClaim->id)->get();
-    //         if(count($dataClaimDetails) > 0){
-    //             foreach($dataClaimDetails as $dataClaimDetail){
-    //                 $nameExpense = $dataClaimDetail->expense_claim_type->expense_name;
-    //                 $idExpense = $dataClaimDetail->expense_claim_type->account_number;
-    //                 $descriptionExpense = $dataClaimDetail->expense_claim_type->description;
-    //                 $costCenterExpense = $dataClaimDetail->cost_center->cost_center_id;
-    //                 $totalExpense = $dataClaimDetail->cost;
-    //                 $totalDetailExpenseCost += $totalExpense;
-
-    //                 $expensePurpose[] = $nameExpense;
-    //                 $ex = [
-    //                     'account_description' => $nameExpense,
-    //                     'expense_code' => $idExpense,
-    //                     'description' => $descriptionExpense,
-    //                     'cost_center' => $costCenterExpense,
-    //                     'total' => $totalExpense,
-    //                 ];
-    //                 array_push($detailExpenses, $ex);
-    //             }
-    //         }
-    //         $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)->groupBy('goa_id')->get();
-    //         if(count($dataGoaDetails) > 0){
-    //             foreach($dataGoaDetails as $dataGoaDetail){
-    //                 $dataGoa = [
-    //                     'name' => $dataGoaDetail->user->name,
-    //                     'date' => Carbon::parse($dataGoaDetail->goa_date)->isoFormat('DD.MM.YYYY')
-    //                 ];
-    //                 array_push($goaHolders, $dataGoa);
-    //             }
-    //         }  
-
-    //         $data['claim_number'] = $dataClaim->expense_number;
-    //         $data['date_submited'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD/MM/YY');
-    //         $data['name'] = $dataClaim->request->name;
-    //         $data['bpid'] = $dataClaim->request->bpid;
-    //         $data['expense_date_from'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
-    //         $data['expense_date_to'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
-    //         $data['department'] = $dataClaim->request->department->name;
-
-    //         $data['purpose_of_expense'] = implode(', ', $expensePurpose);
-
-    //         $data['request_name'] = $dataClaim->request->name;
-    //         $data['request_date'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD.MM.YYYY');
-    //         $data['head_department_name'] = $dataClaim->hod->name ?? '';
-    //         $data['head_department_approval_date'] = ($dataClaim->hod_date != null) ? Carbon::parse($dataClaim->hod_date)->isoFormat('DD.MM.YYYY') : '';
-
-    //         $data['goa_holder'] = $goaHolders;
-
-    //         $data['print_date'] = Carbon::now()->isoFormat('DD-MMM-YY');
-
-    //         // detail for expenses
-    //         $data['detail_expenses'] = $detailExpenses;
-    //         $data['total_detail_expenses'] = $totalDetailExpenseCost; 
-
-    //         $print = new ReportClaim($data);
-    //         return $print->renderPdf();
-
-    //     }
-    // }
     
     public function showDetailsRow($id)
     {
@@ -504,47 +440,12 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
     }
 
 
-    public function downloadApJournal(){
-        $this->crud->hasAccessOrFail('download_journal_ap_history');
-        $entries = [];
-        if(isset(request()->entries) && is_array(request()->entries)){
-            $entries = request()->entries;
-        }
-        $filename = 'ap-journal-'.date('YmdHis').'.xlsx';    
-        $myFile =  Excel::raw(new ApJournalHistoryExport($entries), 'Xlsx');
-        
-        $response =  array(
-            'name' => $filename,
-            'file' => "data:application/vnd.ms-excel;base64,".base64_encode($myFile)
-         );
-         return response()->json($response);
-    }
-
-
-    public function reportExcelClaimSummary()
+    public function reportExcel()
     {
         if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
             abort(404);
         }
-        $this->crud->hasAccessOrFail('download_claim_summary');
-        $filename = 'report-claim-summary-'.date('YmdHis').'.xlsx';
-        $urlFull = parse_url(url()->full()); 
-        $entries['param_url'] = [];
-        if (array_key_exists("query", $urlFull)) {
-            parse_str($urlFull['query'], $paramUrl);
-            $entries['param_url'] = $paramUrl;
-        }
-
-        return Excel::download(new ReportClaimSummaryExport($entries), $filename);
-    }
-
-
-    public function reportExcelClaimDetail()
-    {
-        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
-            abort(404);
-        }
-        $this->crud->hasAccessOrFail('download_claim_detail');
+        $this->crud->hasAccessOrFail('download_excel_report');
         $filename = 'report-claim-detail-'.date('YmdHis').'.xlsx';
         $urlFull = parse_url(url()->full()); 
         $entries['param_url'] = [];
@@ -555,4 +456,5 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
 
         return Excel::download(new ReportClaimDetailExport($entries), $filename);
     }
+
 }

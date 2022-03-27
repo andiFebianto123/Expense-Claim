@@ -90,8 +90,6 @@ Route::group([
         });
         Route::crud('expense-finance-ap-history', 'ExpenseFinanceApHistoryCrudController');
         Route::post('expense-finance-ap-history/download-ap-journal', 'ExpenseFinanceApHistoryCrudController@downloadApJournal');
-        Route::get('expense-finance-ap-history/report-excel-claim-summary', 'ExpenseFinanceApHistoryCrudController@reportExcelClaimSummary');
-        Route::get('expense-finance-ap-history/report-excel-claim-detail', 'ExpenseFinanceApHistoryCrudController@reportExcelClaimDetail');
     });
 
     Route::get('dashboard', 'DashboardController@index');
@@ -110,4 +108,9 @@ Route::group([
     Route::crud('expense', 'ExpenseCrudController');
     Route::crud('expense-code', 'ExpenseCodeCrudController');
     Route::crud('config', 'ConfigCrudController');
+    Route::crud('expense-claim-summary', 'ExpenseClaimSummaryCrudController');
+    Route::crud('expense-claim-detail', 'ExpenseClaimDetailCrudController');
+
+    Route::get('expense-claim-summary/report-excel', 'ExpenseClaimSummaryCrudController@reportExcel');
+    Route::get('expense-claim-detail/report-excel', 'ExpenseClaimDetailCrudController@reportExcel');
 }); // this should be the absolute last line of this file

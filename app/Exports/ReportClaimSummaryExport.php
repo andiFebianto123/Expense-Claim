@@ -1,15 +1,16 @@
 <?php
 namespace App\Exports;
 
-use App\Models\ExpenseClaim;
-use App\Models\ExpenseType;
+use Exception;
 use App\Models\Role;
-use App\Models\TransGoaApproval;
 use App\Models\User;
+use App\Models\ExpenseType;
+use App\Models\ExpenseClaim;
+use App\Models\TransGoaApproval;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
-use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithDrawings;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
@@ -38,7 +39,8 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class    => function(AfterSheet $event) {
+            AfterSheet::class  => function(AfterSheet $event) {
+                $formatNumberExcelNoDecimal = '_(* #,##0_);_(* \(#,##0\);_(* "-"??_);_(@_)';
                 $i = 0;
                 $start = 'A';
                 $end = 'O';
@@ -60,17 +62,18 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
 
                 for ($col = $start; $col !== $end; $col++){
                     // final value must be +1 e.g. A until O this will formatting column from A to N
-                    if ($i > 0) {
-                        $lengthOfWords = strlen($this->headers[$i-1]);
-                        $dynamicWidth = 14;
-                        if ($lengthOfWords > 8 && $lengthOfWords < 20) {
-                            $dynamicWidth = 22;
-                        } else if($lengthOfWords > 20){
-                            $dynamicWidth = $lengthOfWords*2;
-                        }
-                        $event->sheet->getColumnDimension($col)->setWidth($dynamicWidth);
-                    }
-                    $i++;
+                    // if ($i > 0) {
+                    //     $lengthOfWords = strlen($this->headers[$i-1]);
+                    //     $dynamicWidth = 14;
+                    //     if ($lengthOfWords > 8 && $lengthOfWords < 20) {
+                    //         $dynamicWidth = 22;
+                    //     } else if($lengthOfWords > 20){
+                    //         $dynamicWidth = $lengthOfWords*2;
+                    //     }
+                    //     $event->sheet->getColumnDimension($col)->setWidth($dynamicWidth);
+                    // }
+                    // $i++;
+                    $event->sheet->getColumnDimension($col)->setAutoSize(true);
                 }
 
                 $end = 'N'; // based on notes so, it should be N
@@ -82,6 +85,7 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
                 $event->sheet->getDelegate()->getStyle($start.'5:'.$end.'5')
                     ->getAlignment()
                     ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+                $event->sheet->getDelegate()->getStyle('G6:G' . $event->sheet->getHighestRow())->getNumberFormat()->setFormatCode($formatNumberExcelNoDecimal);
                 },
         ];
     }
@@ -90,24 +94,35 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
     {
         $paramUrl = $this->entries['param_url'];
         $excEpenseClaims = ExpenseClaim::leftJoin('mst_users as user_req', 'user_req.id', 'trans_expense_claims.request_id')
-            ->leftJoin('mst_users as user_goa', 'user_goa.id', 'trans_expense_claims.current_trans_goa_id')
+            // ->leftJoin('mst_users as user_goa', 'user_goa.id', 'trans_expense_claims.current_trans_goa_id')
             ->leftJoin('mst_users as user_hod', 'user_hod.id', 'trans_expense_claims.hod_id')
             ->leftJoin('mst_users as user_finance', 'user_finance.id', 'trans_expense_claims.finance_id')
             ->leftJoin('mst_users as user_hod_deleg', 'user_hod_deleg.id', 'trans_expense_claims.hod_delegation_id')
-            ->leftJoin('mst_departments', 'mst_departments.id', 'user_req.department_id');
-        $excEpenseClaims->whereNotNull('expense_number');
+            ->leftJoin('mst_departments', 'mst_departments.id', 'user_req.real_department_id');
 
         if (isset($paramUrl['status'])) {
             $excEpenseClaims->where('trans_expense_claims.status', $paramUrl['status']);
         }
         if (isset($paramUrl['department_id'])) {
-            $excEpenseClaims->where('user_req.department_id', (int)$paramUrl['department_id']);
+            $excEpenseClaims->where('user_req.real_department_id', (int)$paramUrl['department_id']);
         }
 
-        $excEpenseClaims = $excEpenseClaims->get(['trans_expense_claims.id', 'user_req.user_id as user_id', 'user_req.name as requestor', 
+        if(isset($paramUrl['request_date'])){
+            try{
+                $dates = json_decode($paramUrl['request_date']);
+                $excEpenseClaims->where('request_date', '>=', $dates->from);
+                $excEpenseClaims->where('request_date', '<=', $dates->to);
+            }
+            catch(Exception $e){
+                
+            }
+        }
+
+        $excEpenseClaims = $excEpenseClaims->select('trans_expense_claims.id', 'user_req.user_id as user_id', 'user_req.name as requestor', 
             'mst_departments.name as md_name', 'expense_number', 'request_date', 'value', 'user_hod.name as hod_name', 
-            'trans_expense_claims.hod_date as hod_date', 'user_goa.name as goa_name', 'user_finance.name as finance_name', 
-            'finance_date', 'user_hod_deleg.name as delegation_name', 'trans_expense_claims.status', 'user_req.department_id']);
+            'trans_expense_claims.hod_date as hod_date', 'user_finance.name as finance_name', 'hod_delegation_id',
+            'finance_date', 'user_hod_deleg.name as delegation_name', 'hod_action_id', 'trans_expense_claims.status', 'user_req.real_department_id as department_id')
+            ->get();
         
         $arrRows = [];
         foreach ($excEpenseClaims as $key => $expenseType) {
@@ -115,35 +130,35 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
             $transGoaApproval = TransGoaApproval::leftJoin('mst_users as goa', 'goa.id', 'trans_goa_approvals.goa_id')
                 ->leftJoin('mst_users as delegation', 'delegation.id', 'trans_goa_approvals.goa_delegation_id')
                 ->where('expense_claim_id', $expenseType->id)
-                ->orderBy('order', 'desc')
-                ->select('goa.name as goa_name', 'goa_date', 'delegation.name as delegation_name')
-                ->first();
-
-            $hodName = $expenseType->hod_name ?? '';
-            if (isset($expenseType->delegation_name)) {
-                $hodName = $expenseType->delegation_name;
+                ->orderBy('order')
+                ->select('goa.name as goa_name', 'goa_date', 'delegation.name as delegation_name', 'goa_delegation_id', 'goa_action_id', 'status')
+                ->get();
+            
+            foreach($transGoaApproval as $currentTransGoa){
+                $hodName = $expenseType->hod_name ?? '-';
+                if($expenseType->hod_action_id != null && $expenseType->hod_action_id == $expenseType->hod_action_id){
+                    $hodName = '(D) ' . $expenseType->delegation_name ?? '-';
+                }
+                $goaName = $currentTransGoa->goa_name ?? '-';
+                if($currentTransGoa->goa_action_id != null && $currentTransGoa->goa_action_id == $currentTransGoa->goa_delegation_id){
+                    $goaName = '(D) ' . $currentTransGoa->delegation_name ?? '-';
+                }
+                $arrRows[] = [
+                    $expenseType->user_id, 
+                    $expenseType->requestor, 
+                    $expenseType->md_name, 
+                    $expenseType->expense_number, 
+                    $expenseType->request_date, 
+                    $expenseType->value, 
+                    $hodName, 
+                    $expenseType->hod_date ?? '-', 
+                    $goaName,
+                    $currentTransGoa->goa_date ?? '-',
+                    $expenseType->finance_name ?? '',
+                    $expenseType->finance_date ?? '',
+                    $expenseType->status
+                ];
             }
-
-            $goaName = $transGoaApproval->goa_name ?? '';
-            if (isset($transGoaApproval->delegation_name)) {
-                $goaName = $transGoaApproval->delegation_name;
-            }
-
-            $arrRows[] = [
-                $expenseType->user_id, 
-                $expenseType->requestor, 
-                $expenseType->md_name, 
-                $expenseType->expense_number, 
-                $expenseType->request_date, 
-                $expenseType->value, 
-                $hodName, 
-                $expenseType->hod_date ?? '-', 
-                $goaName,
-                $transGoaApproval->goa_date ?? '-',
-                $expenseType->finance_name ?? '',
-                $expenseType->finance_date ?? '',
-                $expenseType->status
-            ];
         }
 
         $data['title'] = $this->title;

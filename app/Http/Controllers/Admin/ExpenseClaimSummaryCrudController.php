@@ -2,22 +2,23 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Exception;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\CostCenter;
+use App\Models\Department;
+use App\Models\MstExpense;
+use App\Models\ExpenseCode;
+use App\Models\ExpenseClaim;
 use App\Exports\ApJournalExport;
+use App\Models\TransGoaApproval;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ApJournalHistoryExport;
 use App\Exports\ReportClaimDetailExport;
 use App\Exports\ReportClaimSummaryExport;
-use App\Models\CostCenter;
-use App\Models\Department;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\ExpenseClaim;
-use App\Models\ExpenseCode;
-use App\Models\MstExpense;
-use App\Models\TransGoaApproval;
 use Illuminate\Database\Eloquent\Builder;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
-use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * Class ExpenseFinanceApHistoryCrudController
@@ -53,6 +54,13 @@ class ExpenseClaimSummaryCrudController extends CrudController
             $this->crud->allowAccess('download_excel_report');
         }
 
+        ExpenseClaim::addGlobalScope('status', function (Builder $builder) {
+            $builder->where(function ($query) {
+                $query->where('trans_expense_claims.status', '!=', ExpenseClaim::DRAFT)
+                ->where('trans_expense_claims.status', '!=', ExpenseClaim::CANCELED);
+            });
+        });
+
         CRUD::setModel(ExpenseClaim::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/expense-claim-summary');
         CRUD::setEntityNameStrings('Expense Claim - Summary', 'Expense Claim - Summary');
@@ -68,7 +76,9 @@ class ExpenseClaimSummaryCrudController extends CrudController
     {
         // $this->crud->enableDetailsRow();
         $this->crud->addButtonFromView('top', 'download_excel_report', 'download_excel_report', 'end');
-        $this->crud->query->whereNotNull('expense_number');
+        $this->crud->addButtonFromModelFunction('line', 'detailRequestButton', 'detailRequestButton');
+
+        $this->crud->enableDetailsRow();
 
         $this->crud->addFilter([
             'name'  => 'department_id',
@@ -77,8 +87,9 @@ class ExpenseClaimSummaryCrudController extends CrudController
           ], function () {
             return Department::pluck('name','id')->toArray();
           }, function ($value) { // if the filter is active
-            return $this->crud->query->leftJoin('mst_users as r', 'r.id', '=', 'trans_expense_claims.request_id')
-                ->where('department_id', $value);
+            $this->crud->addClause('whereHas', 'request', function($query) use($value){
+                $query->where('real_department_id', $value);
+            });
         });
         $this->crud->addFilter([
             'name'  => 'status',
@@ -86,7 +97,6 @@ class ExpenseClaimSummaryCrudController extends CrudController
             'label' => 'Status'
           ], function () {
               $arrStatus = [
-                ExpenseClaim::DRAFT => ExpenseClaim::DRAFT,
                 ExpenseClaim::REQUEST_FOR_APPROVAL => ExpenseClaim::REQUEST_FOR_APPROVAL,
                 ExpenseClaim::REQUEST_FOR_APPROVAL_TWO => ExpenseClaim::REQUEST_FOR_APPROVAL_TWO,
                 ExpenseClaim::PARTIAL_APPROVED => ExpenseClaim::PARTIAL_APPROVED,
@@ -108,9 +118,14 @@ class ExpenseClaimSummaryCrudController extends CrudController
           ],
           false,
           function ($value) { // if the filter is active, apply these constraints
-            $dates = json_decode($value);
-            $this->crud->addClause('where', 'request_date', '>=', $dates->from);
-            $this->crud->addClause('where', 'request_date', '<=', $dates->to . ' 23:59:59');
+            try{
+                $dates = json_decode($value);
+                $this->crud->addClause('where', 'request_date', '>=', $dates->from);
+                $this->crud->addClause('where', 'request_date', '<=', $dates->to);
+            }
+            catch(Exception $e){
+                
+            }
         });
 
         CRUD::addColumns([
@@ -151,52 +166,6 @@ class ExpenseClaimSummaryCrudController extends CrudController
                         ->orderBy('r.name', $columnDirection)->select('trans_expense_claims.*');
                 },
             ],
-            // [
-            //     'label' => 'Department',
-            //     'name' => 'department_id',
-            //     'type'      => 'select',
-            //     'entity'    => 'department',
-            //     'attribute' => 'name',
-            //     'model'     => Department::class,
-            //     'orderLogic' => function ($query, $column, $columnDirection) {
-            //         return $query->leftJoin('departments as d', 'd.id', '=', 'trans_expense_claims.department_id')
-            //         ->orderBy('d.name', $columnDirection)->select('trans_expense_claims.*');
-            //     },
-            // ],
-            // [
-            //     'label' => 'Approved By',
-            //     'name' => 'approval_id',
-            //     'type'      => 'select',
-            //     'entity'    => 'approval',
-            //     'attribute' => 'name',
-            //     'model'     => User::class,
-            //     'orderLogic' => function ($query, $column, $columnDirection) {
-            //         return $query->leftJoin('users as a', 'a.id', '=', 'trans_expense_claims.approval_id')
-            //         ->orderBy('a.name', $columnDirection)->select('trans_expense_claims.*');
-            //     },
-            // ],
-            // [
-            //     'label' => 'Approved Date',
-            //     'name' => 'approval_date',
-            //     'type'  => 'date',
-            // ],
-            // [
-            //     'label' => 'GoA By',
-            //     'name' => 'goa_id',
-            //     'type'      => 'select',
-            //     'entity'    => 'goa',
-            //     'attribute' => 'name',
-            //     'model'     => User::class,
-            //     'orderLogic' => function ($query, $column, $columnDirection) {
-            //         return $query->leftJoin('users as g', 'g.id', '=', 'trans_expense_claims.goa_id')
-            //         ->orderBy('g.name', $columnDirection)->select('trans_expense_claims.*');
-            //     },
-            // ],
-            // [
-            //     'label' => 'GoA Date',
-            //     'name' => 'goa_date',
-            //     'type'  => 'date',
-            // ],
             [
                 'label' => 'Fin AP By',
                 'name' => 'finance_id',
@@ -398,16 +367,18 @@ class ExpenseClaimSummaryCrudController extends CrudController
 
     public function reportExcel()
     {
-        if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
-            abort(404);
-        }
         $this->crud->hasAccessOrFail('download_excel_report');
         $filename = 'report-claim-summary-'.date('YmdHis').'.xlsx';
         $urlFull = parse_url(url()->full()); 
         $entries['param_url'] = [];
-        if (array_key_exists("query", $urlFull)) {
-            parse_str($urlFull['query'], $paramUrl);
-            $entries['param_url'] = $paramUrl;
+        try{
+            if (array_key_exists("query", $urlFull)) {
+                parse_str($urlFull['query'], $paramUrl);
+                $entries['param_url'] = $paramUrl;
+            }
+        }
+        catch(Exception $e){
+
         }
 
         return Excel::download(new ReportClaimSummaryExport($entries), $filename);

@@ -142,7 +142,7 @@ class ReportClaimDetailExport implements FromView, WithEvents, WithDrawings
             ->leftJoin('mst_users as user_finance', 'user_finance.id', 'tec.finance_id')
             ->leftJoin('mst_users as user_hod_deleg', 'user_hod_deleg.id', 'tec.hod_delegation_id')
             ->leftJoin('mst_departments', 'mst_departments.id', 'user_req.real_department_id');
-        $excEpenseClaimDetails->whereNotNull('expense_number');
+        // $excEpenseClaimDetails->whereNotNull('expense_number');
 
         if (isset($paramUrl['status'])) {
             $excEpenseClaimDetails->where('tec.status', $paramUrl['status']);
@@ -170,13 +170,13 @@ class ReportClaimDetailExport implements FromView, WithEvents, WithDrawings
             $excEpenseClaimDetails->where('mcc.id', $paramUrl['cost_center_id']);
         }
 
-        $excEpenseClaimDetails = $excEpenseClaimDetails->get(['tec.id', 'user_req.user_id as user_id', 'user_req.name as request', 
+        $excEpenseClaimDetails = $excEpenseClaimDetails->select('tec.id', 'user_req.user_id as user_id', 'user_req.name as request', 
             'mst_departments.name as md_name', 'tec.expense_number', 'tec.request_date', 
             'tec.value', 'user_hod.name as hod_name', 'tec.hod_date as hod_date', 'user_goa.name as goa_name', 
             'user_finance.name as finance_name', 'tec.finance_date', 'user_hod_deleg.name as delegation_name', 
             'tec.status', 'tect.expense_name', 'trans_expense_claim_details.date as tec_date', 
             'mcc.cost_center_id as mcc_cci', 'mcc.description as mcc_description', 'trans_expense_claim_details.cost as tecd_cost', 
-            'trans_expense_claim_details.total_day as tecd_total_days', 'trans_expense_claim_details.remark as tecd_remark']);
+            'trans_expense_claim_details.total_day as tecd_total_days', 'trans_expense_claim_details.remark as tecd_remark')->get();
         
         $arrRows = [];
         foreach ($excEpenseClaimDetails as $key => $expenseType) {
@@ -226,10 +226,6 @@ class ReportClaimDetailExport implements FromView, WithEvents, WithDrawings
                 $expenseType->tecd_total_days ?? '-',
                 $expenseType->tecd_remark ?? '-',
             ];
-            // break;
-            if($key == 8){
-                break;
-            }
         }
 
         $data['title'] = $this->title;

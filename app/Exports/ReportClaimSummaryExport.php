@@ -161,7 +161,7 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
             $arrRows[] = [
                 $expenseType->user_id, 
                 $expenseType->requestor, 
-                $expenseType->md_name, 
+                $expenseType->md_name ?? '-', 
                 $expenseType->expense_number, 
                 $expenseType->request_date, 
                 $expenseType->value, 
@@ -169,8 +169,8 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
                 $expenseType->hod_date ?? '-', 
                 $goaNames->join("<br>"),
                 $goaDates->join("<br>"),
-                $expenseType->finance_name ?? '',
-                $expenseType->finance_date ?? '',
+                $expenseType->finance_name ?? '-',
+                $expenseType->finance_date ?? '-',
                 $expenseType->status
             ];
         }

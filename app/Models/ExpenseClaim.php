@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Department;
 use App\Models\TransGoaApproval;
+use App\Models\ExpenseClaimDetail;
 use Illuminate\Database\Eloquent\Model;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use \Venturecraft\Revisionable\RevisionableTrait;
@@ -99,6 +100,10 @@ class ExpenseClaim extends Model
     public function transgoa()
     {
         return $this->hasMany(TransGoaApproval::class, 'expense_claim_id');
+    }
+
+    public function details(){
+        return $this->hasMany(ExpenseClaimDetail::class, 'expense_claim_id');
     }
 
     public static function mapColorStatus($status)

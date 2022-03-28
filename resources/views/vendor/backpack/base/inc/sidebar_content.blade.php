@@ -84,7 +84,7 @@
 @endif
 
 @if ($allowReport)
-<li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-list"></i> Report</a>
+<li class="nav-item nav-dropdown"><a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon la la-chart-bar"></i> Report</a>
     <ul class="nav-dropdown-items">
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-claim-summary')}}"> Claim Summary</a></li>
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-claim-detail')}}"> Claim Detail</a></li>

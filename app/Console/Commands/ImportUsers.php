@@ -35,7 +35,7 @@ class ImportUsers extends Command
      */
     public function handle()
     {
-        $path = storage_path().'/app/data';
+        $path = storage_path().'/sap';
         $files = File::files($path);
         $getFiles = [];
         if(count($files) > 0){
@@ -52,7 +52,7 @@ class ImportUsers extends Command
             foreach($getFiles as $key => $getFile){
                 DB::beginTransaction();
                 try {
-                    $path = storage_path('/app/data/' . $getFile->getFilename());
+                    $path = storage_path('/sap/' . $getFile->getFilename());
                     $import = new UsersImport();
                     $import->import($path);
 
@@ -64,9 +64,9 @@ class ImportUsers extends Command
 
                         foreach($import->logMessages as $logMessage){
                             $log->getString(
-                                $logMessage['time'], 
-                                $logMessage['row'], 
-                                $logMessage['type'], 
+                                $logMessage['time'],
+                                $logMessage['row'],
+                                $logMessage['type'],
                                 $logMessage['message']);
                         }
                         $log->close();
@@ -75,15 +75,15 @@ class ImportUsers extends Command
                     if (file_exists($path)) {
                         unlink($path);
                     }
-                    Log::info('Import users by successed run');
+                    Log::info('Users import successful. File : '.$getFile->getFilename());
                 }catch(Exception $e){
                     DB::rollback();
-                   Log::info('Import users by failed run to file : '.$getFile->getFilename());         
+                   Log::info('Users import failed. File : '.$getFile->getFilename());
                     throw $e;
                 }
             }
         }else{
-            Log::info('File users is not exists');
+            Log::info('File users import is not exists');
         }
     }
 }

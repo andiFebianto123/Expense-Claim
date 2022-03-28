@@ -55,7 +55,9 @@ class ReportUserExport implements FromView, WithEvents, WithDrawings
         
                 ];
 
-                for ($col = $start; $col !== $end; $col++){
+                $tempEnd = $end;
+                $tempEnd++;
+                for ($col = $start; $col !== $tempEnd; $col++){
                     // final value must be +1 e.g. A until P this will formatting column from A to O
                     // if ($i > 0) {
                     //     $lengthOfWords = strlen($this->headers[$i-1]);

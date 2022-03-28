@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Exception;
+use Carbon\Carbon;
+use App\Models\Role;
 use ReflectionClass;
 use App\Models\CustomRevision;
+use App\Exports\ReportAuditTrail;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Requests\AuditTrailRequest;
+use Illuminate\Support\Facades\Validator;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -28,6 +34,17 @@ class AuditTrailCrudController extends CrudController
         CRUD::setModel(CustomRevision::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/audit-trail');
         CRUD::setEntityNameStrings('Audit Trail', 'Audit Trails');
+
+        if (allowedRole([Role::SUPER_ADMIN, Role::ADMIN])) {
+            $this->crud->excelReportBtn = [
+                [
+                    'name' => 'download_excel_report', 
+                    'label' => 'Excel Report',
+                    'url' => url('audit-trail/report-excel')
+                ],
+            ];
+            $this->crud->allowAccess('download_excel_report');
+        }
     }
 
     public function getColumns($forList = true){
@@ -88,6 +105,22 @@ class AuditTrailCrudController extends CrudController
      */
     protected function setupListOperation()
     {
+        $this->crud->addFilter([
+            'type'  => 'date_month',
+            'name'  => 'month',
+            'label' => 'Month'
+          ],
+            false,
+          function ($value) { // if the filter is active, apply these constraints
+            $validator = Validator::make(['date' => $value], ['date' => 'required|date']);
+            if(!$validator->fails()){
+                $date = Carbon::parse($value);
+                $this->crud->addClause('where', 'created_at', '>=', $date->startOfMonth());
+                $this->crud->addClause('where', 'created_at', '<=', $date->copy()->endOfMonth());
+            }
+          });
+
+        $this->crud->addButtonFromView('top', 'download_excel_report', 'download_excel_report', 'end');
         $this->getColumns();
     }
 
@@ -119,5 +152,23 @@ class AuditTrailCrudController extends CrudController
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
+    }
+
+    public function reportExcel(){
+        $this->crud->hasAccessOrFail('download_excel_report');
+        $filename = 'report-audit-trail-'.date('YmdHis').'.xlsx';
+        $urlFull = parse_url(url()->full()); 
+        $entries['param_url'] = [];
+        try{
+            if (array_key_exists("query", $urlFull)) {
+                parse_str($urlFull['query'], $paramUrl);
+                $entries['param_url'] = $paramUrl;
+            }
+        }
+        catch(Exception $e){
+
+        }
+
+        return Excel::download(new ReportAuditTrail($entries), $filename);
     }
 }

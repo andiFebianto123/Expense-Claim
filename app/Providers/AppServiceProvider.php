@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Config;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+       
     }
 
     /**
@@ -23,6 +24,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        config(['mail.mailers.smtp.password' => Config::where('key', 'Email Password')->first()->value ?? null]);
     }
 }

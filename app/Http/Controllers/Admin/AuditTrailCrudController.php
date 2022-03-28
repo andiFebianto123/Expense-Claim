@@ -33,6 +33,7 @@ class AuditTrailCrudController extends CrudController
     public function getColumns($forList = true){
         $limit = $forList ? 40: 255;
         // CRUD::column('id')->label('ID')->limit($limit);
+        CRUD::column('created_at')->label('Created At')->tye('datetime')->limit($limit);
         CRUD::column('ip_address')->label('IP Address')->limit($limit);
         CRUD::addColumn([
             'label' => 'User',

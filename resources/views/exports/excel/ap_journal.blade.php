@@ -13,7 +13,7 @@
         <table>
             <thead>
             <tr>
-                <th>No</th>
+                {{-- <th>No</th> --}}
                 @foreach($headers as $header)
                 <th>{{$header}}</th>
                 @endforeach
@@ -26,7 +26,7 @@
                             $keys = array_keys($row);
                         @endphp
                         <tr>
-                            <td>{{ $no }}</td>
+                            {{-- <td>{{ $no }}</td> --}}
                             @foreach($keys as $key)
                                 <td> {{ $row[$key] }} </td>
                             @endforeach

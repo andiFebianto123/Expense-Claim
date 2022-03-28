@@ -35,7 +35,7 @@ class ImportUsers extends Command
      */
     public function handle()
     {
-        $path = storage_path().'/app/data';
+        $path = storage_path().'/sap';
         $files = File::files($path);
         $getFiles = [];
         if(count($files) > 0){
@@ -52,7 +52,7 @@ class ImportUsers extends Command
             foreach($getFiles as $key => $getFile){
                 DB::beginTransaction();
                 try {
-                    $path = storage_path('/app/data/' . $getFile->getFilename());
+                    $path = storage_path('/sap/' . $getFile->getFilename());
                     $import = new UsersImport();
                     $import->import($path);
 
@@ -83,7 +83,7 @@ class ImportUsers extends Command
                 }
             }
         }else{
-            Log::info('File users is not exists');
+            Log::info('File users import is not exists');
         }
     }
 }

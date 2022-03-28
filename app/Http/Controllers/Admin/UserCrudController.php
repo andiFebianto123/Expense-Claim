@@ -286,7 +286,7 @@ class UserCrudController extends CrudController
             'type'  => 'select2',
             'label' => 'Cost Center'
           ], function () {
-            return CostCenter::pluck('cost_center_id','id')->toArray();
+            return CostCenter::pluck('description','id')->toArray();
           }, function ($value) { // if the filter is active
             $this->crud->addClause('where', 'cost_center_id', $value);
         });

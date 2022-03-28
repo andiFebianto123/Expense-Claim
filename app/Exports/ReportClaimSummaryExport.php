@@ -167,8 +167,8 @@ class ReportClaimSummaryExport implements FromView, WithEvents, WithDrawings
                 $expenseType->value, 
                 $hodName, 
                 $expenseType->hod_date ?? '-', 
-                $goaNames->join("<br>"),
-                $goaDates->join("<br>"),
+                $goaNames->toArray(),
+                $goaDates->toArray(),
                 $expenseType->finance_name ?? '-',
                 $expenseType->finance_date ?? '-',
                 $expenseType->status

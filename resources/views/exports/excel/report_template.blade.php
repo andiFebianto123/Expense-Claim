@@ -26,11 +26,22 @@
                 <tr>
                     <td>{{ $k+1 }}</td>
                     @for($t = 0; $t < sizeof($headers); $t++)
-                   @if (\Str::contains($row[$t], '<br>'))
-                   <td>{!! $row[$t] !!}</td>
-                   @else
-                   <td>{{ $row[$t] }}</td>    
-                   @endif
+                        @if (is_array($row[$t]))
+                            @if (count($row[$t]) == 0)
+                                <td>-</td>
+                            @else
+                                <td>
+                                @foreach ($row[$t] as $indexText => $text)
+                                    @if ($indexText > 0)
+                                        <br>
+                                    @endif
+                                    {{$text}}
+                                @endforeach
+                                </td>
+                            @endif
+                        @else
+                        <td>{{ $row[$t] }}</td>    
+                        @endif
                     @endfor
                 </tr>
                 @endforeach

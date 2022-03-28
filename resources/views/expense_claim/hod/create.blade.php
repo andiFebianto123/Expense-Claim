@@ -85,10 +85,10 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
 @endsection
 @push('after_styles')
     <style>
-        form .form-group.required-custom>label:not(:empty):not(.form-check-label):after {
+        /* form .form-group.required-custom>label:not(:empty):not(.form-check-label):after {
             color: red;
             content: " *";
-        }
+        } */
     </style>
 @endpush
 @push('after_scripts')

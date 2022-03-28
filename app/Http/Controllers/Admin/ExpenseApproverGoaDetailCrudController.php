@@ -244,7 +244,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 'searchLogic' => false,
                 'type'  => 'model_function',
                 'function_name' => 'getDocumentLink',
-                'function_parameters' => ['expense-approver-hod'],
+                'function_parameters' => ['expense-approver-goa'],
                 'limit' => 1000000,
                 'escaped' => false
             ],

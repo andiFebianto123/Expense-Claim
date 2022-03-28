@@ -121,7 +121,7 @@ class ApJournalExport implements FromView, WithEvents
                 if(count($dataExpenseDetails) > 0){
                     foreach($dataExpenseDetails as $dataExpenseDetail){
                         $expenseName[] = $dataExpenseDetail->expense_claim_type->expense_name;
-                        $date = $dataExpenseDetail->date;
+                        $date = Carbon::parse($dataExpenseDetail->date)->isoFormat('DDMMYYYY');
                         $reference = $dataExpense->expense_number;
                         $currency = $dataExpenseDetail->currency;
                         $total_doc_curr_1_dc += $dataExpenseDetail->cost;
@@ -130,8 +130,8 @@ class ApJournalExport implements FromView, WithEvents
                             'cocd' => '0100',
                             'doc_type' => 'KR',
                             'doc_no' => $no,
-                            'posting_date' => Carbon::now()->isoFormat('YYYYMMDD'),
-                            'document_date' => $this->replaceString('-', '', $dataExpenseDetail->date),
+                            'posting_date' => Carbon::now()->isoFormat('DDMMYYYY'),
+                            'document_date' => $date,
                             'reference' => $dataExpense->expense_number,
                             'header_text' => null,
                             'bussines_place' => null,
@@ -193,8 +193,8 @@ class ApJournalExport implements FromView, WithEvents
                         'cocd' => '0100',
                         'doc_type' => 'KR',
                         'doc_no' => $no,
-                        'posting_date' => Carbon::now()->isoFormat('YYYYMMDD'),
-                        'document_date' => $this->replaceString('-', '', $date),
+                        'posting_date' => Carbon::now()->isoFormat('DDMMYYYY'),
+                        'document_date' => $date,
                         'reference' => $reference,
                         'header_text' => null,
                         'bussines_place' => null,
@@ -216,7 +216,7 @@ class ApJournalExport implements FromView, WithEvents
                         'tax_ammount' => null,
                         'top' => 'Y001',
                         'day' => null,
-                        'baseline_date' => $this->replaceString('-', '', $date),
+                        'baseline_date' => $date,
                         'material' => null,
                         'quantity' => null,
                         'uom' => null,

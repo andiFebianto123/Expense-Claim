@@ -409,9 +409,9 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
             'attributes' => [
                 'id' => 'documentFile'
             ],
-            'wrapper' => [
-                'class' => 'form-group col-md-12 required'
-            ]
+            // 'wrapper' => [
+            //     'class' => 'form-group col-md-12 required'
+            // ]
         ]);
 
         CRUD::addField([

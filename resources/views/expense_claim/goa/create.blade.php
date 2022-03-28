@@ -85,10 +85,10 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
 @endsection
 @push('after_styles')
     <style>
-        /* form .form-group.required-custom>label:not(:empty):not(.form-check-label):after {
+        form .form-group.required-custom>label:not(:empty):not(.form-check-label):after {
             color: red;
             content: " *";
-        } */
+        }
     </style>
 @endpush
 @push('after_scripts')
@@ -98,7 +98,8 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
         var selectedExpenseTypeId = parseInt($('#expenseTypeId').val());
         var currentItem = null;
 
-        selectExpenseType(selectedExpenseTypeId)
+        selectExpenseType(selectedExpenseTypeId);
+        $('#documentFile').parents('div.form-group').addClass('required-custom');
 
         $('#expenseTypeId').on('change', function() {
             selectExpenseType(parseInt(this.value));
@@ -113,12 +114,12 @@ $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
             if(index !== -1){
                 currentItem = expenseTypes[index];
                 item = currentItem;
-                if(item.traf){
-                    $('#documentFile').parents('div.form-group').addClass('required-custom');
-                }
-                else{
-                    $('#documentFile').parents('div.form-group').removeClass('required-custom');
-                }
+                // if(item.traf){
+                //     $('#documentFile').parents('div.form-group').addClass('required-custom');
+                // }
+                // else{
+                //     $('#documentFile').parents('div.form-group').removeClass('required-custom');
+                // }
                 if (item.expense_type_id === selectedId) {
                     $('#currencyId').val(item.currency);
                     var multiply = 1;

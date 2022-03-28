@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
-use \Venturecraft\Revisionable\RevisionableTrait;
+use App\Traits\CustomRevisionableTrait;
 
 class ApprovalCard extends Model
 {
-    use HasFactory, CrudTrait, RevisionableTrait;
+    use HasFactory, CrudTrait, CustomRevisionableTrait;
     protected $revisionEnabled = true;
     protected $revisionCreationsEnabled = true;
     protected $revisionForceDeleteEnabled = true;

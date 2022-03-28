@@ -8,11 +8,11 @@ use App\Models\GoaHolder;
 use App\Models\ApprovalUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use \Venturecraft\Revisionable\RevisionableTrait;
+use App\Traits\CustomRevisionableTrait;
 
 class HeadDepartment extends Model
 {
-    use HasFactory, RevisionableTrait;
+    use HasFactory, CustomRevisionableTrait;
     protected $revisionEnabled = true;
     protected $revisionCreationsEnabled = true;
     protected $revisionForceDeleteEnabled = true;

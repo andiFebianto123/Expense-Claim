@@ -113,4 +113,5 @@ Route::group([
 
     Route::get('expense-claim-summary/report-excel', 'ExpenseClaimSummaryCrudController@reportExcel');
     Route::get('expense-claim-detail/report-excel', 'ExpenseClaimDetailCrudController@reportExcel');
+    Route::crud('audit-trail', 'AuditTrailCrudController');
 }); // this should be the absolute last line of this file

@@ -9,11 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use \Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use \Venturecraft\Revisionable\RevisionableTrait;
+use App\Traits\CustomRevisionableTrait;
 
 class ExpenseType extends Model
 {
-    use HasFactory, CrudTrait, RevisionableTrait;
+    use HasFactory, CrudTrait, CustomRevisionableTrait;
     protected $revisionEnabled = true;
     protected $revisionCreationsEnabled = true;
     protected $revisionForceDeleteEnabled = true;

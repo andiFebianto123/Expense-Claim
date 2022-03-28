@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\ExpenseClaim;
 use App\Models\GoaHolder;
 use App\Models\User;
-use \Venturecraft\Revisionable\RevisionableTrait;
+use App\Traits\CustomRevisionableTrait;
 
 class TransGoaApproval extends Model
 {
-    use HasFactory, CrudTrait, RevisionableTrait;
+    use HasFactory, CrudTrait, CustomRevisionableTrait;
     protected $revisionEnabled = true;
     protected $revisionCreationsEnabled = true;
     protected $revisionForceDeleteEnabled = true;

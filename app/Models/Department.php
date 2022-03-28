@@ -7,11 +7,10 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use \Venturecraft\Revisionable\RevisionableTrait;
-
+use App\Traits\CustomRevisionableTrait;
 class Department extends Model
 {
-    use HasFactory, CrudTrait, RevisionableTrait;
+    use HasFactory, CrudTrait, CustomRevisionableTrait;
     protected $revisionEnabled = true;
     protected $revisionCreationsEnabled = true;
     protected $revisionForceDeleteEnabled = true;

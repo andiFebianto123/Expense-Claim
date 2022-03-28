@@ -115,11 +115,19 @@ class AuditTrailCrudController extends CrudController
             $validator = Validator::make(['date' => $value], ['date' => 'required|date']);
             if(!$validator->fails()){
                 $date = Carbon::parse($value);
-                $this->crud->addClause('where', 'created_at', '>=', $date->startOfMonth());
-                $this->crud->addClause('where', 'created_at', '<=', $date->copy()->endOfMonth());
             }
+            else{
+                $date = Carbon::now();
+            }
+            $this->crud->addClause('where', 'created_at', '>=', $date->startOfMonth());
+            $this->crud->addClause('where', 'created_at', '<=', $date->copy()->endOfMonth());
           });
-
+        
+        if(!request()->filled('month')){
+            $date = Carbon::now();
+            $this->crud->addClause('where', 'created_at', '>=', $date->startOfMonth());
+            $this->crud->addClause('where', 'created_at', '<=', $date->copy()->endOfMonth());
+        }
         $this->crud->addButtonFromView('top', 'download_excel_report', 'download_excel_report', 'end');
         $this->getColumns();
     }

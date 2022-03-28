@@ -174,6 +174,7 @@ class ReportClaimDetailExport implements FromView, WithEvents, WithDrawings
             'mst_departments.name as md_name', 'tec.expense_number', 'tec.request_date', 
             'tec.value', 'user_hod.name as hod_name', 'tec.hod_date as hod_date', 'user_goa.name as goa_name', 
             'user_finance.name as finance_name', 'tec.finance_date', 'user_hod_deleg.name as delegation_name', 
+            'hod_action_id', 'hod_delegation_id',
             'tec.status', 'tect.expense_name', 'trans_expense_claim_details.date as tec_date', 
             'mcc.cost_center_id as mcc_cci', 'mcc.description as mcc_description', 'trans_expense_claim_details.cost as tecd_cost', 
             'trans_expense_claim_details.total_day as tecd_total_days', 'trans_expense_claim_details.remark as tecd_remark')->get();

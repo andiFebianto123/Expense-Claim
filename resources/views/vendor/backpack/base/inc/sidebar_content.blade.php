@@ -88,6 +88,7 @@
     <ul class="nav-dropdown-items">
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-claim-summary')}}"> Claim Summary</a></li>
         <li class="nav-item"><a class="nav-link" href="{{backpack_url('expense-claim-detail')}}"> Claim Detail</a></li>
+        <li class='nav-item'><a class='nav-link' href='{{ backpack_url('audit-trail') }}'>Audit Trail</a></li>
     </ul>
 </li>
 @endif

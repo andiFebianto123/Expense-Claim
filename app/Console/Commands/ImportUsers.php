@@ -64,9 +64,9 @@ class ImportUsers extends Command
 
                         foreach($import->logMessages as $logMessage){
                             $log->getString(
-                                $logMessage['time'], 
-                                $logMessage['row'], 
-                                $logMessage['type'], 
+                                $logMessage['time'],
+                                $logMessage['row'],
+                                $logMessage['type'],
                                 $logMessage['message']);
                         }
                         $log->close();
@@ -75,10 +75,10 @@ class ImportUsers extends Command
                     if (file_exists($path)) {
                         unlink($path);
                     }
-                    Log::info('Import users by successed run');
+                    Log::info('Users import successful. File : '.$getFile->getFilename());
                 }catch(Exception $e){
                     DB::rollback();
-                   Log::info('Import users by failed run to file : '.$getFile->getFilename());         
+                   Log::info('Users import failed. File : '.$getFile->getFilename());
                     throw $e;
                 }
             }

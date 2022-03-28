@@ -16,6 +16,10 @@
     <h2>
       <span class="text-capitalize">{!! $crud->getHeading() ?? $crud->entity_name_plural !!}</span>
       <small id="datatable_info_stack">{!! $crud->getSubheading() ?? '' !!}</small>
+      @if (isset($crud->urlParent))
+          <br>
+	        <small class=""><a href="{{ url($crud->urlParent) }}" class="font-sm"><i class="la la-angle-double-left"></i> {{ trans('backpack::crud.back_to_all') }} <span>{{ $crud->parentName }}</span></a></small>
+	    @endif
     </h2>
   </div>
 @endsection

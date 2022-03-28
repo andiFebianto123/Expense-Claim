@@ -79,6 +79,23 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
      */
     protected function setupListOperation()
     {
+        $this->crud->addFilter([
+            'type'  => 'date_range',
+            'name'  => 'finance_date',
+            'label' => 'Fin AP Date',
+          ],
+          false,
+          function ($value) { // if the filter is active, apply these constraints
+            try{
+                $dates = json_decode($value);
+                $this->crud->addClause('where', 'finance_date', '>=', $dates->from);
+                $this->crud->addClause('where', 'finance_date', '<=', $dates->to);
+            }
+            catch(Exception $e){
+                
+            }
+        });
+        
         $this->crud->enableBulkActions();
         $this->crud->enableDetailsRow();
         $this->crud->addButtonFromView('top', 'download_journal_ap_history', 'download_journal_ap_history', 'end');

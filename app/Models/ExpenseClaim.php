@@ -7,12 +7,12 @@ use App\Models\TransGoaApproval;
 use App\Models\ExpenseClaimDetail;
 use Illuminate\Database\Eloquent\Model;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
-use \Venturecraft\Revisionable\RevisionableTrait;
+use App\Traits\CustomRevisionableTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ExpenseClaim extends Model
 {
-    use HasFactory, CrudTrait, RevisionableTrait;
+    use HasFactory, CrudTrait, CustomRevisionableTrait;
     protected $revisionEnabled = true;
     protected $revisionCreationsEnabled = true;
     protected $revisionForceDeleteEnabled = true;

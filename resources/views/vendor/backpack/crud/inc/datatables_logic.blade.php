@@ -267,6 +267,11 @@ jQuery(document).ready(function($) {
   $("#crudTable_filter").appendTo($('#datatable_search_stack' ));
   $("#crudTable_filter input").removeClass('form-control-sm');
 
+  // modal responsive
+  $(document).on('show.bs.modal', 'div.dtr-bs-modal', function(){
+      $(this).find('div.modal-body').addClass('table-responsive');
+  }) 
+
   // move "showing x out of y" info to header
   @if($crud->getSubheading())
   $('#crudTable_info').hide();

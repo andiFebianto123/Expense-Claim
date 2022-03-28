@@ -3,14 +3,15 @@
 namespace App\Models;
 
 use App\Models\Config;
+use App\Traits\CustomRevisionableTrait;
 use Illuminate\Database\Eloquent\Model;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use \Venturecraft\Revisionable\RevisionableTrait;
+
 
 class CostCenter extends Model
 {
-    use HasFactory, CrudTrait, RevisionableTrait;
+    use HasFactory, CrudTrait, CustomRevisionableTrait;
     protected $revisionEnabled = true;
     protected $revisionCreationsEnabled = true;
     protected $revisionForceDeleteEnabled = true;

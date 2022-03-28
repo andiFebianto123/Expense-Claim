@@ -72,6 +72,7 @@ class ExpenseFinanceApCrudController extends CrudController
         // if ($countFullyApproved > 0) {
         //     $this->crud->enableBulkActions();
         // }
+
         $this->crud->enableBulkActions();
         $this->crud->enableDetailsRow();
         $this->crud->addButtonFromView('top', 'download_journal_ap', 'download_journal_ap', 'end');

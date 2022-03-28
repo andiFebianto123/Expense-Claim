@@ -98,6 +98,11 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             DB::rollback();
             abort(404, trans('custom.model_not_found'));
         }
+
+        $isHistory = in_array($expenseClaim->status, [ExpenseClaim::FULLY_APPROVED, ExpenseClaim::REJECTED_ONE,  ExpenseClaim::REJECTED_TWO, ExpenseClaim::PROCEED, ExpenseClaim::CANCELED]);
+        $this->crud->urlParent = backpack_url('expense-user-request' . ($isHistory ? '-history' : ''));
+        $this->crud->parentName = 'Expense User Request - ' . ($isHistory ? 'History' : 'Ongoing');
+
         return $expenseClaim;
     }
 

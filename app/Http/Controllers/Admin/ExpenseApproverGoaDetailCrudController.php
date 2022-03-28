@@ -127,6 +127,11 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
             DB::rollback();
             abort(404, trans('custom.model_not_found'));
         }
+        
+        $isHistory = in_array($expenseClaim->status, [ ExpenseClaim::FULLY_APPROVED,  ExpenseClaim::REJECTED_TWO, ExpenseClaim::PROCEED]);
+        $this->crud->urlParent = backpack_url('expense-approver-goa' . ($isHistory ? '-history' : ''));
+        $this->crud->parentName = 'Expense Approver GoA - ' . ($isHistory ? 'History' : 'Ongoing');
+
         return $expenseClaim;
     }
 

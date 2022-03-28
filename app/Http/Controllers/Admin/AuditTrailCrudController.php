@@ -49,8 +49,9 @@ class AuditTrailCrudController extends CrudController
 
     public function getColumns($forList = true){
         $limit = $forList ? 40: 255;
+        
         // CRUD::column('id')->label('ID')->limit($limit);
-        CRUD::column('created_at')->label('Created At')->tye('datetime')->limit($limit);
+        CRUD::column('created_at')->label('Created At')->type('datetime')->limit($limit);
         CRUD::column('ip_address')->label('IP Address')->limit($limit);
         CRUD::addColumn([
             'label' => 'User',
@@ -119,14 +120,14 @@ class AuditTrailCrudController extends CrudController
             else{
                 $date = Carbon::now();
             }
-            $this->crud->addClause('where', 'created_at', '>=', $date->startOfMonth());
-            $this->crud->addClause('where', 'created_at', '<=', $date->copy()->endOfMonth());
+            $this->crud->addClause('where', 'revisions.created_at', '>=', $date->startOfMonth());
+            $this->crud->addClause('where', 'revisions.created_at', '<=', $date->copy()->endOfMonth());
           });
         
         if(!request()->filled('month')){
             $date = Carbon::now();
-            $this->crud->addClause('where', 'created_at', '>=', $date->startOfMonth());
-            $this->crud->addClause('where', 'created_at', '<=', $date->copy()->endOfMonth());
+            $this->crud->addClause('where', 'revisions.created_at', '>=', $date->startOfMonth());
+            $this->crud->addClause('where', 'revisions.created_at', '<=', $date->copy()->endOfMonth());
         }
         $this->crud->addButtonFromView('top', 'download_excel_report', 'download_excel_report', 'end');
         $this->getColumns();
@@ -142,7 +143,6 @@ class AuditTrailCrudController extends CrudController
     {
         CRUD::setValidation(AuditTrailRequest::class);
 
-        
 
         /**
          * Fields can be defined using the fluent syntax or array syntax:

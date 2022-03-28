@@ -391,6 +391,9 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             'attributes' => [
                 'id' => 'documentFile'
             ],
+            'wrapper' => [
+                'class' => 'form-group col-md-12 required'
+            ]
         ]);
 
         CRUD::addField([
@@ -635,7 +638,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                     ]);
                 }
     
-                if ($expenseType->is_traf && !$request->hasFile('document')) {
+                if (/* $expenseType->is_traf && */ !$request->hasFile('document')) {
                     $errors['document'] = [
                         trans(
                             'validation.required',
@@ -1150,7 +1153,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                     ]);
                 }
     
-                if ($expenseType->is_traf && !$request->hasFile('document') && $request->document_change) {
+                if (/* $expenseType->is_traf && */ !$request->hasFile('document') && $request->document_change) {
                     $errors['document'] = [
                         trans(
                             'validation.required',

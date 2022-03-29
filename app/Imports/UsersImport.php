@@ -46,11 +46,18 @@ class UsersImport implements OnEachRow, WithHeadingRow
                 $user->bpid = $dataRow['vendor'];
                 $user->password = bcrypt('taisho');
                 $user->user_id = null;
+                $user->is_active = 0;
+            }else if($user->user_id == null 
+                && $user->vendor_number == null 
+                && $user->email == null)
+            {
+                $user->is_active = 0;
+            }else{
+                $user->is_active = ($block == 'N') ? 1 : 0;
             }
             $user->name = $dataRow['name'];
             $user->bpcscode = $dataRow['bpcscode'];
             $user->last_imported_at = Carbon::now();
-            $user->is_active = ($block == 'N') ? 1 : 0;
             $user->save();
             $this->logMessages[] = [
                 'row' => $rowIndex, 

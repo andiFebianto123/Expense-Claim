@@ -12,7 +12,7 @@
                 @foreach ($dataWaitingApproval as $item)
                     @if ($item['has_access'])
                     <li class="list-group-item list-hover">
-                        <a href="{{$item['url']}}" target="_blank" class="d-flex flex-wrap align-items-center text-dark">
+                        <a href="{{$item['url']}}" class="d-flex flex-wrap align-items-center text-dark">
                             <div class="mr-2">
                                 {{$item['title']}}
                             </div>
@@ -44,7 +44,7 @@
                 @foreach ($dataNeedApproval as $item)
                     @if ($item['has_access'])
                     <li class="list-group-item list-hover">
-                        <a href="{{$item['url']}}" target="_blank" class="d-flex flex-wrap align-items-center text-dark">
+                        <a href="{{$item['url']}}" class="d-flex flex-wrap align-items-center text-dark">
                             <div class="mr-2">
                                 {{$item['title']}}
                             </div>
@@ -76,7 +76,7 @@
                 @foreach ($dataRequest as $item)
                     @if ($item['has_access'])
                     <li class="list-group-item list-hover">
-                        <a href="{{$item['url']}}" target="_blank" class="d-flex flex-wrap align-items-center text-dark">
+                        <a href="{{$item['url']}}" class="d-flex flex-wrap align-items-center text-dark">
                             <div class="mr-2">
                                 {{$item['title']}}
                             </div>

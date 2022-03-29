@@ -120,7 +120,7 @@ class ReportUserExport implements FromView, WithEvents, WithDrawings
         $arrRows = [];
         foreach ($users as $key => $user) {
             $strRoles = "";
-            $roles = Role::whereIn('id', $user->roles)->get();
+            $roles = Role::whereIn('id', $user->roles ?? [])->get();
             foreach ($roles as $key => $role) {
                 $strRoles .= $role->name.",";
             }

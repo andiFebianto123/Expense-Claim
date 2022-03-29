@@ -164,6 +164,13 @@ class DatabaseSeeder extends Seeder
                 'is_none' => $isNone
             ]);
         }
+        Department::updateOrCreate([
+            'department_id' => 'DEPT57'
+        ], [
+            'department_id' => 'DEPT57',
+            'name' => 'COMMERCIAL',
+            'is_none' => false 
+        ]);
     }
 
     public function expenseCodeSeeder()

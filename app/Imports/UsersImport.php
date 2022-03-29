@@ -45,7 +45,7 @@ class UsersImport implements OnEachRow, WithHeadingRow
                 $user = new User;
                 $user->bpid = $dataRow['vendor'];
                 $user->password = bcrypt('taisho');
-                $user->user_id = $dataRow['vendor'];
+                $user->user_id = null;
             }
             $user->name = $dataRow['name'];
             $user->bpcscode = $dataRow['bpcscode'];

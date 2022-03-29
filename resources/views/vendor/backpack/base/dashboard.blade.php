@@ -6,10 +6,10 @@
     <div class="col-md-6 col-lg-4">
         <div class="card">
             <div class="card-header font-weight-bold bg-primary">
-                Waiting Approval
+                My Request(s)
             </div>
             <ul class="list-group list-group-flush">
-                @foreach ($dataWaitingApproval as $item)
+                @foreach ($dataRequest as $item)
                     @if ($item['has_access'])
                     <li class="list-group-item list-hover">
                         <a href="{{$item['url']}}" class="d-flex flex-wrap align-items-center text-dark">
@@ -38,7 +38,7 @@
     <div class="col-md-6 col-lg-4">
         <div class="card">
             <div class="card-header font-weight-bold bg-primary">
-                Need Approval
+                Need My Approval
             </div>
             <ul class="list-group list-group-flush">
                 @foreach ($dataNeedApproval as $item)
@@ -70,10 +70,10 @@
     <div class="col-md-6 col-lg-4">
         <div class="card">
             <div class="card-header font-weight-bold bg-primary">
-                Request
+                Waiting Approval
             </div>
             <ul class="list-group list-group-flush">
-                @foreach ($dataRequest as $item)
+                @foreach ($dataWaitingApproval as $item)
                     @if ($item['has_access'])
                     <li class="list-group-item list-hover">
                         <a href="{{$item['url']}}" class="d-flex flex-wrap align-items-center text-dark">

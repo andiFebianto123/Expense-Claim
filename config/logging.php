@@ -49,7 +49,13 @@ return [
 
         'daily' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/laravel.log'),
+            'path' => storage_path(function_exists('posix_getpwuid') 
+            && function_exists('posix_geteuid')
+                ? 'logs/laravel'
+                    . '-' . php_sapi_name()
+                    . '-' . posix_getpwuid(posix_geteuid())['name'] 
+                    . '.log'
+                : 'logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => 14,
         ],
@@ -99,6 +105,13 @@ return [
 
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
+        ],
+
+        'email' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/emails.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 30,
         ],
     ],
 

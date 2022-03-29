@@ -17,7 +17,7 @@ use Maatwebsite\Excel\Concerns\WithCustomCsvSettings;
 
 class UsersImport implements OnEachRow, WithHeadingRow
 {
-    use Importable; //SkipsFailures;
+    use Importable;
 
     public $logMessages = [];
 

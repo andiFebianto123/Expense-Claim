@@ -6,21 +6,22 @@ use Exception;
 use Carbon\Carbon;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Department;
 use App\Models\ApprovalCard;
 use App\Models\ExpenseClaim;
-use App\Models\Department;
 use Illuminate\Http\Request;
-use App\Models\ExpenseClaimDetail;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use Illuminate\Database\Eloquent\Builder;
-use App\Http\Requests\ExpenseFinanceApDetailRequest;
-use App\Mail\StatusForRequestorMail;
 use App\Models\TransApRevision;
 use App\Models\TransGoaApproval;
+use App\Models\ExpenseClaimDetail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Mail\StatusForRequestorMail;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Database\Eloquent\Builder;
+use App\Http\Requests\ExpenseFinanceApDetailRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * Class ExpenseFinanceApDetailCrudController
@@ -342,14 +343,49 @@ class ExpenseFinanceApDetailCrudController extends CrudController
             $insertApRevision->status = ExpenseClaim::NEED_REVISION;
             $insertApRevision->save();
 
+            $dataMailRequestor['expenseNumber']= $expenseClaim->expense_number;
             $dataMailRequestor['approverName'] = $this->crud->user->name;
             $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
             $dataMailRequestor['status'] = ExpenseClaim::NEED_REVISION;
             $dataMailRequestor['approverDate'] = $now;
+            $dataMailRequestor['remark'] = $request->remark;
             $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
 
             if (isset($expenseClaim->request->email)) {
-                Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));
+                $mail = Mail::to($expenseClaim->request->email);
+                $ccs = [];
+                $secretaryEmail = $expenseClaim->secretary->email ?? null;
+
+                if($secretaryEmail != null){
+                    $ccs[] = $secretaryEmail;
+                }
+
+                $hodEmail = $expenseClaim->hodaction->email ?? null;
+                if($hodEmail != null){
+                    $ccs[] = $hodEmail;
+                }
+
+                $prevTransGoaApprovalEmail = TransGoaApproval::
+                where('expense_claim_id', $this->crud->headerId)
+                ->where('status', '!=', '-')->join('mst_users as user', 'user.id', 'trans_goa_approvals.goa_action_id')
+                ->whereNotNull('email')->select('email')->get()->pluck('email')->toArray();
+
+                $ccs = array_merge($ccs, $prevTransGoaApprovalEmail);
+
+                if(count($ccs) > 0){
+                    $mail->cc(array_unique($ccs));
+                }
+
+                try{
+                    $mail->send(new StatusForRequestorMail($dataMailRequestor));
+                }
+                catch(Exception $e){
+                    DB::rollback();
+                    Log::channel('email')->error('Expense Claim - (' .  $expenseClaim->id . ') ' . $expenseClaim->expense_number);
+                    Log::channel('email')->error($dataMailRequestor);
+                    Log::channel('email')->error($e);
+                    return response()->json(['message' => trans('custom.mail_failed')], 400);
+                }
             }
 
             DB::commit();

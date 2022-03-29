@@ -9,6 +9,7 @@ return [
     'approve' => 'Approve',
     'revise' => 'Revise',
     'reject' => 'Reject',
+    'mail_failed' => 'Failed to sent the email notification for the expense claim. Please contact the admin.',
     
 
     //ACTION

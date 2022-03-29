@@ -28,6 +28,8 @@ class StatusForRequestorMail extends Mailable
      */
     public function build()
     {
-        return $this->view('emails.status_for_requestor', $this->entries);
+        return $this
+        ->subject('Status for Requestor - ' . $this->entries['expenseNumber'])
+        ->view('emails.status_for_requestor', $this->entries);
     }
 }

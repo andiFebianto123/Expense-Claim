@@ -72,6 +72,11 @@ class ExpenseClaim extends Model
         return $this->belongsTo(User::class, 'hod_id');
     }
 
+    public function hodaction()
+    {
+        return $this->belongsTo(User::class, 'hod_action_id');
+    }
+
     public function hod_delegation()
     {
         return $this->belongsTo(User::class, 'hod_delegation_id');

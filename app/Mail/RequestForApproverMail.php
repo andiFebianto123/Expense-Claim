@@ -30,7 +30,8 @@ class RequestForApproverMail extends Mailable
      */
     public function build()
     {
-        return $this->view('emails.request_for_approver', $this->entries);
+        return $this->subject('Request for Approver - ' . $this->entries['expenseNumber'])
+        ->view('emails.request_for_approver', $this->entries);
     }
 
     public function handle(MessageSending $event)

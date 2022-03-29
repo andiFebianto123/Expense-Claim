@@ -19,16 +19,17 @@ use App\Models\ExpenseClaimType;
 use App\Models\TransGoaApproval;
 use App\Models\ExpenseClaimDetail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Mail\RequestForApproverMail;
+use App\Mail\StatusForRequestorMail;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Requests\ExpenseUserRequestDetailRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use App\Http\Requests\ExpenseUserRequestUpdateDetailRequest;
-use App\Mail\RequestForApproverMail;
-use App\Mail\StatusForRequestorMail;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * Class ExpenseUserRequestDetailCrudController
@@ -1579,21 +1580,46 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     $goaOrDelegationName = $user->name ?? null;
                     $goaOrDelegationEmail = $user->email ?? null;
 
+                    $dataMailApprover['expenseNumber'] = $expenseClaim->expense_number;
                     $dataMailApprover['approverName'] = $goaOrDelegationName;
                     $dataMailApprover['requestorName'] = $expenseClaim->request->name;
                     $dataMailApprover['requestorDate'] = $now;
                     $dataMailApprover['urlRedirect'] = url('expense-approver-goa/'.$this->crud->headerId.'/detail');
                     if (isset($goaOrDelegationEmail)) {
-                        Mail::to($goaOrDelegationEmail)->send(new RequestForApproverMail($dataMailApprover));
+                        try{
+                            Mail::to($goaOrDelegationEmail)->send(new RequestForApproverMail($dataMailApprover));
+                        }
+                        catch(Exception $e){
+                            DB::rollback();
+                            Log::channel('email')->error('Expense Claim - (' .  $expenseClaim->id . ') ' . $expenseClaim->expense_number);
+                            Log::channel('email')->error($dataMailApprover);
+                            Log::channel('email')->error($e);
+                            return response()->json(['message' => trans('custom.mail_failed')], 400);
+                        }  
                     }
                 }else{
+                    $dataMailRequestor['expenseNumber'] = $expenseClaim->expense_number;
                     $dataMailRequestor['approverName'] = $this->crud->user->name;
                     $dataMailRequestor['requestorName'] = $expenseClaim->request->name;
                     $dataMailRequestor['status'] = $status;
                     $dataMailRequestor['approverDate'] = $now;
                     $dataMailRequestor['urlRedirect'] = url('expense-user-request/'.$this->crud->headerId.'/detail');
                     if (isset($expenseClaim->request->email)) {
-                        Mail::to($expenseClaim->request->email)->send(new StatusForRequestorMail($dataMailRequestor));        
+                        $secretaryEmail = $expenseClaim->secretary->email ?? null;
+                        $mail = Mail::to($expenseClaim->request->email);
+                        if($secretaryEmail != null){
+                            $mail->cc([$secretaryEmail]);
+                        }
+                        try{
+                            $mail->send(new StatusForRequestorMail($dataMailRequestor)); 
+                        }   
+                        catch(Exception $e){
+                            DB::rollback();
+                            Log::channel('email')->error('Expense Claim - (' .  $expenseClaim->id . ') ' . $expenseClaim->expense_number);
+                            Log::channel('email')->error($dataMailRequestor);
+                            Log::channel('email')->error($e);
+                            return response()->json(['message' => trans('custom.mail_failed')], 400);
+                        }    
                     }
                 }
 
@@ -1622,12 +1648,22 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $hodOrDelegationName = $user->name ?? null;
                 $hodOrDelegationEmail = $user->email ?? null;
 
+                $dataMailApprover['expenseNumber'] = $expenseClaim->expense_number;
                 $dataMailApprover['approverName'] = $hodOrDelegationName;
                 $dataMailApprover['requestorName'] = $expenseClaim->request->name;
                 $dataMailApprover['requestorDate'] = $now;
                 $dataMailApprover['urlRedirect'] = url('expense-approver-hod/'.$this->crud->headerId.'/detail');
                 if (isset($hodOrDelegationEmail)) {
-                    Mail::to($hodOrDelegationEmail)->send(new RequestForApproverMail($dataMailApprover));
+                    try{
+                        Mail::to($hodOrDelegationEmail)->send(new RequestForApproverMail($dataMailApprover));
+                    }
+                    catch(Exception $e){
+                        DB::rollback();
+                        Log::channel('email')->error('Expense Claim - (' .  $expenseClaim->id . ') ' . $expenseClaim->expense_number);
+                        Log::channel('email')->error($dataMailApprover);
+                        Log::channel('email')->error($e);
+                        return response()->json(['message' => trans('custom.mail_failed')], 400);
+                    }  
                 }
     
             }

@@ -40,7 +40,7 @@ class ExpenseFinanceApDetailCrudController extends CrudController
     public function setup()
     {
         $this->crud->user = backpack_user();
-        $this->crud->role = $this->crud->user->role->name ?? null;
+        // $this->crud->role = $this->crud->user->role->name ?? null;
         $this->crud->department = $this->crud->user->department->name ?? null;
         $this->crud->hasAction = false;
 

@@ -34,7 +34,7 @@ class ExpenseApproverGoaHistoryCrudController extends CrudController
     public function setup()
     {
         $this->crud->user = backpack_user();
-        $this->crud->role = $this->crud->user->role->name ?? null;
+        // $this->crud->role = $this->crud->user->role->name ?? null;
 
         if (!allowedRole([Role::SUPER_ADMIN, Role::ADMIN, Role::GOA_HOLDER])) {
             $this->crud->denyAccess('list');

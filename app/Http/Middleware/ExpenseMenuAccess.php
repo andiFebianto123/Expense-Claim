@@ -17,7 +17,7 @@ class ExpenseMenuAccess
      */
     public function handle(Request $request, Closure $next)
     {
-        $role = backpack_user()->role->name;
+        // $role = backpack_user()->role->name;
 
         $grantAccess = allowedRole([Role::USER, Role::GOA_HOLDER, Role::ADMIN, Role::HOD, Role::SECRETARY, Role::FINANCE_AP]);
 

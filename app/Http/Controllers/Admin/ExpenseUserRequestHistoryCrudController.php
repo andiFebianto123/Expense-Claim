@@ -35,7 +35,7 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
     public function setup()
     {
         $this->crud->user = backpack_user();
-        $this->crud->role = $this->crud->user->role->name ?? null;
+        // $this->crud->role = $this->crud->user->role->name ?? null;
 
         if (!allowedRole([Role::ADMIN])) {
             ExpenseClaim::addGlobalScope('request_id', function (Builder $builder) {

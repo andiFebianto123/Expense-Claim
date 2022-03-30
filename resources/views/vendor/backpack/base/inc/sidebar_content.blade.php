@@ -3,7 +3,7 @@
 
 @php
     $user = backpack_user();
-    $role = $user->role->name ?? null;
+    // $role = $user->role->name ?? null;
     
     $classRole = 'App\Models\Role';
     $allowAll = allowedRole([$classRole::USER, $classRole::ADMIN, $classRole::GOA_HOLDER, $classRole::HOD, $classRole::SECRETARY, $classRole::FINANCE_AP]);

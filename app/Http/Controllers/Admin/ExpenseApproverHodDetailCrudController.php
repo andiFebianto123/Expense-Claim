@@ -51,7 +51,7 @@ class ExpenseApproverHodDetailCrudController extends CrudController
     public function setup()
     {
         $this->crud->user = backpack_user();
-        $this->crud->role = $this->crud->user->role->name ?? null;
+        // $this->crud->role = $this->crud->user->role->name ?? null;
         $this->crud->hasAction = false;
 
         $this->crud->headerId = \Route::current()->parameter('header_id');

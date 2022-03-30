@@ -29,7 +29,7 @@ class LevelCrudController extends CrudController
      */
     public function setup()
     {
-        $roleName = backpack_user()->role->name;
+        // $roleName = backpack_user()->role->name;
         if(!allowedRole([Role::ADMIN])){
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
         }

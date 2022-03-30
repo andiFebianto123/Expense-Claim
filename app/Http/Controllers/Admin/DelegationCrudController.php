@@ -25,7 +25,7 @@ class DelegationCrudController extends CrudController
 
     public function setup()
     {
-        $roleName = backpack_user()->role->name;
+        // $roleName = backpack_user()->role->name;
         if(!allowedRole([Role::ADMIN, Role::GOA_HOLDER, Role::HOD, Role::SECRETARY])){
             $this->crud->denyAccess(['list', 'show', 'create', 'update', 'delete']);
         }

@@ -71,7 +71,8 @@
             var $fake = element,
                 $field = $fake.closest('.input-group').parent().find('input[type="hidden"]'),
             $customConfig = $.extend({
-                format: 'dd/mm/yyyy'
+                format: 'dd/mm/yyyy',
+                autoclose: true,
             }, $fake.data('bs-datepicker'));
             $picker = $fake.bootstrapDP($customConfig);
 

@@ -408,7 +408,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             'label' => 'Date',
             'date_picker_options' => [
                 'format' => 'dd M yyyy',
-                'startDate' => Carbon::now()->subMonth()->startOfMonth()->format('d-m-Y'),
+                'startDate' => Carbon::now()->startOfMonth()->subMonth()->format('d-m-Y'),
                 'endDate' => Carbon::now()->format('d-m-Y'),
             ]
         ]);

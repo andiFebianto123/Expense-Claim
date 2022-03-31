@@ -61,7 +61,7 @@ class ExpenseUserRequestCrudController extends CrudController
         $this->crud->addButtonFromView('top', 'new_request', 'new_request', 'end');
         $this->crud->addButtonFromView('top', 'new_request_goa', 'new_request_goa', 'end');
 
-        $this->crud->goaUser = GoaHolder::select('user_id')->with('user:id,name')->get();
+        $this->crud->goaUser = User::select('id', 'name')->get();
 
         $this->crud->enableDetailsRow();
 
@@ -275,15 +275,16 @@ class ExpenseUserRequestCrudController extends CrudController
         $this->crud->hasAccessOrFail('request_goa');
         DB::beginTransaction();
         try {
-            $goaUser = GoaHolder::where('user_id', $request->goa_id)->first();
-            if ($goaUser == null) {
+            $goaUser = User::where('id', $request->goa_id)->first();
+            // GoaHolder::where('user_id', $request->goa_id)->first();
+            if ($goaUser == null || $goaUser->id == $this->crud->user->id) {
                 DB::rollback();
-                return response()->json(['errors' => ['goa_id' => [trans('validation.in', ['attribute' => trans('validation.attributes.goa_holder_id')])]]], 422);
+                return response()->json(['errors' => ['goa_id' => [trans('validation.in', ['attribute' => trans('validation.attributes.user_id')])]]], 422);
             }
             $expenseClaim = new ExpenseClaim;
 
             $expenseClaim->value = 0;
-            $expenseClaim->request_id = $goaUser->user_id;
+            $expenseClaim->request_id = $goaUser->id;
             $expenseClaim->secretary_id = $this->crud->user->id;
             $expenseClaim->status = ExpenseClaim::DRAFT;
             $expenseClaim->currency = Config::IDR;

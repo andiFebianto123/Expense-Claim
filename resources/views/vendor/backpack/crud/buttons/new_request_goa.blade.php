@@ -1,22 +1,22 @@
 @if ($crud->hasAccess('request_goa') && ((isset($crud->requestGoaCondition) && call_user_func_array($crud->requestGoaCondition, array($entry))) || !isset($crud->requestGoaCondition)))
-<a href="javascript:void(0)" onclick="newRequestGoaEntry(this)" data-route="{{ url($crud->route . '/new-request') }}" class="btn btn-info" data-style="zoom-in"><span class="ladda-label"><i class="la la-plus"></i> New Request for GoA Holder</span></a>
+<a href="javascript:void(0)" onclick="newRequestGoaEntry(this)" data-route="{{ url($crud->route . '/new-request') }}" class="btn btn-info" data-style="zoom-in"><span class="ladda-label"><i class="la la-plus"></i> New Request for Other User</span></a>
 @endif
 <div class="modal fade" id="modalRequestGoa" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content position-relative">
         <div class="modal-header">
-          <h5 class="modal-title">New Request for GoA Holder</h5>
+          <h5 class="modal-title">New Request for Other User</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body" id="bodyRequestGoa">
            <div class="form-group required">
-               <label>GoA Holder</label>
+               <label>User</label>
                <select class="form-control" name="goa_id" style="width:100%" id="selectGoa">
                     <option value=""></option>
                     @foreach ($crud->goaUser as $goa)
-                        <option value="{{$goa->user->id}}">{{$goa->user->name}}</option>
+                        <option value="{{$goa->id}}">{{$goa->name}}</option>
                     @endforeach
                 </select>
            </div>
@@ -51,6 +51,7 @@
         $('#selectGoa').select2({
             theme: "bootstrap",
             placeholder: "",
+            dropdownParent:$('#bodyRequestGoa')
        });
 	  function newRequestGoaEntry(button) {
         toggleLoadingSaveRequestGoa(false);

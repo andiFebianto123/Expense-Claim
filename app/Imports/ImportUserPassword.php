@@ -14,16 +14,29 @@ use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithCustomCsvSettings;
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
+use Maatwebsite\Excel\Concerns\HasReferencesToOtherSheets;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class ImportUserPassword implements OnEachRow, WithHeadingRow
+class ImportUserPassword implements OnEachRow, WithCalculatedFormulas, HasReferencesToOtherSheets, WithHeadingRow, WithMultipleSheets
 {
     use Importable;
 
     public $logMessages = [];
 
+    /**
+     * @return array
+     */
+    public function sheets(): array
+    {
+        return [
+            0 => $this,
+        ];
+    }
+
     public function onRow(Row $row){
         $rowIndex = $row->getIndex();
-        $dataRow  = $row->toArray();
+        $dataRow  = $row->toArray($nullValue = null, $calculateFormulas = true, $formatData = true, $endColumn = null);
         $validator = Validator::make($dataRow, $this->rules($dataRow));
 
         if ($validator->fails()) {
@@ -36,35 +49,25 @@ class ImportUserPassword implements OnEachRow, WithHeadingRow
             return;
         }
 
-        $block = strtoupper($dataRow['block']);
-
         try{
-            $user = User::where('bpid', $dataRow['vendor'] ?? null)->first();
-            if($user == null){
-                // jika tidak ada data
-                $user = new User;
-                $user->bpid = $dataRow['vendor'];
-                $user->password = bcrypt('taisho');
-                $user->user_id = null;
-                $user->is_active = 0;
-            }else if($user->user_id == null 
-                && $user->vendor_number == null 
-                && $user->email == null)
-            {
-                $user->is_active = 0;
+            $user = User::where('user_id', $dataRow['user_id'] ?? null)->first();
+            if($user != null){
+                $user->password = bcrypt($dataRow['password']);
+                $user->save();
+                $this->logMessages[] = [
+                    'row' => $rowIndex, 
+                    'type' => 'Success',
+                    'time' => Carbon::now(),
+                    'message' => null,
+                ];
             }else{
-                $user->is_active = ($block == 'N') ? 1 : 0;
+                $this->logMessages[] = [
+                    'row' => $rowIndex, 
+                    'type' => 'Failed',
+                    'time' => Carbon::now(),
+                    'message' => "Tidak ada datanya"
+                ];
             }
-            $user->name = $dataRow['name'];
-            $user->bpcscode = $dataRow['bpcscode'];
-            $user->last_imported_at = Carbon::now();
-            $user->save();
-            $this->logMessages[] = [
-                'row' => $rowIndex, 
-                'type' => 'Success',
-                'time' => Carbon::now(),
-                'message' => null,
-            ];
         }catch(Exception $e){
             $this->logMessages[] = [
                 'row' => $rowIndex, 

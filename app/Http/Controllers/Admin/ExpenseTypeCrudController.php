@@ -178,6 +178,15 @@ class ExpenseTypeCrudController extends CrudController
         ]);
 
         CRUD::addColumn([
+            'name' => 'limit_monthly',
+            'label' => 'Limit Monthly',
+            'type' => 'boolean',
+            'orderable' => false,
+            'searchLogic' => false,
+            'limit' => $limit,
+        ]);
+
+        CRUD::addColumn([
             'name'     => 'is_bod',
             'label'    => 'BoD Approval',
             'type'     => 'boolean',
@@ -355,6 +364,17 @@ class ExpenseTypeCrudController extends CrudController
             ],
         ]);
 
+        CRUD::addField([
+            'name'        => 'limit_monthly',
+            'label'       => 'Limit Monthly',
+            'type'        => 'radio',
+            'default' => 0,
+            'options'     => [
+                1 => "Yes",
+                0 => "No",
+            ],
+        ]);
+
 
         CRUD::addField([
             'name'        => 'is_bod',
@@ -485,6 +505,18 @@ class ExpenseTypeCrudController extends CrudController
                 'attr2' => trans('validation.attributes.is_limit_person')])];
             }
 
+            if($request->limit_monthly){
+                if($request->is_limit_person || $request->limit_daily){
+                    $errors['limit_monthly'] = [trans('validation.attribute_cannot_be_used_together2', 
+                        [
+                        'attr1' => trans('validation.attributes.limit_monthly'),   
+                        'attr2' => trans('validation.attributes.is_limit_person'), 
+                        'attr3' => trans('validation.attributes.limit_daily')
+                        ]
+                    )];
+                }
+            }
+
 
             $uniqueDepartments = [];
             if($request->filled('department_id') && is_array($request->department_id)){
@@ -523,6 +555,7 @@ class ExpenseTypeCrudController extends CrudController
             $expenseType->bod_level =  $request->is_bod ? $request->bod_level : null;
             $expenseType->limit_business_approval =  $request->is_bp_approval ? $request->limit_business_approval : null;
             $expenseType->currency = $request->currency;
+            $expenseType->limit_monthly = $request->limit_monthly;
             $expenseType->remark = $request->remark;
 
             $expenseType->save();
@@ -639,6 +672,26 @@ class ExpenseTypeCrudController extends CrudController
                 'attr2' => trans('validation.attributes.is_limit_person')])];
             }
 
+            if($request->limit_monthly){
+                if($request->is_limit_person || $request->limit_daily){
+                    $errors['limit_monthly'] = [trans('validation.attribute_cannot_be_used_together2', 
+                        [
+                        'attr1' => trans('validation.attributes.limit_monthly'),   
+                        'attr2' => trans('validation.attributes.is_limit_person'), 
+                        'attr3' => trans('validation.attributes.limit_daily')
+                        ]
+                    )];
+                }
+                if($request->is_limit_person){
+                    $errors['is_limit_person'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.is_limit_person'), 
+                    'attr2' => trans('validation.attributes.limit_monthly')])];
+                }
+                if($request->limit_daily){
+                    $errors['limit_daily'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.limit_daily'), 
+                    'attr2' => trans('validation.attributes.limit_monthly')])];
+                }
+            }
+
 
             $uniqueDepartments = [];
             if($request->filled('department_id') && is_array($request->department_id)){
@@ -684,6 +737,7 @@ class ExpenseTypeCrudController extends CrudController
             $expenseType->bod_level =  $request->is_bod ? $request->bod_level : null;
             $expenseType->limit_business_approval =  $request->is_bp_approval ? $request->limit_business_approval : null;
             $expenseType->currency = $request->currency;
+            $expenseType->limit_monthly = $request->limit_monthly;
             $expenseType->remark = $request->remark;
 
             $expenseType->save();

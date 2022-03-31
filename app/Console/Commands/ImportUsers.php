@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
-class ImportUsers extends Command
+class ImportUsers extends Command 
 {
     /**
      * The name and signature of the console command.
@@ -72,6 +72,8 @@ class ImportUsers extends Command
                         $log->close();
                     }
                     DB::commit();
+                    $to = storage_path().'/backup/'.$getFile->getFilename();
+                    File::copy($path, $to);
                     if (file_exists($path)) {
                         unlink($path);
                     }

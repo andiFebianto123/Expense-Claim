@@ -64,16 +64,16 @@
         },
         {
             "name": "backpack/crud",
-            "version": "5.0.11",
+            "version": "5.0.13",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Laravel-Backpack/CRUD.git",
-                "reference": "337163b7e9a0e63413474bd3ee800a198f83c8e9"
+                "reference": "d78f4263f5eef1e7761ba2d55d81959f4de559b6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Laravel-Backpack/CRUD/zipball/337163b7e9a0e63413474bd3ee800a198f83c8e9",
-                "reference": "337163b7e9a0e63413474bd3ee800a198f83c8e9",
+                "url": "https://api.github.com/repos/Laravel-Backpack/CRUD/zipball/d78f4263f5eef1e7761ba2d55d81959f4de559b6",
+                "reference": "d78f4263f5eef1e7761ba2d55d81959f4de559b6",
                 "shasum": ""
             },
             "require": {
@@ -152,9 +152,9 @@
             ],
             "support": {
                 "issues": "https://github.com/Laravel-Backpack/CRUD/issues",
-                "source": "https://github.com/Laravel-Backpack/CRUD/tree/5.0.11"
+                "source": "https://github.com/Laravel-Backpack/CRUD/tree/5.0.13"
             },
-            "time": "2022-03-19T09:37:21+00:00"
+            "time": "2022-03-30T09:02:10+00:00"
         },
         {
             "name": "backpack/pro",
@@ -9943,5 +9943,5 @@
         "php": "^7.3|^8.0"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.2.0"
 }

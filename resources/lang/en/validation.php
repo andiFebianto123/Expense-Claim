@@ -193,7 +193,8 @@ return [
         'bod_level' => 'boD level',
         'limit_departments' => 'limit departments',
         'total_person' => 'total person',
-        'total_day' => 'total day'
+        'total_day' => 'total day',
+        'limit_monthly' => 'limit monthly',
     ],
 
     // CUSTOM
@@ -204,4 +205,5 @@ return [
     'not_active' => "Your account is not active.",
     'limit_bp' => ":Attr1 exceeding :attr2 of :value, need to check Business Purposes Approval.",
     'attribute_cannot_be_used_together' => ':Attr1 cannot be used with :attr2.',
+    'attribute_cannot_be_used_together2' => ':Attr1 cannot be used with :attr2 or :attr3',
 ];

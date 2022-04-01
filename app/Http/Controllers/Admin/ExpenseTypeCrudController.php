@@ -119,15 +119,6 @@ class ExpenseTypeCrudController extends CrudController
         ]);
 
         CRUD::addColumn([
-            'name'     => 'limit_daily',
-            'label'    => 'Limit Daily',
-            'type'     => 'boolean',
-            'orderable' => false,
-            'searchLogic' => false,
-            'limit' => $limit,
-        ]);
-
-        CRUD::addColumn([
             'name'     => 'expense_code_id',
             'label'    => 'Expense Code',
             'type'     => 'select',
@@ -167,7 +158,15 @@ class ExpenseTypeCrudController extends CrudController
             'limit' => $limit,
         ]);
 
-
+        CRUD::addColumn([
+            'name'     => 'limit_daily',
+            'label'    => 'Limit Daily',
+            'type'     => 'boolean',
+            'orderable' => false,
+            'searchLogic' => false,
+            'limit' => $limit,
+        ]);
+        
         CRUD::addColumn([
             'name'     => 'is_limit_person',
             'label'    => 'Limit Person',
@@ -323,17 +322,6 @@ class ExpenseTypeCrudController extends CrudController
         ]);
 
         CRUD::addField([
-            'name' => 'limit_daily',
-            'label' => 'Limit Daily',
-            'type'  => 'radio',
-            'default' => 0,
-            'options'     => [
-                1 => "Yes",
-                0 => "No",
-            ],
-        ]);
-
-        CRUD::addField([
             'label'     => "Expense Code",
             'type'      => 'select2',
             'name'      => 'expense_code_id',
@@ -346,6 +334,17 @@ class ExpenseTypeCrudController extends CrudController
             'name'        => 'is_traf',
             'label'       => 'TRAF Approval',
             'type'        => 'radio',
+            'default' => 0,
+            'options'     => [
+                1 => "Yes",
+                0 => "No",
+            ],
+        ]);
+
+        CRUD::addField([
+            'name' => 'limit_daily',
+            'label' => 'Limit Daily',
+            'type'  => 'radio',
             'default' => 0,
             'options'     => [
                 1 => "Yes",
@@ -498,23 +497,41 @@ class ExpenseTypeCrudController extends CrudController
                 $errors['is_bp_approval'] = [trans('custom.business_purposes_restrict_level', ['level' => 'D7'])];
             }
 
-            if($request->is_limit_person && $request->limit_daily){
-                $errors['is_limit_person'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.is_limit_person'), 
-                'attr2' => trans('validation.attributes.limit_daily')])];
-                $errors['limit_daily'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.limit_daily'), 
-                'attr2' => trans('validation.attributes.is_limit_person')])];
+            $countLimit = 0;
+            if($request->is_limit_person){
+                $countLimit++;
+            }
+            if($request->limit_daily){
+                $countLimit++;
+            }
+            if($request->limit_monthly){
+                $countLimit++;
             }
 
-            if($request->limit_monthly){
-                if($request->is_limit_person || $request->limit_daily){
-                    $errors['limit_monthly'] = [trans('validation.attribute_cannot_be_used_together2', 
-                        [
-                        'attr1' => trans('validation.attributes.limit_monthly'),   
-                        'attr2' => trans('validation.attributes.is_limit_person'), 
-                        'attr3' => trans('validation.attributes.limit_daily')
-                        ]
-                    )];
-                }
+            if($countLimit > 1){
+                $errors['limit_daily'] = [trans('validation.attribute_cannot_be_used_together2', 
+                    [
+                    'attr1' => trans('validation.attributes.limit_daily'),   
+                    'attr2' => trans('validation.attributes.is_limit_person'), 
+                    'attr3' => trans('validation.attributes.limit_monthly')
+                    ]
+                )];
+
+                $errors['is_limit_person'] = [trans('validation.attribute_cannot_be_used_together2', 
+                    [
+                    'attr1' => trans('validation.attributes.is_limit_person'),   
+                    'attr2' => trans('validation.attributes.limit_daily'), 
+                    'attr3' => trans('validation.attributes.limit_monthly')
+                    ]
+                )];
+
+                $errors['limit_monthly'] = [trans('validation.attribute_cannot_be_used_together2', 
+                    [
+                    'attr1' => trans('validation.attributes.limit_monthly'),   
+                    'attr2' => trans('validation.attributes.limit_daily'), 
+                    'attr3' => trans('validation.attributes.is_limit_person')
+                    ]
+                )];
             }
 
 
@@ -665,31 +682,42 @@ class ExpenseTypeCrudController extends CrudController
                 $errors['is_bp_approval'] = [trans('custom.business_purposes_restrict_level', ['level' => 'D7'])];
             }
 
-            if($request->is_limit_person && $request->limit_daily){
-                $errors['is_limit_person'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.is_limit_person'), 
-                'attr2' => trans('validation.attributes.limit_daily')])];
-                $errors['limit_daily'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.limit_daily'), 
-                'attr2' => trans('validation.attributes.is_limit_person')])];
+            
+            $countLimit = 0;
+            if($request->is_limit_person){
+                $countLimit++;
+            }
+            if($request->limit_daily){
+                $countLimit++;
+            }
+            if($request->limit_monthly){
+                $countLimit++;
             }
 
-            if($request->limit_monthly){
-                if($request->is_limit_person || $request->limit_daily){
-                    $errors['limit_monthly'] = [trans('validation.attribute_cannot_be_used_together2', 
-                        [
-                        'attr1' => trans('validation.attributes.limit_monthly'),   
-                        'attr2' => trans('validation.attributes.is_limit_person'), 
-                        'attr3' => trans('validation.attributes.limit_daily')
-                        ]
-                    )];
-                }
-                if($request->is_limit_person){
-                    $errors['is_limit_person'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.is_limit_person'), 
-                    'attr2' => trans('validation.attributes.limit_monthly')])];
-                }
-                if($request->limit_daily){
-                    $errors['limit_daily'] = [trans('validation.attribute_cannot_be_used_together', ['attr1' => trans('validation.attributes.limit_daily'), 
-                    'attr2' => trans('validation.attributes.limit_monthly')])];
-                }
+            if($countLimit > 1){
+                $errors['limit_daily'] = [trans('validation.attribute_cannot_be_used_together2', 
+                    [
+                    'attr1' => trans('validation.attributes.limit_daily'),   
+                    'attr2' => trans('validation.attributes.is_limit_person'), 
+                    'attr3' => trans('validation.attributes.limit_monthly')
+                    ]
+                )];
+
+                $errors['is_limit_person'] = [trans('validation.attribute_cannot_be_used_together2', 
+                    [
+                    'attr1' => trans('validation.attributes.is_limit_person'),   
+                    'attr2' => trans('validation.attributes.limit_daily'), 
+                    'attr3' => trans('validation.attributes.limit_monthly')
+                    ]
+                )];
+
+                $errors['limit_monthly'] = [trans('validation.attribute_cannot_be_used_together2', 
+                    [
+                    'attr1' => trans('validation.attributes.limit_monthly'),   
+                    'attr2' => trans('validation.attributes.limit_daily'), 
+                    'attr3' => trans('validation.attributes.is_limit_person')
+                    ]
+                )];
             }
 
 

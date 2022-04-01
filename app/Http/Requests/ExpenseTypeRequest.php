@@ -32,6 +32,7 @@ class ExpenseTypeRequest extends FormRequest
             'level_id' => 'required',
             'limit' => 'nullable|integer|min:0',
             'limit_daily' => 'required|boolean',
+            'limit_monthly' => 'required|boolean',
             'currency' => ['required', Rule::in(CostCenter::OPTIONS_CURRENCY)],
             'expense_code_id' => 'required',
             'is_traf' => 'required|boolean',

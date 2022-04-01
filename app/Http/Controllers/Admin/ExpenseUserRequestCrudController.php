@@ -61,7 +61,8 @@ class ExpenseUserRequestCrudController extends CrudController
         $this->crud->addButtonFromView('top', 'new_request', 'new_request', 'end');
         $this->crud->addButtonFromView('top', 'new_request_goa', 'new_request_goa', 'end');
 
-        $this->crud->goaUser = User::select('id', 'name')->where('is_active', 1)->whereNotNull('user_id')->get();
+        $this->crud->goaUser = User::select('id', 'name')->where('is_active', 1)
+        ->where('id', '>', 1)->whereNotNull('user_id')->get();
 
         $this->crud->enableDetailsRow();
 
@@ -275,7 +276,8 @@ class ExpenseUserRequestCrudController extends CrudController
         $this->crud->hasAccessOrFail('request_goa');
         DB::beginTransaction();
         try {
-            $goaUser = User::where('id', $request->goa_id)->where('is_active', 1)->whereNotNull('user_id')->first();
+            $goaUser = User::where('id', $request->goa_id)->where('is_active', 1)
+            ->where('id', '>', 1)->whereNotNull('user_id')->first();
             // GoaHolder::where('user_id', $request->goa_id)->first();
             if ($goaUser == null || $goaUser->id == $this->crud->user->id) {
                 DB::rollback();

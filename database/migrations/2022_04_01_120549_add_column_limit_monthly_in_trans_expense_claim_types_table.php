@@ -13,9 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('mst_expense_types', function (Blueprint $table) {
-            if(!Schema::hasColumn('mst_expense_types', 'limit_daily')){
-                $table->boolean('limit_daily')->after('currency')->default(0);
+        Schema::table('trans_expense_claim_types', function (Blueprint $table) {
+            if(!Schema::hasColumn('trans_expense_claim_types', 'limit_monthly')){
+                $table->boolean('limit_monthly')->after('limit_daily')->default(0);
             }
         });
     }

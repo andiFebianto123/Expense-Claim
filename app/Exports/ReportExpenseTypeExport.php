@@ -17,8 +17,8 @@ class ReportExpenseTypeExport implements FromView, WithEvents, WithDrawings
     {
         $this->title = 'Report Expense Type';
         $this->entries = $entries;
-        $this->headers = ['Expense Type', 'Level Code', 'Level Name', 'Limit', 'Currency','Limit Daily',
-        'Expense Code', 'Expense Code Name', 'TRAF Approval', 'Limit Person','BoD Approval', 'Business Purposes Approval', 
+        $this->headers = ['Expense Type', 'Level Code', 'Level Name', 'Limit', 'Currency',
+        'Expense Code', 'Expense Code Name', 'TRAF Approval', 'Limit Daily', 'Limit Person', 'Limit Monthly','BoD Approval', 'Business Purposes Approval', 
         'BoD Level', 'Limit Bussiness Approval', 'Limit Departments', 'Remark'];
     }
 
@@ -76,7 +76,7 @@ class ReportExpenseTypeExport implements FromView, WithEvents, WithDrawings
                     $event->sheet->getColumnDimension($col)->setAutoSize(true);
                 }
 
-                $end = 'Q'; // based on notes so, it should be Q
+                $end = 'R'; // based on notes so, it should be R
                 $event->sheet->getDelegate()->getStyle($start.'5:'.$end.'5')->applyFromArray($styleHeader);
                 $event->sheet->getDelegate()->getRowDimension('5')->setRowHeight(22);
                 $event->sheet->getDelegate()->getStyle($start.'5:'.$end.'5')
@@ -109,8 +109,8 @@ class ReportExpenseTypeExport implements FromView, WithEvents, WithDrawings
         }
 
         $expenseTypes = $expenseTypes->select('mst_expense_types.id', 'mst_expenses.name as me_name', 'mst_levels.level_id as ml_level_id', 
-        'mst_levels.name as ml_name', 'limit', 'currency', 'limit_daily', 'mst_expense_codes.account_number as mec_code', 
-        'mst_expense_codes.description as mec_desc', 'is_traf', 'is_limit_person', 'is_bod', 'is_bp_approval', 
+        'mst_levels.name as ml_name', 'limit', 'currency', 'mst_expense_codes.account_number as mec_code', 
+        'mst_expense_codes.description as mec_desc', 'is_traf', 'limit_daily', 'is_limit_person', 'limit_monthly', 'is_bod', 'is_bp_approval', 
         'bod_level', 'limit_business_approval', 'remark')->get();
         
         $arrRows = [];
@@ -126,11 +126,12 @@ class ReportExpenseTypeExport implements FromView, WithEvents, WithDrawings
                 $expenseType->ml_name,
                 $expenseType->limit, 
                 $expenseType->currency, 
-                ['No', 'Yes'][$expenseType->limit_daily],
                 $expenseType->mec_code,
                 $expenseType->mec_desc, 
                 ['No', 'Yes'][$expenseType->is_traf],
+                ['No', 'Yes'][$expenseType->limit_daily],
                 ['No', 'Yes'][$expenseType->is_limit_person],
+                ['No', 'Yes'][$expenseType->limit_monthly],
                 ['No', 'Yes'][$expenseType->is_bod],
                 ['No', 'Yes'][$expenseType->is_bp_approval],
                 $expenseType->bod_level ?? '-', 

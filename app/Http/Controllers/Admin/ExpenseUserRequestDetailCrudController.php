@@ -358,6 +358,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'mst_expense_types.is_bp_approval as bp_approval',
                 'mst_expense_types.limit_daily',
                 'mst_expense_types.is_limit_person as limit_person',
+                'mst_expense_types.limit_monthly',
                 'mst_levels.level_id as level',
                 'mst_expenses.name as expense_name',
             )
@@ -374,6 +375,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'is_bp_approval as bp_approval',
                 'limit_daily',
                 'is_limit_person as limit_person',
+                'limit_monthly',
                 'detail_level_id as level',
                 'expense_name'
             )->get()->mapWithKeys(function ($item) {
@@ -410,6 +412,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 'format' => 'dd M yyyy',
                 'startDate' => Carbon::now()->startOfMonth()->subMonth()->format('d-m-Y'),
                 'endDate' => Carbon::now()->format('d-m-Y'),
+            ],
+            'wrapper' => [
+                'class' => 'form-group col-md-12 required'
             ]
         ]);
 
@@ -537,6 +542,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     'currency as currency',
                     'limit_business_approval as limit_business_approval',
                     'is_limit_person',
+                    'limit_monthly',
                     'expense_code_id',
                     'account_number',
                     'description',
@@ -566,6 +572,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         'mst_expense_types.currency as currency',
                         'mst_expense_types.limit_business_approval as limit_business_approval',
                         'is_limit_person',
+                        'limit_monthly',
                         'mst_expense_codes.id as expense_code_id',
                         'mst_expense_codes.account_number as account_number',
                         'mst_expense_codes.description as description',
@@ -618,20 +625,61 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     }
                 }
 
-
-                if ($expenseType->currency == Config::USD) {
-                    $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                        ->where('expense_type_id', $expenseType->expense_type_id)
-                        ->when($isLimitDaily && !$errorLimitDaily, function($query) use($request){
-                            $query->where('date', '=', Carbon::parse($request->date)->startOfDay()->format('Y-m-d'));
+                $currentCost = 0;
+                $isLimitMonthly = $expenseType->limit_monthly;
+                if($isLimitMonthly){
+                    if ($expenseType->currency == Config::USD) {
+                        $currentCost = ExpenseClaimDetail::withoutGlobalScope('header_id')->
+                            where('expense_type_id', $expenseType->expense_type_id)
+                            ->whereHas('expense_claim_type', function($query){
+                                $query->where('currency', Config::USD)
+                                ->where('limit_monthly', 1);
+                            })
+                            ->whereHas('expense_claim', function($query){
+                                $query->where('request_id', $this->crud->expenseClaim->request_id)
+                                ->where('status', '!=', ExpenseClaim::CANCELED)
+                                ->where('status', '!=', ExpenseClaim::REJECTED_ONE)
+                                ->where('status', '!=', ExpenseClaim::REJECTED_TWO);
+                            })
+                            ->where(function($query) use($request){
+                                $query->where('date', '>=', Carbon::parse($request->date)->startOfMonth()->format('Y-m-d'))
+                                ->where('date', '<=', Carbon::parse($request->date)->endOfMonth()->format('Y-m-d'));
+                            })
+                            ->sum('converted_cost');
+                    } else {
+                        $currentCost = ExpenseClaimDetail::withoutGlobalScope('header_id')->
+                        where('expense_type_id', $expenseType->expense_type_id)
+                        ->whereHas('expense_claim_type', function($query){
+                            $query->where('currency', Config::IDR)
+                            ->where('limit_monthly', 1);
                         })
-                        ->sum('converted_cost');
-                } else {
-                    $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                        ->when($isLimitDaily && !$errorLimitDaily, function($query) use($request){
-                            $query->where('date', '=', Carbon::parse($request->date)->startOfDay()->format('Y-m-d'));
+                        ->whereHas('expense_claim', function($query){
+                            $query->where('request_id', $this->crud->expenseClaim->request_id)
+                            ->where('status', '!=', ExpenseClaim::CANCELED)
+                            ->where('status', '!=', ExpenseClaim::REJECTED_ONE)
+                            ->where('status', '!=', ExpenseClaim::REJECTED_TWO);
                         })
-                        ->where('expense_type_id', $expenseType->expense_type_id)->sum('cost');
+                        ->where(function($query) use($request){
+                            $query->where('date', '>=', Carbon::parse($request->date)->startOfMonth()->format('Y-m-d'))
+                            ->where('date', '<=', Carbon::parse($request->date)->endOfMonth()->format('Y-m-d'));
+                        })->sum('cost');
+                    }
+                }
+                else{
+                    if ($expenseType->currency == Config::USD) {
+                        $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                            ->where('expense_type_id', $expenseType->expense_type_id)
+                            ->when($isLimitDaily && !$errorLimitDaily, function($query) use($request){
+                                $query->where('date', '=', Carbon::parse($request->date)->startOfDay()->format('Y-m-d'));
+                            })
+                            ->sum('converted_cost');
+                    } else {
+                        $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                            ->when($isLimitDaily && !$errorLimitDaily, function($query) use($request){
+                                $query->where('date', '=', Carbon::parse($request->date)->startOfDay()->format('Y-m-d'));
+                            })
+                            ->where('expense_type_id', $expenseType->expense_type_id)->sum('cost');
+                    }
                 }
                 $totalCost = $request->cost + $currentCost;
 
@@ -660,7 +708,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                                 'validation.limit',
                                 [
                                     'attr1' => trans('validation.attributes.cost'),
-                                    'attr2' => trans('validation.attributes.limit' . ($isLimitDaily ? '_daily' : '')),
+                                    'attr2' => trans('validation.attributes.limit' . ($isLimitDaily ? '_daily' : ($isLimitMonthly ? '_monthly' : ''))),
                                     'value' => $expenseType->currency . ' ' .  formatNumber($limit),
                                 ]
                             )
@@ -740,7 +788,18 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     ]
                 )];
             }
-
+            else{
+                $minDate = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                ->min('date');
+                if($minDate != null){
+                    $minDate = Carbon::parse($minDate)->startOfMonth();
+                    $monthRequestDate = $requestDate->copy()->startOfMonth();
+                    $diffInMonths = abs($minDate->diffInMonths($monthRequestDate));
+                    if($diffInMonths > 1){
+                        $errors['date'] = [trans('custom.difference_date_request_invalid')];
+                    }
+                }
+            }
 
             if (count($errors) != 0) {
                 DB::rollback();
@@ -791,6 +850,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     'level_name' => $user->level_name,
                     'limit' => $expenseType->limit,
                     'limit_daily' => $expenseType->limit_daily,
+                    'limit_monthly' => $expenseType->limit_monthly,
                     'expense_code_id' => $expenseType->expense_code_id,
                     'account_number' => $expenseType->account_number,
                     'description' => $expenseType->description,
@@ -1032,6 +1092,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     'currency as currency',
                     'limit_business_approval as limit_business_approval',
                     'is_limit_person',
+                    'limit_monthly',
                     'expense_code_id',
                     'account_number',
                     'description',
@@ -1079,22 +1140,64 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         $errors['total_day'] = [trans('validation.integer', ['attribute' => trans('validation.attributes.total_day')])];
                     }
                 }
-
-                if ($expenseType->currency == Config::USD) {
-                    $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                        ->where('expense_type_id', $expenseType->expense_type_id)
-                        ->when($isLimitDaily && !$errorLimitDaily, function($query) use($expenseClaimDetail){
-                            $query->where('date', '=', Carbon::parse($expenseClaimDetail->date)->startOfDay()->format('Y-m-d'));
+                $currentCost = 0;
+                $isLimitMonthly = $expenseType->limit_monthly;
+                if($isLimitMonthly){
+                    if ($expenseType->currency == Config::USD) {
+                        $currentCost = ExpenseClaimDetail::withoutGlobalScope('header_id')->
+                            where('expense_type_id', $expenseType->expense_type_id)
+                            ->whereHas('expense_claim_type', function($query){
+                                $query->where('currency', Config::USD)
+                                ->where('limit_monthly', 1);
+                            })
+                            ->whereHas('expense_claim', function($query){
+                                $query->where('request_id', $this->crud->expenseClaim->request_id)
+                                ->where('status', '!=', ExpenseClaim::CANCELED)
+                                ->where('status', '!=', ExpenseClaim::REJECTED_ONE)
+                                ->where('status', '!=', ExpenseClaim::REJECTED_TWO);
+                            })
+                            ->where(function($query) use($expenseClaimDetail){
+                                $query->where('date', '>=', Carbon::parse($expenseClaimDetail->date)->startOfMonth()->format('Y-m-d'))
+                                ->where('date', '<=', Carbon::parse($expenseClaimDetail->date)->endOfMonth()->format('Y-m-d'));
+                            })
+                            ->where('id', '!=', $expenseClaimDetail->id)
+                            ->sum('converted_cost');
+                    } else {
+                        $currentCost = ExpenseClaimDetail::withoutGlobalScope('header_id')->
+                        where('expense_type_id', $expenseType->expense_type_id)
+                        ->whereHas('expense_claim_type', function($query){
+                            $query->where('currency', Config::IDR)
+                            ->where('limit_monthly', 1);
                         })
-                        ->where('id', '!=', $expenseClaimDetail->id)->sum('converted_cost');
-                } else {
-                    $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
-                        ->where('expense_type_id', $expenseType->expense_type_id)
-                        ->where('id', '!=', $expenseClaimDetail->id)
-                        ->when($isLimitDaily && !$errorLimitDaily, function($query) use($expenseClaimDetail){
-                            $query->where('date', '=', Carbon::parse($expenseClaimDetail->date)->startOfDay()->format('Y-m-d'));
+                        ->whereHas('expense_claim', function($query){
+                            $query->where('request_id', $this->crud->expenseClaim->request_id)
+                            ->where('status', '!=', ExpenseClaim::CANCELED)
+                            ->where('status', '!=', ExpenseClaim::REJECTED_ONE)
+                            ->where('status', '!=', ExpenseClaim::REJECTED_TWO);
                         })
-                        ->sum('cost');
+                        ->where(function($query) use($expenseClaimDetail){
+                            $query->where('date', '>=', Carbon::parse($expenseClaimDetail->date)->startOfMonth()->format('Y-m-d'))
+                            ->where('date', '<=', Carbon::parse($expenseClaimDetail->date)->endOfMonth()->format('Y-m-d'));
+                        })->where('id', '!=', $expenseClaimDetail->id)->sum('cost');
+                    }
+                }
+                else{
+                    if ($expenseType->currency == Config::USD) {
+                        $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                            ->where('expense_type_id', $expenseType->expense_type_id)
+                            ->when($isLimitDaily && !$errorLimitDaily, function($query) use($expenseClaimDetail){
+                                $query->where('date', '=', Carbon::parse($expenseClaimDetail->date)->startOfDay()->format('Y-m-d'));
+                            })
+                            ->where('id', '!=', $expenseClaimDetail->id)->sum('converted_cost');
+                    } else {
+                        $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                            ->where('expense_type_id', $expenseType->expense_type_id)
+                            ->where('id', '!=', $expenseClaimDetail->id)
+                            ->when($isLimitDaily && !$errorLimitDaily, function($query) use($expenseClaimDetail){
+                                $query->where('date', '=', Carbon::parse($expenseClaimDetail->date)->startOfDay()->format('Y-m-d'));
+                            })
+                            ->sum('cost');
+                    }
                 }
                 $totalCost = $request->cost + $currentCost;
 
@@ -1123,7 +1226,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                                 'validation.limit',
                                 [
                                     'attr1' => trans('validation.attributes.cost'),
-                                    'attr2' => trans('validation.attributes.limit' . ($isLimitDaily ? '_daily' : '')),
+                                    'attr2' => trans('validation.attributes.limit' . ($isLimitDaily ? '_daily' : ($isLimitMonthly ? '_monthly' : ''))),
                                     'value' => $expenseType->currency . ' ' .  formatNumber($limit),
                                 ]
                             )
@@ -1333,6 +1436,18 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             }
 
             $now = Carbon::now();
+
+            $minDate = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                ->min('date');
+            if($minDate != null){
+                $minDate = Carbon::parse($minDate)->startOfMonth();
+                $monthApproveDate = $now->copy()->startOfMonth();
+                $diffInMonths = abs($minDate->diffInMonths($monthApproveDate));
+                if($diffInMonths > 1){
+                    DB::rollback();
+                    return response()->json(['message' => trans('custom.difference_date_request_submit_invalid')], 403);
+                }
+            }
 
             $isDraft = $expenseClaim->status == ExpenseClaim::DRAFT;
             $totalCost = $expenseClaim->value;

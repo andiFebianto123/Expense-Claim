@@ -32,6 +32,8 @@ return [
     'goa_user_not_found' => 'The user for GoA approval is not found.',
     'expense_claim_cant_status' => 'The expense claim status is :status and cannot be :action.',
     'expense_type_limit_daily' => 'The selected :attribute has conflict request with start date = :startDate and end date = :endDate.',
+    'difference_date_request_invalid' => 'The month difference between current request date with the oldest request date must be less than 2 months.',
+    'difference_date_request_submit_invalid' => 'The month difference between submit date and the oldest request date must be less than 2 months.',
 
     // USER REQUEST DETAIL
     'submit_confirm' => 'Are you sure you want to submit this item?',

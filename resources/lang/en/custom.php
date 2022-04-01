@@ -71,6 +71,7 @@ return [
         'log' => "[:time] Line :line, Message: :message\n",
         'success' => "SUCCESS to input or update data",
         'failed' => "FAILED to input or update data",
+        
     ],
 
     'business_purposes_restrict_level' => 'The business purposes approval can only be used for level :level.',

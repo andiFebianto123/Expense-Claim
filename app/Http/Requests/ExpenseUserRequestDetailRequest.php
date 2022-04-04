@@ -31,7 +31,7 @@ class ExpenseUserRequestDetailRequest extends FormRequest
         return [
             'expense_type_id' => 'required',
             'date' => 'required|date',
-            'cost_center_id' => 'required',
+            // 'cost_center_id' => 'required',
             'cost' => ['required', 'int', 'min:0'],
             'document' => ['nullable', 'file', 'max:5000'],
             'is_bp_approval' => 'nullable|boolean',

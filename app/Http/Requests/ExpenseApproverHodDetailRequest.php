@@ -30,7 +30,7 @@ class ExpenseApproverHodDetailRequest extends FormRequest
     {
 
         return [
-            'cost_center_id' => 'required',
+            // 'cost_center_id' => 'required',
             'date' => [Rule::requiredIf($this->method() == 'POST'), 'date'],
             'expense_type_id' => [Rule::requiredIf($this->method() == 'POST')],
             'cost' => ['required', 'int', 'min:0'],

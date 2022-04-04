@@ -389,14 +389,26 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
             ]
         ]);
 
+
+        $costCenter = User::where('id', $this->crud->expenseClaim->request_id)->first();
         CRUD::addField([
             'name' => 'cost_center_id',
             'label' => 'Cost Center',
-            'type'        => 'select2_from_array',
-            'options'     => CostCenter::select('id', 'description')->get()->pluck('description', 'id'),
-            'allows_null' => false,
-            'default' => (User::where('id', $this->crud->expenseClaim->request_id)->first()->cost_center_id ?? null)
+            'type' => 'text',
+            'value' => CostCenter::where('id', ($costCenter->cost_center_id ?? null))->first()->description ?? '',
+            'attributes' => [
+                'disabled' => true
+            ]
         ]);
+
+        // CRUD::addField([
+        //     'name' => 'cost_center_id',
+        //     'label' => 'Cost Center',
+        //     'type'        => 'select2_from_array',
+        //     'options'     => CostCenter::select('id', 'description')->get()->pluck('description', 'id'),
+        //     'allows_null' => false,
+        //     'default' => (User::where('id', $this->crud->expenseClaim->request_id)->first()->cost_center_id ?? null)
+        // ]);
 
         CRUD::addField([
             'name' => 'cost',
@@ -495,7 +507,8 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                     'mst_levels.level_id as level_code',
                     'mst_levels.name as level_name',
                     'mst_levels.id as level_id',
-                    'department_id'
+                    'department_id',
+                    'cost_center_id'
                 )
                 ->first();
 
@@ -741,7 +754,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 $errors['user_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.user_id')])];
             }
 
-            $costCenter = CostCenter::where('id', $request->cost_center_id)->first();
+            $costCenter = CostCenter::where('id', ($user->cost_center_id ?? null))->first();
             if ($costCenter == null) {
                 $errors['cost_center_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.cost_center_id')])];
             }
@@ -904,14 +917,25 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
             ]
         ]);
 
+        $costCenter = User::where('id', $this->crud->expenseClaim->request_id)->first();
         CRUD::addField([
             'name' => 'cost_center_id',
             'label' => 'Cost Center',
-            'type'        => 'select2_from_array',
-            'options'     => CostCenter::select('id', 'description')->get()->pluck('description', 'id'),
-            'allows_null' => false,
-            'default' => CostCenter::where('id', $this->crud->expenseClaim->request_id)->select('id')->first()->id ?? null
+            'type' => 'text',
+            'value' => CostCenter::where('id', ($costCenter->cost_center_id ?? null))->first()->description ?? '',
+            'attributes' => [
+                'disabled' => true
+            ]
         ]);
+
+        // CRUD::addField([
+        //     'name' => 'cost_center_id',
+        //     'label' => 'Cost Center',
+        //     'type'        => 'select2_from_array',
+        //     'options'     => CostCenter::select('id', 'description')->get()->pluck('description', 'id'),
+        //     'allows_null' => false,
+        //     'default' => CostCenter::where('id', $this->crud->expenseClaim->request_id)->select('id')->first()->id ?? null
+        // ]);
 
         CRUD::addField([
             'name' => 'cost',
@@ -1014,6 +1038,10 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
             'value' => Carbon::parse($this->data['entry']->date)->format('d M Y')
         ]);
 
+        $this->crud->modifyField('cost_center_id', [
+            'value' => CostCenter::where('id', ($this->data['entry']->cost_center_id ?? null))->first()->description ?? ''
+        ]);
+
         $this->data['id'] = $id;
 
         // load the view from /resources/views/vendor/backpack/crud/ if it exists, otherwise load the one in the package
@@ -1043,7 +1071,8 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                     'mst_levels.level_id as level_code',
                     'mst_levels.name as level_name',
                     'mst_levels.id as level_id',
-                    'department_id'
+                    'department_id',
+                    'cost_center_id'
                 )
                 ->first();
 
@@ -1244,7 +1273,7 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                 $errors['user_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.user_id')])];
             }
 
-            $costCenter = CostCenter::where('id', $request->cost_center_id)->first();
+            $costCenter = CostCenter::where('id', $expenseClaimDetail->cost_center_id)->first();
             if ($costCenter == null) {
                 $errors['cost_center_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.cost_center_id')])];
             }

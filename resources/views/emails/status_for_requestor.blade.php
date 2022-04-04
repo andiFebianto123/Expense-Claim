@@ -18,7 +18,8 @@
             <p>Remark : {{$remark ?? '-'}}</p>
             @endif
             <p>By {{$approverName}} at {{$approverDate}}
-                <br>Please follow this link to view detail :
+            @if (($withButton ?? true))
+            <br>Please follow this link to view detail :
             </p>
             <div style="margin-top: 40px; margin-bottom:40px; text-align:center;" >
                 <a href="{{$urlRedirect}}" 
@@ -26,6 +27,7 @@
                     Visit Page
                 </a>
             </div>
+            @endif
             <div style="margin-top: 10px; margin-bottom:10px;" >
                 Thanks,<br>{{env('APP_NAME')}}
             </div>

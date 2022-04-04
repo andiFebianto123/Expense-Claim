@@ -1483,9 +1483,9 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 if($secretaryEmail != null){
                     $ccs[] = $secretaryEmail;
                 }
-                if($this->crud->user->email != null){
-                    $ccs[] = $this->crud->user->email;
-                }
+                // if($this->crud->user->email != null){
+                //     $ccs[] = $this->crud->user->email;
+                // }
                 if(count($ccs) > 0){
                     $mail->cc(array_unique($ccs));
                 }

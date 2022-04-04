@@ -1595,18 +1595,18 @@ class ExpenseApproverGoaDetailCrudController extends CrudController
                     $ccs[] = $secretaryEmail;
                 }
 
-                $hodEmail = $expenseClaim->hodaction->email ?? null;
-                if($hodEmail != null){
-                    $ccs[] = $hodEmail;
-                }
+                // $hodEmail = $expenseClaim->hodaction->email ?? null;
+                // if($hodEmail != null){
+                //     $ccs[] = $hodEmail;
+                // }
 
-                $prevTransGoaApprovalEmail = TransGoaApproval::
-                where('order', '<=', $transGoaApproval->order)
-                ->where('expense_claim_id', $this->crud->headerId)
-                ->where('status', '!=', '-')->join('mst_users as user', 'user.id', 'trans_goa_approvals.goa_action_id')
-                ->whereNotNull('email')->select('email')->get()->pluck('email')->toArray();
+                // $prevTransGoaApprovalEmail = TransGoaApproval::
+                // where('order', '<=', $transGoaApproval->order)
+                // ->where('expense_claim_id', $this->crud->headerId)
+                // ->where('status', '!=', '-')->join('mst_users as user', 'user.id', 'trans_goa_approvals.goa_action_id')
+                // ->whereNotNull('email')->select('email')->get()->pluck('email')->toArray();
 
-                $ccs = array_merge($ccs, $prevTransGoaApprovalEmail);
+                // $ccs = array_merge($ccs, $prevTransGoaApprovalEmail);
 
                 if(count($ccs) > 0){
                     $mail->cc(array_unique($ccs));

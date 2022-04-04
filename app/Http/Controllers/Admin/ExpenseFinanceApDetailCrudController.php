@@ -360,9 +360,14 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                     $ccs[] = $secretaryEmail;
                 }
 
+                if(count($ccs) > 0){
+                    $mail->cc(array_unique($ccs));
+                }
+
+                $emailHodGoa = [];
                 $hodEmail = $expenseClaim->hodaction->email ?? null;
                 if($hodEmail != null){
-                    $ccs[] = $hodEmail;
+                    $emailHodGoa[] = $hodEmail;
                 }
 
                 $prevTransGoaApprovalEmail = TransGoaApproval::
@@ -370,14 +375,20 @@ class ExpenseFinanceApDetailCrudController extends CrudController
                 ->where('status', '!=', '-')->join('mst_users as user', 'user.id', 'trans_goa_approvals.goa_action_id')
                 ->whereNotNull('email')->select('email')->get()->pluck('email')->toArray();
 
-                $ccs = array_merge($ccs, $prevTransGoaApprovalEmail);
-
-                if(count($ccs) > 0){
-                    $mail->cc(array_unique($ccs));
-                }
+                $emailHodGoa = array_merge($emailHodGoa, $prevTransGoaApprovalEmail);
 
                 try{
                     $mail->send(new StatusForRequestorMail($dataMailRequestor));
+                    if(count($emailHodGoa) > 0){
+                        $emailHodGoa = array_unique($emailHodGoa);
+                        $mailHoaGoa = Mail::to($emailHodGoa[0]);
+                        array_shift($emailHodGoa);
+                        if(count($emailHodGoa) > 0){
+                            $mailHoaGoa->cc($emailHodGoa);
+                        }
+                        $dataMailRequestor['withButton'] = false;
+                        $mailHoaGoa->send(new StatusForRequestorMail($dataMailRequestor));
+                    }
                 }
                 catch(Exception $e){
                     DB::rollback();

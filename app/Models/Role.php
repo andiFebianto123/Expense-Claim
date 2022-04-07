@@ -29,4 +29,5 @@ class Role extends Model
     public const HOD = 'Hod';
     public const SECRETARY = 'Secretary';
     public const FINANCE_AP = 'Finance AP';
+    public const ALL_CC = 'All CC';
 }

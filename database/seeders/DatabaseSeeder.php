@@ -60,7 +60,8 @@ class DatabaseSeeder extends Seeder
             'Administrator',
             'Hod',
             'Secretary',
-            'Finance AP'
+            'Finance AP',
+            'All CC'
         ];
 
         foreach ($roles as $role) {

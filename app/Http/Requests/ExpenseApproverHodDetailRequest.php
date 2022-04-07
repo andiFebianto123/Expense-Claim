@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Role;
 use App\Models\ApprovalCard;
 use App\Http\Requests\Request;
 use Illuminate\Validation\Rule;
@@ -30,7 +31,7 @@ class ExpenseApproverHodDetailRequest extends FormRequest
     {
 
         return [
-            // 'cost_center_id' => 'required',
+            'cost_center_id' => [allowedRole([Role::ALL_CC]) ? 'required' : 'nullable'],
             'date' => [Rule::requiredIf($this->method() == 'POST'), 'date'],
             'expense_type_id' => [Rule::requiredIf($this->method() == 'POST')],
             'cost' => ['required', 'int', 'min:0'],

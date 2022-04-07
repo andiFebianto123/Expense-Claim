@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Role;
 use App\Models\ApprovalCard;
 use App\Http\Requests\Request;
 use Illuminate\Validation\Rule;
@@ -31,7 +32,7 @@ class ExpenseUserRequestDetailRequest extends FormRequest
         return [
             'expense_type_id' => 'required',
             'date' => 'required|date',
-            // 'cost_center_id' => 'required',
+            'cost_center_id' => [allowedRole([Role::ALL_CC]) ? 'required' : 'nullable'],
             'cost' => ['required', 'int', 'min:0'],
             'document' => ['nullable', 'file', 'max:5000'],
             'is_bp_approval' => 'nullable|boolean',

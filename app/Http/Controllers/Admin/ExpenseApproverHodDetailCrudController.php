@@ -371,16 +371,28 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             ]
         ]);
 
-        $costCenter = User::where('id', $this->crud->expenseClaim->request_id)->first();
-        CRUD::addField([
-            'name' => 'cost_center_id',
-            'label' => 'Cost Center',
-            'type' => 'text',
-            'value' => CostCenter::where('id', ($costCenter->cost_center_id ?? null))->first()->description ?? '',
-            'attributes' => [
-                'disabled' => true
-            ]
-        ]);
+        if(allowedRole([Role::ALL_CC])){
+            CRUD::addField([
+                'name' => 'cost_center_id',
+                'label' => 'Cost Center',
+                'type'        => 'select2_from_array',
+                'options'     => CostCenter::select('id', 'description')->get()->pluck('description', 'id'),
+                'allows_null' => false,
+                'default' => (User::where('id', $this->crud->expenseClaim->request_id)->first()->cost_center_id ?? null),
+            ]);
+        }
+        else{
+            $costCenter = User::where('id', $this->crud->expenseClaim->request_id)->first();
+            CRUD::addField([
+                'name' => 'cost_center',
+                'label' => 'Cost Center',
+                'type' => 'text',
+                'value' => CostCenter::where('id', ($costCenter->cost_center_id ?? null))->first()->description ?? '',
+                'attributes' => [
+                    'disabled' => true
+                ]
+            ]);
+        }
 
 
         // CRUD::addField([
@@ -737,9 +749,17 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 $errors['user_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.user_id')])];
             }
 
-            $costCenter = CostCenter::where('id', ($user->cost_center_id ?? null))->first();
-            if ($costCenter == null) {
-                $errors['cost_center_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.cost_center_id')])];
+            if(allowedRole([Role::ALL_CC])){
+                $costCenter = CostCenter::where('id', $request->cost_center_id)->first();
+                if ($costCenter == null) {
+                    $errors['cost_center_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.cost_center_id')])];
+                }
+            }
+            else{
+                $costCenter = CostCenter::where('id', ($user->cost_center_id ?? null))->first();
+                if ($costCenter == null) {
+                    $errors['cost_center'] = [trans('validation.in', ['attribute' => trans('validation.attributes.cost_center_id')])];
+                }
             }
 
             $startDate = Carbon::now()->startOfMonth()->subMonth()->startOfDay();
@@ -900,16 +920,28 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             ]
         ]);
 
-        $costCenter = User::where('id', $this->crud->expenseClaim->request_id)->first();
-        CRUD::addField([
-            'name' => 'cost_center_id',
-            'label' => 'Cost Center',
-            'type' => 'text',
-            'value' => CostCenter::where('id', ($costCenter->cost_center_id ?? null))->first()->description ?? '',
-            'attributes' => [
-                'disabled' => true
-            ]
-        ]);
+        if(allowedRole([Role::ALL_CC])){
+            CRUD::addField([
+                'name' => 'cost_center_id',
+                'label' => 'Cost Center',
+                'type'        => 'select2_from_array',
+                'options'     => CostCenter::select('id', 'description')->get()->pluck('description', 'id'),
+                'allows_null' => false,
+                'default' => CostCenter::where('id', $this->crud->expenseClaim->request_id)->select('id')->first()->id ?? null
+            ]);
+        }
+        else{
+            $costCenter = User::where('id', $this->crud->expenseClaim->request_id)->first();
+            CRUD::addField([
+                'name' => 'cost_center',
+                'label' => 'Cost Center',
+                'type' => 'text',
+                'value' => CostCenter::where('id', ($costCenter->cost_center_id ?? null))->first()->description ?? '',
+                'attributes' => [
+                    'disabled' => true
+                ]
+            ]);
+        }
 
         // CRUD::addField([
         //     'name' => 'cost_center_id',
@@ -1021,9 +1053,11 @@ class ExpenseApproverHodDetailCrudController extends CrudController
             'value' => Carbon::parse($this->data['entry']->date)->format('d M Y')
         ]);
 
-        $this->crud->modifyField('cost_center_id', [
-            'value' => CostCenter::where('id', ($this->data['entry']->cost_center_id ?? null))->first()->description ?? ''
-        ]);
+        if(!allowedRole([Role::ALL_CC])){
+            $this->crud->modifyField('cost_center', [
+                'value' => CostCenter::where('id', ($this->data['entry']->cost_center_id ?? null))->first()->description ?? ''
+            ]);
+        }
 
         $this->data['id'] = $id;
 
@@ -1312,9 +1346,17 @@ class ExpenseApproverHodDetailCrudController extends CrudController
                 $errors['user_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.user_id')])];
             }
 
-            $costCenter = CostCenter::where('id', $expenseClaimDetail->cost_center_id)->first();
-            if ($costCenter == null) {
-                $errors['cost_center_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.cost_center_id')])];
+            if(allowedRole([Role::ALL_CC])){
+                $costCenter = CostCenter::where('id', $request->cost_center_id)->first();
+                if ($costCenter == null) {
+                    $errors['cost_center_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.cost_center_id')])];
+                }
+            }
+            else{
+                $costCenter = CostCenter::where('id', $expenseClaimDetail->cost_center_id)->first();
+                if ($costCenter == null) {
+                    $errors['cost_center'] = [trans('validation.in', ['attribute' => trans('validation.attributes.cost_center_id')])];
+                }
             }
 
 

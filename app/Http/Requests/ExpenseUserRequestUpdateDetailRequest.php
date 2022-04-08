@@ -31,7 +31,7 @@ class ExpenseUserRequestUpdateDetailRequest extends FormRequest
         return [
             // 'cost_center_id' => 'required',
             'cost' => ['required', 'int', 'min:0'],
-            'document' => ['nullable', 'file', 'max:5000'],
+            'document' => ['nullable', 'file', 'max:10000'],
             'is_bp_approval' => 'nullable|boolean',
             'total_person' => 'nullable|int|min:1',
             'total_day' => 'nullable|int|min:1',

@@ -1536,6 +1536,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         ->whereNotNull('expense_number')
                         ->select(DB::raw('CAST(SUBSTR(expense_number,' . (strlen($baseExpenseNumber) + 1) . ') AS UNSIGNED) as numbers'))
                         ->orderBy(DB::raw('CAST(SUBSTR(expense_number,' . (strlen($baseExpenseNumber) + 1) . ') AS UNSIGNED)'), 'desc')
+                        ->lockForUpdate()
                         ->first();
 
                     if($lastExpenseNumber == null){

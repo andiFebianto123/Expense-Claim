@@ -188,7 +188,12 @@ class ExpenseTypeCrudController extends CrudController
         CRUD::addColumn([
             'name'     => 'is_bod',
             'label'    => 'BoD Approval',
-            'type'     => 'boolean',
+            'type'     => 'radio',
+            'options'     => [
+                2 => "When Exceeding Limit",
+                1 => "Yes",
+                0 => "No",
+            ],
             'orderable' => false,
             'searchLogic' => false,
             'limit' => $limit,
@@ -381,6 +386,7 @@ class ExpenseTypeCrudController extends CrudController
             'type'        => 'radio',
             'default' => 0,
             'options'     => [
+                2 => "When Exceeding Limit",
                 1 => "Yes",
                 0 => "No",
             ]
@@ -532,6 +538,14 @@ class ExpenseTypeCrudController extends CrudController
                     'attr3' => trans('validation.attributes.is_limit_person')
                     ]
                 )];
+            }
+
+            if($countLimit > 0 && $request->is_bod == 2){
+                $errors['is_bod'] = [trans('validation.attribute_cannot_be_used_together', [
+                    'attr1' => trans('validation.attributes.is_bod'),   
+                    'attr2' => trans('validation.attributes.limit_daily') . ' / ' . 
+                    trans('validation.attributes.limit_monthly') . ' / ' . trans('validation.attributes.is_limit_person'), 
+                ])];
             }
 
 
@@ -720,6 +734,14 @@ class ExpenseTypeCrudController extends CrudController
                 )];
             }
 
+            if($countLimit > 0 && $request->is_bod == 2){
+                $errors['is_bod'] = [trans('validation.attribute_cannot_be_used_together', [
+                    'attr1' => trans('validation.attributes.is_bod') . ' (When Exceeding Limit)',   
+                    'attr2' => trans('validation.attributes.limit_daily') . ' / ' . 
+                    trans('validation.attributes.limit_monthly') . ' / ' . trans('validation.attributes.is_limit_person'), 
+                ])];
+            }
+
 
             $uniqueDepartments = [];
             if($request->filled('department_id') && is_array($request->department_id)){
@@ -795,10 +817,10 @@ class ExpenseTypeCrudController extends CrudController
 
             MstExpenseTypeDepartment::where('expense_type_id', $id)->delete();
 
-            $result = ExpenseType::where('id', $id)->delete();
+            $response = $this->crud->delete($id);
 
             DB::commit();
-            return $result;
+            return $response;
         } catch (Exception $e) {
             DB::rollBack();
             if($e instanceof QueryException){

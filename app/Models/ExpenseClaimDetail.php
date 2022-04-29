@@ -23,7 +23,7 @@ class ExpenseClaimDetail extends Model
         'total_day', 'end_date',
         'is_bp_approval',
         'cost', 'currency', 'converted_currency', 'exchange_value', 'converted_cost',
-        'document', 'remark'
+        'document', 'remark', 'is_exceed_limit'
     ];
     protected $table = 'trans_expense_claim_details';
 

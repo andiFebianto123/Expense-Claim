@@ -601,6 +601,8 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             if ($expenseType == null) {
                 $errors['expense_type_id'] = [trans('validation.in', ['attribute' => trans('validation.attributes.expense_type')])];
             } else {
+                $isBodLimit = $expenseType->is_bod == 2;
+
                 $limit = $expenseType->limit;
 
                 $isLimitDaily = $expenseType->limit_daily;
@@ -716,8 +718,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     }
                 }
 
+                $isExceedLimit = false;
                 if (!$errorLimitPerson && !$errorLimitDaily) {
-                    if ($limit != null && $totalCost > $limit) {
+                    if ($limit != null && $totalCost > $limit && !$isBodLimit) {
                         $errors['cost'] = [
                             trans(
                                 'validation.limit',
@@ -728,6 +731,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                                 ]
                             )
                         ];
+                    }
+
+                    if($limit != null && $isBodLimit && $totalCost > $limit){
+                        $isExceedLimit = true;
                     }
                 }
 
@@ -843,10 +850,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     }
                 }
                 $hasBodRespective = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
-                    $query->where('is_bod', 1)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
+                    $query->where('is_bod', '>=', 1)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
                 })->exists();
                 $hasBodGeneral = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
-                    $query->where('is_bod', 1)->where('bod_level', ExpenseType::GENERAL_MANAGER);
+                    $query->where('is_bod', '>=', 1)->where('bod_level', ExpenseType::GENERAL_MANAGER);
                 })->exists();
                 if($expenseType->is_bod){
                     if(($expenseType->bod_level == ExpenseType::GENERAL_MANAGER && !$hasBodGeneral)){
@@ -855,6 +862,12 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     else if(($expenseType->bod_level == ExpenseType::RESPECTIVE_DIRECTOR && !$hasBodRespective && !$hasBodGeneral)){
                         $errors['expense_type_id'] = [trans('custom.cant_add_other_bod_level', ['level' => $expenseType->bod_level])];
                     }
+                }
+                $prevExceedLimit = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
+                    $query->where('is_bod', '=', 2);
+                })->where('expense_claim_type_id', ($historyExpenseType->id ?? null))->where('is_exceed_limit', 1)->exists();
+                if($isExceedLimit != $prevExceedLimit){
+                    $errors['cost'] = [trans('custom.cant_action_exceeding_limit_bod_level', ['action' => trans('custom.add_new')])];
                 }
             }
 
@@ -907,6 +920,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             $expenseClaimDetail->cost = $cost;
             $expenseClaimDetail->remark = $request->remark;
             $expenseClaimDetail->document = $request->document;
+            $expenseClaimDetail->is_exceed_limit = $isExceedLimit;
 
             $expenseClaimDetail->save();
 
@@ -1149,6 +1163,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 $expenseType = $historyExpenseType;
                 $limit = $expenseType->limit;
                 $isLimitDaily = $expenseType->limit_daily;
+                $isBodLimit = $expenseType->is_bod == 2;
 
                 $errorLimitDaily = false;
                 if ($isLimitDaily) {
@@ -1263,8 +1278,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     }
                 }
 
+                $isExceedLimit = false;
                 if (!$errorLimitPerson && !$errorLimitDaily) {
-                    if ($limit != null && $totalCost > $limit) {
+                    if ($limit != null && $totalCost > $limit && !$isBodLimit) {
                         $errors['cost'] = [
                             trans(
                                 'validation.limit',
@@ -1276,6 +1292,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                             )
                         ];
                     }
+                    if($limit != null && $isBodLimit && $totalCost > $limit){
+                        $isExceedLimit = true;
+                    }
+                    
                 }
 
                 $isBpApproval = $request->is_bp_approval ?? false;
@@ -1351,6 +1371,13 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         )]);
                     }
                 }
+
+                $prevExceedLimit = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
+                    $query->where('is_bod', '=', 2);
+                })->where('expense_claim_type_id', ($historyExpenseType->id ?? null))->where('is_exceed_limit', 1)->exists();
+                if($isExceedLimit != $prevExceedLimit){
+                    $errors['cost'] = [trans('custom.cant_action_exceeding_limit_bod_level', ['action' => trans('custom.edit')])];
+                }
             }
 
             if (count($errors) != 0) {
@@ -1375,6 +1402,7 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             if ($request->document_change) {
                 $expenseClaimDetail->document = $request->document;
             }
+            $expenseClaimDetail->is_exceed_limit = $isExceedLimit;
 
             $expenseClaimDetail->save();
 
@@ -1410,6 +1438,16 @@ class ExpenseUserRequestDetailCrudController extends CrudController
             }
 
             $cost = $expenseClaimDetail->cost;
+            if($expenseClaimType->is_bod == 2){
+                if ($expenseClaimType->currency == Config::USD) {
+                    $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                        ->where('expense_type_id', $expenseClaimType->expense_type_id)
+                        ->sum('converted_cost');
+                } else {
+                    $currentCost = ExpenseClaimDetail::where('expense_claim_id', $this->crud->expenseClaim->id)
+                        ->where('expense_type_id', $expenseClaimType->expense_type_id)->sum('cost');
+                }
+            }
 
             if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
                 $upperLimit = $this->crud->expenseClaim->upper_limit;
@@ -1434,10 +1472,10 @@ class ExpenseUserRequestDetailCrudController extends CrudController
 
             if ($this->crud->expenseClaim->status != ExpenseClaim::DRAFT) {
                 $hasBodRespective = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
-                    $query->where('is_bod', 1)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
+                    $query->where('is_bod', '>=', 1)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
                 })->exists();
                 $hasBodGeneral = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
-                    $query->where('is_bod', 1)->where('bod_level', ExpenseType::GENERAL_MANAGER);
+                    $query->where('is_bod', '>=', 1)->where('bod_level', ExpenseType::GENERAL_MANAGER);
                 })->exists();
 
                 if($expenseClaimType->is_bod){
@@ -1448,6 +1486,33 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     else if(($expenseClaimType->bod_level == ExpenseType::RESPECTIVE_DIRECTOR && !$hasBodRespective && !$hasBodGeneral)){
                         DB::rollback();
                         return response()->json(['message' => trans('custom.cant_delete_other_bod_level', ['level' => $expenseClaimType->bod_level])], 403);
+                    }
+                }
+            }
+
+            if($expenseClaimType->is_bod == 2){
+                $limit = $expenseClaimType->limit;
+
+                $isExceedLimitBefore = false;
+                if($limit != null && $limit < $currentCost){
+                    $isExceedLimitBefore = true;
+                }
+                
+                $isExceedLimitAfter = false;
+                $cost = $expenseClaimType->currency == Config::USD ? $expenseClaimDetail->converted_cost : $expenseClaimDetail->cost;
+                if($limit != null && $limit < ($currentCost - $cost)){
+                    $isExceedLimitAfter = true;
+                }
+                if($isExceedLimitBefore && !$isExceedLimitAfter){
+                    if($this->crud->expenseClaim->status != ExpenseClaim::DRAFT){
+                        DB::rollback();
+                        return response()->json(['message' => trans('custom.cant_action_exceeding_limit_bod_level', ['action' => trans('custom.delete')])], 403);
+                    }
+                    $otherDetails = ExpenseClaimDetail::where('expense_claim_type_id', $expenseClaimDetail->expense_claim_type_id)
+                    ->where('is_exceed_limit', 1)->sharedLock()->get();
+                    foreach($otherDetails as $otherDetail){
+                        $otherDetail->is_exceed_limit = 0;
+                        $otherDetail->save();
                     }
                 }
             }
@@ -1605,11 +1670,12 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                     $expenseClaim->upper_limit = $upperLimit;
 
                     $hasBodRespective = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
-                        $query->where('is_bod', 1)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
+                        $query->where('is_bod', '=', 1)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
                     })->exists();
                     $hasBodGeneral = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
-                        $query->where('is_bod', 1)->where('bod_level', ExpenseType::GENERAL_MANAGER);
+                        $query->where('is_bod', '=', 1)->where('bod_level', ExpenseType::GENERAL_MANAGER);
                     })->exists();
+
                     if($hasBodGeneral){
                         $liftedLevel = $maxLevel;
                     }
@@ -1617,7 +1683,22 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         $liftedLevel = $beforeMaxLevel;
                     }
                     else{
-                        $liftedLevel = $currentLevelGoa;
+                        $hasBodRespectiveLimit = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
+                            $query->where('is_bod', '=', 2)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
+                        })->where('is_exceed_limit', 1)->exists();
+                        $hasBodGeneralLimit = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
+                            $query->where('is_bod', '=', 2)->where('bod_level', ExpenseType::GENERAL_MANAGER);
+                        })->where('is_exceed_limit', 1)->exists();
+
+                        if($hasBodGeneralLimit){
+                            $liftedLevel = $maxLevel;
+                        }
+                        else if($hasBodRespectiveLimit){
+                            $liftedLevel = $beforeMaxLevel;
+                        }
+                        else{
+                            $liftedLevel = $currentLevelGoa;
+                        }
                     }
 
                     while($currentLevelGoa < $liftedLevel){

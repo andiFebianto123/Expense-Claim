@@ -1683,22 +1683,21 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                         $liftedLevel = $beforeMaxLevel;
                     }
                     else{
-                        $hasBodRespectiveLimit = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
-                            $query->where('is_bod', '=', 2)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
-                        })->where('is_exceed_limit', 1)->exists();
-                        $hasBodGeneralLimit = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
-                            $query->where('is_bod', '=', 2)->where('bod_level', ExpenseType::GENERAL_MANAGER);
-                        })->where('is_exceed_limit', 1)->exists();
+                        $liftedLevel = $currentLevelGoa;
+                    }
 
-                        if($hasBodGeneralLimit){
-                            $liftedLevel = $maxLevel;
-                        }
-                        else if($hasBodRespectiveLimit){
-                            $liftedLevel = $beforeMaxLevel;
-                        }
-                        else{
-                            $liftedLevel = $currentLevelGoa;
-                        }
+                    $hasBodRespectiveLimit = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
+                        $query->where('is_bod', '=', 2)->where('bod_level', ExpenseType::RESPECTIVE_DIRECTOR);
+                    })->where('is_exceed_limit', 1)->exists();
+                    $hasBodGeneralLimit = ExpenseClaimDetail::whereHas('expense_claim_type', function($query){
+                        $query->where('is_bod', '=', 2)->where('bod_level', ExpenseType::GENERAL_MANAGER);
+                    })->where('is_exceed_limit', 1)->exists();
+
+                    if($hasBodGeneralLimit){
+                        $liftedLevel = $maxLevel;
+                    }
+                    else if($hasBodRespectiveLimit && $liftedLevel < $beforeMaxLevel){
+                        $liftedLevel = $beforeMaxLevel;
                     }
 
                     while($currentLevelGoa < $liftedLevel){

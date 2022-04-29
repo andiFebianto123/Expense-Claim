@@ -132,7 +132,7 @@ class ReportExpenseTypeExport implements FromView, WithEvents, WithDrawings
                 ['No', 'Yes'][$expenseType->limit_daily],
                 ['No', 'Yes'][$expenseType->is_limit_person],
                 ['No', 'Yes'][$expenseType->limit_monthly],
-                ['No', 'Yes'][$expenseType->is_bod],
+                ['No', 'Yes', 'When Exceeding Limit'][$expenseType->is_bod],
                 ['No', 'Yes'][$expenseType->is_bp_approval],
                 $expenseType->bod_level ?? '-', 
                 $expenseType->limit_business_approval ?? '-', 

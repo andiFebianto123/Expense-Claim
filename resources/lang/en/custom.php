@@ -16,6 +16,7 @@ return [
     'canceled' => 'canceled',
     'submitted' => 'submitted',
     'add' => 'add',
+    'add_new' => 'add new',
     'edit' => 'edit',
     'delete' => 'delete',
     'approved' => 'approved',
@@ -44,8 +45,9 @@ return [
     'file_not_found' => 'File is not found.',
     'expense_claim_detail_cant_status' => 'The expense claim status is :status and cannot :action item from the list.',
     'expense_claim_detail_same_current' => 'The item in expense claim must have same currency with the others (:currency).',
-    'cant_add_other_bod_level' => 'Cannot add new expense type with boD Approval = Yes and boD level = :level.',
-    'cant_delete_other_bod_level' => 'Cannot delete expense type with boD Approval = Yes and boD level = :level.',
+    'cant_add_other_bod_level' => 'Cannot add new expense type with boD Approval = When Exceeding Limit / Yes and boD level = :level.',
+    'cant_delete_other_bod_level' => 'Cannot delete expense type with boD Approval = When Exceeding Limit / Yes and boD level = :level.',
+    'cant_action_exceeding_limit_bod_level' => 'Cannot :action the cost of expense type because the limit condition for boD Approval will be different.',
     'goa_user_limit_not_found' => 'The GoA with limit greater than :value is not found.',
 
 

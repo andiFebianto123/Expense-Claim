@@ -386,7 +386,7 @@ class ExpenseTypeCrudController extends CrudController
             'type'        => 'radio',
             'default' => 0,
             'options'     => [
-                2 => "When Exceeding Limit",
+                // 2 => "When Exceeding Limit",
                 1 => "Yes",
                 0 => "No",
             ]

@@ -36,7 +36,7 @@ class ExpenseTypeRequest extends FormRequest
             'currency' => ['required', Rule::in(CostCenter::OPTIONS_CURRENCY)],
             'expense_code_id' => 'required',
             'is_traf' => 'required|boolean',
-            'is_bod' => ['required', Rule::in([0, 1, 2])],
+            'is_bod' => ['required', Rule::in([0, 1 /*, 2 */])],
             'is_bp_approval' => 'required|boolean',
             'is_limit_person' => 'required|boolean',
             'bod_level' => ['nullable', 'required_if:is_bod,1', Rule::in([ExpenseType::RESPECTIVE_DIRECTOR, ExpenseType::GENERAL_MANAGER])],

@@ -87,9 +87,13 @@ Route::group([
             Route::crud('detail', 'ExpenseFinanceApDetailCrudController');
             Route::get('detail/{id}/document', [ExpenseFinanceApDetailCrudController::class, 'document']);
             Route::post('detail/revise', [ExpenseFinanceApDetailCrudController::class, 'revise']);
+            Route::get('print', 'ExpenseFinanceApCrudController@printReport');
         });
         Route::crud('expense-finance-ap-history', 'ExpenseFinanceApHistoryCrudController');
         Route::post('expense-finance-ap-history/download-ap-journal', 'ExpenseFinanceApHistoryCrudController@downloadApJournal');
+        Route::prefix('expense-finance-ap-history/{header_id}')->group(function () {
+            Route::get('print', 'ExpenseFinanceApHistoryCrudController@printReport');
+        });
     });
 
     Route::get('dashboard', 'DashboardController@index');

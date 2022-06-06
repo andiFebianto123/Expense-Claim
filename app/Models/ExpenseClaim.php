@@ -164,6 +164,22 @@ class ExpenseClaim extends Model
         }
     }
 
+    public function printReportExpenseAp(){
+        if(isset($this->status)){
+            if($this->status == self::FULLY_APPROVED || $this->status == self::PROCEED){
+                return '<a href="' . backpack_url('expense-finance-ap/' . $this->id . '/print') . '" class="btn btn-sm btn-link" target="_blank"><i class="la la-print"></i> Report</a>';
+            }
+        }
+    }
+
+    public function printReportExpenseApHistory(){
+        if(isset($this->status)){
+            if($this->status == self::FULLY_APPROVED || $this->status == self::PROCEED){
+                return '<a href="' . backpack_url('expense-finance-ap-history/' . $this->id . '/print') . '" class="btn btn-sm btn-link" target="_blank"><i class="la la-print"></i> Report</a>';
+            }
+        }
+    }
+
     public function detailFinanceApButton()
     {
         return '<a href="' . backpack_url('expense-finance-ap/' . $this->id . '/detail') . '" class="btn btn-sm btn-link"><i class="la la-list"></i> Detail</a>';

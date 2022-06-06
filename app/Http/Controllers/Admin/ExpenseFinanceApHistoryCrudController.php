@@ -2,22 +2,25 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Carbon\Carbon;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\CostCenter;
+use App\Models\Department;
+use App\Models\MstExpense;
+use App\Models\ExpenseCode;
+use App\Library\ReportClaim;
+use App\Models\ExpenseClaim;
 use App\Exports\ApJournalExport;
+use App\Models\TransGoaApproval;
+use App\Models\ExpenseClaimDetail;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ApJournalHistoryExport;
 use App\Exports\ReportClaimDetailExport;
 use App\Exports\ReportClaimSummaryExport;
-use App\Models\CostCenter;
-use App\Models\Department;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\ExpenseClaim;
-use App\Models\ExpenseCode;
-use App\Models\MstExpense;
-use App\Models\TransGoaApproval;
 use Illuminate\Database\Eloquent\Builder;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
-use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * Class ExpenseFinanceApHistoryCrudController
@@ -102,6 +105,7 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         // $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_summary', 'end');
         // $this->crud->addButtonFromView('top', 'download_excel_report', 'download_claim_detail', 'end');
         $this->crud->addButtonFromModelFunction('line', 'detailFinanceApButton', 'detailFinanceApButton');
+        $this->crud->addButtonFromModelFunction('line', 'printReportExpenseApHistory', 'printReportExpenseApHistory', 'end');
 
         
         // $this->crud->addFilter([
@@ -433,77 +437,85 @@ class ExpenseFinanceApHistoryCrudController extends CrudController
         return $this->getEntriesAsJsonForDatatables($entries, $totalRows, $filteredRows, $startIndex);
     }
 
-    // public function printReport(){
-    //     $this->crud->headerId = \Route::current()->parameter('header_id');
-    //     $data = [];
-    //     $expensePurpose = [];
-    //     $goaHolders = [];
-    //     $detailExpenses = [];
-    //     $totalDetailExpenseCost = 0;
+    public function printReport(){
+        $this->crud->hasAccessOrFail('list');
+        $this->crud->headerId = \Route::current()->parameter('header_id');
+        $data = [];
+        $expensePurpose = [];
+        $goaHolders = [];
+        $detailExpenses = [];
+        $totalDetailExpenseCost = 0;
 
-    //     $dataClaim = ExpenseClaim::where('id', $this->crud->headerId)
-    //     ->first();
-    //     if($dataClaim != null){
-    //         $dataClaimDetails = ExpenseClaimDetail::where('expense_claim_id', $dataClaim->id)->get();
-    //         if(count($dataClaimDetails) > 0){
-    //             foreach($dataClaimDetails as $dataClaimDetail){
-    //                 $nameExpense = $dataClaimDetail->expense_claim_type->expense_name;
-    //                 $idExpense = $dataClaimDetail->expense_claim_type->account_number;
-    //                 $descriptionExpense = $dataClaimDetail->expense_claim_type->description;
-    //                 $costCenterExpense = $dataClaimDetail->cost_center->cost_center_id;
-    //                 $totalExpense = $dataClaimDetail->cost;
-    //                 $totalDetailExpenseCost += $totalExpense;
+        $dataClaim = ExpenseClaim::where('id', $this->crud->headerId)
+        ->where(function($query){
+            $query->where('status', ExpenseClaim::PROCEED);
+        })
+        ->first();
+        if($dataClaim != null){
+            $dataClaimDetails = ExpenseClaimDetail::where('expense_claim_id', $dataClaim->id)->get();
+            if(count($dataClaimDetails) > 0){
+                foreach($dataClaimDetails as $dataClaimDetail){
+                    $nameExpense = $dataClaimDetail->expense_claim_type->expense_name;
+                    $idExpense = $dataClaimDetail->expense_claim_type->account_number;
+                    $descriptionExpense = $dataClaimDetail->expense_claim_type->description;
+                    $costCenterExpense = $dataClaimDetail->cost_center->cost_center_id;
+                    $totalExpense = $dataClaimDetail->cost;
+                    $totalDetailExpenseCost += $totalExpense;
 
-    //                 $expensePurpose[] = $nameExpense;
-    //                 $ex = [
-    //                     'account_description' => $nameExpense,
-    //                     'expense_code' => $idExpense,
-    //                     'description' => $descriptionExpense,
-    //                     'cost_center' => $costCenterExpense,
-    //                     'total' => $totalExpense,
-    //                 ];
-    //                 array_push($detailExpenses, $ex);
-    //             }
-    //         }
-    //         $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)->groupBy('goa_id')->get();
-    //         if(count($dataGoaDetails) > 0){
-    //             foreach($dataGoaDetails as $dataGoaDetail){
-    //                 $dataGoa = [
-    //                     'name' => $dataGoaDetail->user->name,
-    //                     'date' => Carbon::parse($dataGoaDetail->goa_date)->isoFormat('DD.MM.YYYY')
-    //                 ];
-    //                 array_push($goaHolders, $dataGoa);
-    //             }
-    //         }  
+                    $expensePurpose[] = $nameExpense;
+                    $ex = [
+                        'account_description' => $nameExpense,
+                        'expense_code' => $idExpense,
+                        'description' => $descriptionExpense,
+                        'cost_center' => $costCenterExpense,
+                        'total' => $totalExpense,
+                    ];
+                    array_push($detailExpenses, $ex);
+                }
+            }
+            $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)
+            // ->groupBy('goa_id')
+            ->get();
+            if(count($dataGoaDetails) > 0){
+                foreach($dataGoaDetails as $dataGoaDetail){
+                    $dataGoa = [
+                        'name' => $dataGoaDetail->user->name,
+                        'date' => Carbon::parse($dataGoaDetail->goa_date)->isoFormat('DD.MM.YYYY')
+                    ];
+                    array_push($goaHolders, $dataGoa);
+                }
+            }  
 
-    //         $data['claim_number'] = $dataClaim->expense_number;
-    //         $data['date_submited'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD/MM/YY');
-    //         $data['name'] = $dataClaim->request->name;
-    //         $data['bpid'] = $dataClaim->request->bpid;
-    //         $data['expense_date_from'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
-    //         $data['expense_date_to'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
-    //         $data['department'] = $dataClaim->request->department->name;
+            $data['claim_number'] = $dataClaim->expense_number;
+            $data['date_submited'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD/MM/YY');
+            $data['name'] = $dataClaim->request->name;
+            $data['bpid'] = $dataClaim->request->bpid;
+            $data['expense_date_from'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
+            $data['expense_date_to'] = Carbon::parse($dataClaim->request_date)->isoFormat('MMMM');
+            $data['department'] = $dataClaim->request->department->name;
 
-    //         $data['purpose_of_expense'] = implode(', ', $expensePurpose);
+            $data['purpose_of_expense'] = implode(', ', $expensePurpose);
 
-    //         $data['request_name'] = $dataClaim->request->name;
-    //         $data['request_date'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD.MM.YYYY');
-    //         $data['head_department_name'] = $dataClaim->hod->name ?? '';
-    //         $data['head_department_approval_date'] = ($dataClaim->hod_date != null) ? Carbon::parse($dataClaim->hod_date)->isoFormat('DD.MM.YYYY') : '';
+            $data['request_name'] = $dataClaim->request->name;
+            $data['request_date'] = Carbon::parse($dataClaim->request_date)->isoFormat('DD.MM.YYYY');
+            $data['head_department_name'] = $dataClaim->hod->name ?? '';
+            $data['head_department_approval_date'] = ($dataClaim->hod_date != null) ? Carbon::parse($dataClaim->hod_date)->isoFormat('DD.MM.YYYY') : '';
 
-    //         $data['goa_holder'] = $goaHolders;
+            $data['goa_holder'] = $goaHolders;
 
-    //         $data['print_date'] = Carbon::now()->isoFormat('DD-MMM-YY');
+            $data['print_date'] = Carbon::now()->isoFormat('DD-MMM-YY');
 
-    //         // detail for expenses
-    //         $data['detail_expenses'] = $detailExpenses;
-    //         $data['total_detail_expenses'] = $totalDetailExpenseCost; 
+            // detail for expenses
+            $data['detail_expenses'] = $detailExpenses;
+            $data['total_detail_expenses'] = $totalDetailExpenseCost; 
 
-    //         $print = new ReportClaim($data);
-    //         return $print->renderPdf();
-
-    //     }
-    // }
+            $print = new ReportClaim($data);
+            return $print->renderPdf();
+        }
+        else{
+            abort(404, trans('custom.model_not_found'));
+        }
+    }
     
     public function showDetailsRow($id)
     {

@@ -281,7 +281,9 @@ class ExpenseUserRequestHistoryCrudController extends CrudController
                     array_push($detailExpenses, $ex);
                 }
             }
-            $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)->groupBy('goa_id')->get();
+            $dataGoaDetails = TransGoaApproval::where('expense_claim_id', $dataClaim->id)
+            // ->groupBy('goa_id')
+            ->get();
             if(count($dataGoaDetails) > 0){
                 foreach($dataGoaDetails as $dataGoaDetail){
                     $dataGoa = [

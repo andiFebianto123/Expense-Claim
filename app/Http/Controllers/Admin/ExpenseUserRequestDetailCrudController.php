@@ -739,6 +739,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 }
 
                 $isBpApproval = $request->is_bp_approval ?? false;
+                if(isset($errors['cost']) && count($errors['cost']) > 0 && $expenseType->is_bp_approval){
+                    unset($errors['cost']);
+                }
                 if ($expenseType->is_bp_approval && $expenseType->limit_business_approval != null && $totalCost > $expenseType->limit_business_approval && !$isBpApproval) {
                     $errors['cost'] = array_merge($errors['cost'] ?? [], [
                         trans(
@@ -1299,6 +1302,9 @@ class ExpenseUserRequestDetailCrudController extends CrudController
                 }
 
                 $isBpApproval = $request->is_bp_approval ?? false;
+                if(isset($errors['cost']) && count($errors['cost']) > 0 && $expenseType->is_bp_approval){
+                    unset($errors['cost']);
+                }
                 if ($expenseType->is_bp_approval && $expenseType->limit_business_approval != null && $totalCost > $expenseType->limit_business_approval && !$isBpApproval) {
                     $errors['cost'] = array_merge($errors['cost'] ?? [], [
                         trans(
